@@ -1,0 +1,16 @@
+# Local Python environments and caches
+.venv/
+.pytest_cache/
+**/__pycache__/
+*.py[cod]
+
+# Generated local state; source fixtures live under app/fixtures instead.
+runtime/
+data/
+*.db
+*.db-*
+*.sqlite
+*.sqlite-*
+
+# Generated only from the external P5 material archive; never a source fixture.
+scripts/assets/p5-contact-sheets/

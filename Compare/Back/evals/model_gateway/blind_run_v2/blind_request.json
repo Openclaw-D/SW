@@ -1,0 +1,113 @@
+{
+  "runName": "P5-BlindEval-R2",
+  "generatedBy": "codex_isolated_blind_eval_v2",
+  "notAProviderCall": true,
+  "promptVersion": "codex_offline_oracle_prompt_v2",
+  "controlledInputs": [
+    {
+      "role": "sceneSpecAssociation",
+      "sourceRef": "scene/SYN-01-001-E1D2-controlled-scene.json",
+      "contentHash": "fd1e63b1c2ca2ca327f9fcf4a44b71e558d808b4d8eb25b9729e9d912c29ff8b",
+      "schemaVersion": "compare-gaussian-preview-v1",
+      "executionPolicy": "declarative-only",
+      "isSimulated": true
+    }
+  ],
+  "requests": [
+    {
+      "requestId": "p5-blind-r2-image",
+      "capabilityId": "material-intelligence-offline-v2",
+      "mode": "synthetic",
+      "trigger": "explicit_action",
+      "material": {
+        "projectId": "gen-metal_processing-e1d2b78d0b",
+        "materialId": "mat-gen-metal_processing-e1d2b78d0b-equipment-image",
+        "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-equipment-image-v1",
+        "contentHash": "ab76f7ea3853ee204101b8ef734115fe00c799d810bc4d9fe38c99b8663fc489",
+        "mediaKind": "image",
+        "sourceRef": "images/SYN-01-001-E1D2-equipment-overview.png",
+        "dataClassification": "synthetic_demo",
+        "usageAuthorizationRef": "compare-p5-synthetic-v1"
+      },
+      "contextVersion": "p5-blind-r2-scene-fd1e63b1",
+      "projectContext": {
+        "dimensionId": "production",
+        "industryCode": "metal_processing",
+        "locale": "zh-CN"
+      },
+      "fieldSchemas": [
+        {"fieldKey": "equipmentCategory", "label": "设备类别", "valueType": "string"}
+      ],
+      "taskGoals": ["observe", "extract_field_candidates", "identify_unresolved", "scene_spec"],
+      "inputHash": "ab76f7ea3853ee204101b8ef734115fe00c799d810bc4d9fe38c99b8663fc489",
+      "schemaVersion": "1.0"
+    },
+    {
+      "requestId": "p5-blind-r2-pdf",
+      "capabilityId": "material-intelligence-offline-v2",
+      "mode": "synthetic",
+      "trigger": "explicit_action",
+      "material": {
+        "projectId": "gen-metal_processing-e1d2b78d0b",
+        "materialId": "mat-gen-metal_processing-e1d2b78d0b-transaction-purchase-contract",
+        "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-transaction-purchase-contract-v1",
+        "contentHash": "03ae4657ef8277072385602a7a89c41931f6a68d0d07db897bc39825207ea1ad",
+        "mediaKind": "pdf",
+        "sourceRef": "pdf/SYN-01-001-E1D2-purchase-contract.pdf",
+        "dataClassification": "synthetic_demo",
+        "usageAuthorizationRef": "compare-p5-synthetic-v1"
+      },
+      "contextVersion": "p5-blind-r2",
+      "projectContext": {
+        "dimensionId": "transaction",
+        "industryCode": "metal_processing",
+        "locale": "zh-CN"
+      },
+      "fieldSchemas": [
+        {"fieldKey": "purchaseContractNo", "label": "买卖合同号", "valueType": "string"},
+        {"fieldKey": "relatedLeaseContractNo", "label": "关联租赁合同号", "valueType": "string"},
+        {"fieldKey": "supplier", "label": "供应商", "valueType": "string"},
+        {"fieldKey": "equipmentModelText", "label": "设备字段原文", "valueType": "string"},
+        {"fieldKey": "quantity", "label": "数量", "valueType": "integer"},
+        {"fieldKey": "totalAmountWanCny", "label": "总额", "valueType": "number"}
+      ],
+      "taskGoals": ["observe", "extract_field_candidates", "identify_unresolved"],
+      "inputHash": "03ae4657ef8277072385602a7a89c41931f6a68d0d07db897bc39825207ea1ad",
+      "schemaVersion": "1.0"
+    },
+    {
+      "requestId": "p5-blind-r2-excel",
+      "capabilityId": "material-intelligence-offline-v2",
+      "mode": "synthetic",
+      "trigger": "explicit_action",
+      "material": {
+        "projectId": "gen-metal_processing-e1d2b78d0b",
+        "materialId": "mat-gen-metal_processing-e1d2b78d0b-production-operations",
+        "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-production-operations-v1",
+        "contentHash": "d91daf2577932e60c729f59bfc3e429098953c8746cbd72d379754c56e3855d3",
+        "mediaKind": "excel",
+        "sourceRef": "excel/SYN-01-001-E1D2-operations.xlsx",
+        "dataClassification": "synthetic_demo",
+        "usageAuthorizationRef": "compare-p5-synthetic-v1"
+      },
+      "contextVersion": "p5-blind-r2",
+      "projectContext": {
+        "dimensionId": "production",
+        "industryCode": "metal_processing",
+        "locale": "zh-CN"
+      },
+      "fieldSchemas": [
+        {"fieldKey": "recordDate", "label": "记录日期", "valueType": "string"},
+        {"fieldKey": "projectNo", "label": "项目编号", "valueType": "string"},
+        {"fieldKey": "equipmentModelText", "label": "设备型号字段原文", "valueType": "string"},
+        {"fieldKey": "electricityUsage", "label": "用电量", "valueType": "number"},
+        {"fieldKey": "outputQuantity", "label": "产量", "valueType": "integer"},
+        {"fieldKey": "staffOnDuty", "label": "在岗人数", "valueType": "integer"},
+        {"fieldKey": "utilizationRate", "label": "利用率", "valueType": "number"}
+      ],
+      "taskGoals": ["observe", "extract_field_candidates", "identify_unresolved"],
+      "inputHash": "d91daf2577932e60c729f59bfc3e429098953c8746cbd72d379754c56e3855d3",
+      "schemaVersion": "1.0"
+    }
+  ]
+}

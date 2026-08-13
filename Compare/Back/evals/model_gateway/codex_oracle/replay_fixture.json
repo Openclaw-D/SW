@@ -1,0 +1,585 @@
+{
+  "oracleVersion": "1.0",
+  "task": "P5-MG-CodexOracle",
+  "provenance": {
+    "generatedBy": "codex_offline_oracle",
+    "isSimulated": true,
+    "advisoryOnly": true,
+    "notAProviderCall": true
+  },
+  "dataStatus": "simulated",
+  "source": "codex_offline_oracle",
+  "disclaimer": "仅供 project-01 脱敏合成材料的离线回放与人工核验；不是产品 Provider 调用，不写入 FactVersion，不代表真实客户事实或统计模型有效性。",
+  "sourceRoot": "runtime/native-material-packs/project-01",
+  "materialPackProjectId": "gen-metal_processing-e1d2b78d0b",
+  "projectNo": "SYN-01-001-E1D2",
+  "selectedProjectOrdinal": 1,
+  "sourceArtifacts": [
+    {
+      "artifactId": "project-01-equipment-image",
+      "materialId": "mat-gen-metal_processing-e1d2b78d0b-equipment-image",
+      "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-equipment-image-v1",
+      "kind": "image",
+      "relativePath": "images/SYN-01-001-E1D2-equipment-overview.png",
+      "contentHash": "ab76f7ea3853ee204101b8ef734115fe00c799d810bc4d9fe38c99b8663fc489",
+      "byteLength": 1491748,
+      "inspected": true,
+      "humanVisualCheck": true,
+      "locatorAuditNotes": [
+        "前景加工设备位于 manifest focalArea 对应区域。",
+        "底部深色条明确标注本地合成及非真实客户现场。"
+      ],
+      "observedPixelWidth": 2048,
+      "observedPixelHeight": 1152
+    },
+    {
+      "artifactId": "project-01-lease-contract",
+      "materialId": "mat-gen-metal_processing-e1d2b78d0b-transaction-lease-contract",
+      "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-transaction-lease-contract-v1",
+      "kind": "pdf",
+      "relativePath": "pdf/SYN-01-001-E1D2-lease-contract.pdf",
+      "contentHash": "224426a8fa2d8f26aa33bda7d053e8c4d30514a618eea141069e1c293e6da891",
+      "byteLength": 4311,
+      "inspected": true,
+      "humanVisualCheck": true,
+      "locatorAuditNotes": [
+        "第 1 页合同号行清晰显示 FL-SYN-01-001-E1D2-01。",
+        "第 1 页总额与融资金额行分别显示 550.03万元、374.90万元。"
+      ],
+      "observedPageCount": 1
+    },
+    {
+      "artifactId": "project-01-equipment-list",
+      "materialId": "mat-gen-metal_processing-e1d2b78d0b-transaction-equipment-list",
+      "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-transaction-equipment-list-v1",
+      "kind": "excel",
+      "relativePath": "excel/SYN-01-001-E1D2-equipment-list.xlsx",
+      "contentHash": "63555feede8ec4ced923dc2253f46b3b829b152cb3b8bcffffac262aa861b91f",
+      "byteLength": 5618,
+      "inspected": true,
+      "humanVisualCheck": true,
+      "locatorAuditNotes": [
+        "设备清单工作表 A1:I4 已只读导入并渲染。",
+        "第 4 行的 C4、E4、F4、H4 分别为设备、型号、数量与合价。"
+      ],
+      "observedSheets": [
+        "设备清单",
+        "勾稽摘要"
+      ]
+    },
+    {
+      "artifactId": "project-01-controlled-scene",
+      "materialId": "mat-gen-metal_processing-e1d2b78d0b-production-controlled-scene",
+      "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-production-controlled-scene-v1",
+      "kind": "scene",
+      "relativePath": "scene/SYN-01-001-E1D2-controlled-scene.json",
+      "contentHash": "fd1e63b1c2ca2ca327f9fcf4a44b71e558d808b4d8eb25b9729e9d912c29ff8b",
+      "byteLength": 1069,
+      "inspected": true,
+      "humanVisualCheck": false,
+      "locatorAuditNotes": [
+        "executionPolicy 为 declarative-only。",
+        "三个冻结点位分别为 factory、equipment 与 process。"
+      ],
+      "observedScenePointIds": [
+        "scene-gen-metal_processing-e1d2b78d0b-factory",
+        "scene-gen-metal_processing-e1d2b78d0b-equipment",
+        "scene-gen-metal_processing-e1d2b78d0b-process"
+      ]
+    }
+  ],
+  "replayCases": [
+    {
+      "caseId": "project-01-pdf-contract",
+      "provenance": {
+        "generatedBy": "codex_offline_oracle",
+        "isSimulated": true,
+        "advisoryOnly": true,
+        "notAProviderCall": true
+      },
+      "primaryArtifactId": "project-01-lease-contract",
+      "supportingArtifactIds": [],
+      "promptTemplateRef": "prompt_template.md",
+      "request": {
+        "requestId": "oracle-request-project-01-pdf-contract",
+        "capabilityId": "material_intelligence",
+        "mode": "synthetic",
+        "trigger": "explicit_action",
+        "material": {
+          "projectId": "gen-metal_processing-e1d2b78d0b",
+          "materialId": "mat-gen-metal_processing-e1d2b78d0b-transaction-lease-contract",
+          "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-transaction-lease-contract-v1",
+          "contentHash": "224426a8fa2d8f26aa33bda7d053e8c4d30514a618eea141069e1c293e6da891",
+          "mediaKind": "pdf",
+          "sourceRef": "native-material-packs/project-01/pdf/SYN-01-001-E1D2-lease-contract.pdf",
+          "dataClassification": "synthetic_demo",
+          "usageAuthorizationRef": null
+        },
+        "contextVersion": "codex-oracle-project-01-v1",
+        "projectContext": {
+          "dimensionId": "transaction",
+          "industryCode": "metal_precision_processing",
+          "locale": "zh-CN"
+        },
+        "fieldSchemas": [
+          {"fieldKey": "contract_number", "label": "合同号", "valueType": "string"},
+          {"fieldKey": "contract_total_wan", "label": "合同总额", "valueType": "number"},
+          {"fieldKey": "financing_amount_wan", "label": "融资金额", "valueType": "number"}
+        ],
+        "taskGoals": ["observe", "extract_field_candidates"],
+        "inputHash": "224426a8fa2d8f26aa33bda7d053e8c4d30514a618eea141069e1c293e6da891",
+        "schemaVersion": "1.0"
+      },
+      "expectedOutput": {
+        "requestId": "oracle-request-project-01-pdf-contract",
+        "runId": "oracle-run-project-01-pdf-contract",
+        "capabilityId": "material_intelligence",
+        "mode": "synthetic",
+        "status": "succeeded",
+        "materialId": "mat-gen-metal_processing-e1d2b78d0b-transaction-lease-contract",
+        "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-transaction-lease-contract-v1",
+        "inputHash": "224426a8fa2d8f26aa33bda7d053e8c4d30514a618eea141069e1c293e6da891",
+        "result": {
+          "projectId": "gen-metal_processing-e1d2b78d0b",
+          "materialId": "mat-gen-metal_processing-e1d2b78d0b-transaction-lease-contract",
+          "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-transaction-lease-contract-v1",
+          "contentHash": "224426a8fa2d8f26aa33bda7d053e8c4d30514a618eea141069e1c293e6da891",
+          "mediaKind": "pdf",
+          "contextVersion": "codex-oracle-project-01-v1",
+          "dataClassification": "synthetic_demo",
+          "status": "completed",
+          "confidence": 0.99,
+          "observations": [
+            {
+              "id": "oracle-observation-pdf-contract-table",
+              "kind": "structure",
+              "text": "单页脱敏合成融资租赁合同以两列表格列示合同号、总额与融资金额，并明确声明不代表真实原件或统计验证模型。",
+              "sourceAnchorIds": ["anchor-pdf-contract-number", "anchor-pdf-total", "anchor-pdf-financing"]
+            }
+          ],
+          "extractedFieldCandidates": [
+            {
+              "id": "candidate-pdf-contract-number",
+              "fieldKey": "contract_number",
+              "label": "合同号",
+              "value": "FL-SYN-01-001-E1D2-01",
+              "unit": null,
+              "status": "candidate",
+              "sourceAnchorIds": ["anchor-pdf-contract-number"]
+            },
+            {
+              "id": "candidate-pdf-contract-total",
+              "fieldKey": "contract_total_wan",
+              "label": "合同总额",
+              "value": 550.03,
+              "unit": "万元",
+              "status": "candidate",
+              "sourceAnchorIds": ["anchor-pdf-total"]
+            },
+            {
+              "id": "candidate-pdf-financing-amount",
+              "fieldKey": "financing_amount_wan",
+              "label": "融资金额",
+              "value": 374.9,
+              "unit": "万元",
+              "status": "candidate",
+              "sourceAnchorIds": ["anchor-pdf-financing"]
+            }
+          ],
+          "unresolvedItems": [],
+          "sourceAnchors": [
+            {
+              "id": "anchor-pdf-contract-number",
+              "kind": "pdf",
+              "materialId": "mat-gen-metal_processing-e1d2b78d0b-transaction-lease-contract",
+              "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-transaction-lease-contract-v1",
+              "contentHash": "224426a8fa2d8f26aa33bda7d053e8c4d30514a618eea141069e1c293e6da891",
+              "page": 1,
+              "bbox": {"x": 0.37, "y": 0.263, "width": 0.553, "height": 0.034},
+              "polygon": null,
+              "ocrTokenIds": [],
+              "charStart": null,
+              "charEnd": null
+            },
+            {
+              "id": "anchor-pdf-total",
+              "kind": "pdf",
+              "materialId": "mat-gen-metal_processing-e1d2b78d0b-transaction-lease-contract",
+              "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-transaction-lease-contract-v1",
+              "contentHash": "224426a8fa2d8f26aa33bda7d053e8c4d30514a618eea141069e1c293e6da891",
+              "page": 1,
+              "bbox": {"x": 0.37, "y": 0.363, "width": 0.553, "height": 0.034},
+              "polygon": null,
+              "ocrTokenIds": [],
+              "charStart": null,
+              "charEnd": null
+            },
+            {
+              "id": "anchor-pdf-financing",
+              "kind": "pdf",
+              "materialId": "mat-gen-metal_processing-e1d2b78d0b-transaction-lease-contract",
+              "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-transaction-lease-contract-v1",
+              "contentHash": "224426a8fa2d8f26aa33bda7d053e8c4d30514a618eea141069e1c293e6da891",
+              "page": 1,
+              "bbox": {"x": 0.37, "y": 0.43, "width": 0.553, "height": 0.034},
+              "polygon": null,
+              "ocrTokenIds": [],
+              "charStart": null,
+              "charEnd": null
+            }
+          ],
+          "sceneSpec": null,
+          "modelInfo": {"provider": "codex_offline_oracle", "model": "manual-multimodal-review", "modelVersion": "2026-08-12"},
+          "promptVersion": "codex-offline-oracle-v1",
+          "schemaVersion": "1.0",
+          "inputHash": "224426a8fa2d8f26aa33bda7d053e8c4d30514a618eea141069e1c293e6da891",
+          "advisoryOnly": true,
+          "isSimulated": true,
+          "dataStatus": "simulated",
+          "source": "codex_offline_oracle",
+          "disclaimer": "仅供 project-01 脱敏合成材料的离线回放与人工核验；不是产品 Provider 调用，不写入 FactVersion，不代表真实客户事实或统计模型有效性。"
+        },
+        "sourceAnchors": [
+          {
+            "id": "anchor-pdf-contract-number",
+            "kind": "pdf",
+            "materialId": "mat-gen-metal_processing-e1d2b78d0b-transaction-lease-contract",
+            "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-transaction-lease-contract-v1",
+            "contentHash": "224426a8fa2d8f26aa33bda7d053e8c4d30514a618eea141069e1c293e6da891",
+            "page": 1,
+            "bbox": {"x": 0.37, "y": 0.263, "width": 0.553, "height": 0.034},
+            "polygon": null,
+            "ocrTokenIds": [],
+            "charStart": null,
+            "charEnd": null
+          },
+          {
+            "id": "anchor-pdf-total",
+            "kind": "pdf",
+            "materialId": "mat-gen-metal_processing-e1d2b78d0b-transaction-lease-contract",
+            "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-transaction-lease-contract-v1",
+            "contentHash": "224426a8fa2d8f26aa33bda7d053e8c4d30514a618eea141069e1c293e6da891",
+            "page": 1,
+            "bbox": {"x": 0.37, "y": 0.363, "width": 0.553, "height": 0.034},
+            "polygon": null,
+            "ocrTokenIds": [],
+            "charStart": null,
+            "charEnd": null
+          },
+          {
+            "id": "anchor-pdf-financing",
+            "kind": "pdf",
+            "materialId": "mat-gen-metal_processing-e1d2b78d0b-transaction-lease-contract",
+            "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-transaction-lease-contract-v1",
+            "contentHash": "224426a8fa2d8f26aa33bda7d053e8c4d30514a618eea141069e1c293e6da891",
+            "page": 1,
+            "bbox": {"x": 0.37, "y": 0.43, "width": 0.553, "height": 0.034},
+            "polygon": null,
+            "ocrTokenIds": [],
+            "charStart": null,
+            "charEnd": null
+          }
+        ],
+        "locatorBindings": [
+          {
+            "sourceAnchorId": "anchor-pdf-contract-number",
+            "locator": {"kind": "pdf", "materialId": "mat-gen-metal_processing-e1d2b78d0b-transaction-lease-contract", "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-transaction-lease-contract-v1", "page": 1, "bbox": {"x": 0.37, "y": 0.263, "width": 0.553, "height": 0.034}, "textAnchor": "FL-SYN-01-001-E1D2-01"}
+          },
+          {
+            "sourceAnchorId": "anchor-pdf-total",
+            "locator": {"kind": "pdf", "materialId": "mat-gen-metal_processing-e1d2b78d0b-transaction-lease-contract", "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-transaction-lease-contract-v1", "page": 1, "bbox": {"x": 0.37, "y": 0.363, "width": 0.553, "height": 0.034}, "textAnchor": "550.03万元"}
+          },
+          {
+            "sourceAnchorId": "anchor-pdf-financing",
+            "locator": {"kind": "pdf", "materialId": "mat-gen-metal_processing-e1d2b78d0b-transaction-lease-contract", "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-transaction-lease-contract-v1", "page": 1, "bbox": {"x": 0.37, "y": 0.43, "width": 0.553, "height": 0.034}, "textAnchor": "374.90万元"}
+          }
+        ],
+        "error": null,
+        "advisoryOnly": true,
+        "isSimulated": true,
+        "dataStatus": "simulated",
+        "source": "codex_offline_oracle",
+        "disclaimer": "仅供 project-01 脱敏合成材料的离线回放与人工核验；不是产品 Provider 调用，不写入 FactVersion，不代表真实客户事实或统计模型有效性。",
+        "schemaVersion": "1.0"
+      },
+      "authorityWriteExpectation": "none",
+      "expectedFactVersionWrites": 0,
+      "oracleNotes": [
+        "候选值来自渲染后可见表格行，不是权威事实。",
+        "textAnchor 与页码共同约束 PDF locator。"
+      ]
+    },
+    {
+      "caseId": "project-01-excel-equipment-list",
+      "provenance": {
+        "generatedBy": "codex_offline_oracle",
+        "isSimulated": true,
+        "advisoryOnly": true,
+        "notAProviderCall": true
+      },
+      "primaryArtifactId": "project-01-equipment-list",
+      "supportingArtifactIds": [],
+      "promptTemplateRef": "prompt_template.md",
+      "request": {
+        "requestId": "oracle-request-project-01-excel-equipment",
+        "capabilityId": "material_intelligence",
+        "mode": "synthetic",
+        "trigger": "explicit_action",
+        "material": {
+          "projectId": "gen-metal_processing-e1d2b78d0b",
+          "materialId": "mat-gen-metal_processing-e1d2b78d0b-transaction-equipment-list",
+          "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-transaction-equipment-list-v1",
+          "contentHash": "63555feede8ec4ced923dc2253f46b3b829b152cb3b8bcffffac262aa861b91f",
+          "mediaKind": "excel",
+          "sourceRef": "native-material-packs/project-01/excel/SYN-01-001-E1D2-equipment-list.xlsx",
+          "dataClassification": "synthetic_demo",
+          "usageAuthorizationRef": null
+        },
+        "contextVersion": "codex-oracle-project-01-v1",
+        "projectContext": {
+          "dimensionId": "transaction",
+          "industryCode": "metal_precision_processing",
+          "locale": "zh-CN"
+        },
+        "fieldSchemas": [
+          {"fieldKey": "equipment_name", "label": "设备", "valueType": "string"},
+          {"fieldKey": "equipment_model", "label": "型号", "valueType": "string"},
+          {"fieldKey": "equipment_quantity", "label": "数量", "valueType": "integer"},
+          {"fieldKey": "equipment_total_wan", "label": "合价", "valueType": "number"}
+        ],
+        "taskGoals": ["observe", "extract_field_candidates"],
+        "inputHash": "63555feede8ec4ced923dc2253f46b3b829b152cb3b8bcffffac262aa861b91f",
+        "schemaVersion": "1.0"
+      },
+      "expectedOutput": {
+        "requestId": "oracle-request-project-01-excel-equipment",
+        "runId": "oracle-run-project-01-excel-equipment",
+        "capabilityId": "material_intelligence",
+        "mode": "synthetic",
+        "status": "succeeded",
+        "materialId": "mat-gen-metal_processing-e1d2b78d0b-transaction-equipment-list",
+        "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-transaction-equipment-list-v1",
+        "inputHash": "63555feede8ec4ced923dc2253f46b3b829b152cb3b8bcffffac262aa861b91f",
+        "result": {
+          "projectId": "gen-metal_processing-e1d2b78d0b",
+          "materialId": "mat-gen-metal_processing-e1d2b78d0b-transaction-equipment-list",
+          "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-transaction-equipment-list-v1",
+          "contentHash": "63555feede8ec4ced923dc2253f46b3b829b152cb3b8bcffffac262aa861b91f",
+          "mediaKind": "excel",
+          "contextVersion": "codex-oracle-project-01-v1",
+          "dataClassification": "synthetic_demo",
+          "status": "completed",
+          "confidence": 1.0,
+          "observations": [
+            {
+              "id": "oracle-observation-excel-equipment-row",
+              "kind": "structure",
+              "text": "设备清单工作表第 3 行为字段表头，第 4 行为唯一一条脱敏合成设备记录。",
+              "sourceAnchorIds": ["anchor-excel-equipment-name", "anchor-excel-equipment-model", "anchor-excel-equipment-quantity", "anchor-excel-equipment-total"]
+            }
+          ],
+          "extractedFieldCandidates": [
+            {"id": "candidate-excel-equipment-name", "fieldKey": "equipment_name", "label": "设备", "value": "车铣复合中心", "unit": null, "status": "candidate", "sourceAnchorIds": ["anchor-excel-equipment-name"]},
+            {"id": "candidate-excel-equipment-model", "fieldKey": "equipment_model", "label": "型号", "value": "HL-1200", "unit": null, "status": "candidate", "sourceAnchorIds": ["anchor-excel-equipment-model"]},
+            {"id": "candidate-excel-equipment-quantity", "fieldKey": "equipment_quantity", "label": "数量", "value": 2, "unit": "台", "status": "candidate", "sourceAnchorIds": ["anchor-excel-equipment-quantity"]},
+            {"id": "candidate-excel-equipment-total", "fieldKey": "equipment_total_wan", "label": "合价", "value": 550.03, "unit": "万元", "status": "candidate", "sourceAnchorIds": ["anchor-excel-equipment-total"]}
+          ],
+          "unresolvedItems": [],
+          "sourceAnchors": [
+            {"id": "anchor-excel-equipment-name", "kind": "excel", "materialId": "mat-gen-metal_processing-e1d2b78d0b-transaction-equipment-list", "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-transaction-equipment-list-v1", "contentHash": "63555feede8ec4ced923dc2253f46b3b829b152cb3b8bcffffac262aa861b91f", "sheet": "设备清单", "range": "C4"},
+            {"id": "anchor-excel-equipment-model", "kind": "excel", "materialId": "mat-gen-metal_processing-e1d2b78d0b-transaction-equipment-list", "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-transaction-equipment-list-v1", "contentHash": "63555feede8ec4ced923dc2253f46b3b829b152cb3b8bcffffac262aa861b91f", "sheet": "设备清单", "range": "E4"},
+            {"id": "anchor-excel-equipment-quantity", "kind": "excel", "materialId": "mat-gen-metal_processing-e1d2b78d0b-transaction-equipment-list", "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-transaction-equipment-list-v1", "contentHash": "63555feede8ec4ced923dc2253f46b3b829b152cb3b8bcffffac262aa861b91f", "sheet": "设备清单", "range": "F4"},
+            {"id": "anchor-excel-equipment-total", "kind": "excel", "materialId": "mat-gen-metal_processing-e1d2b78d0b-transaction-equipment-list", "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-transaction-equipment-list-v1", "contentHash": "63555feede8ec4ced923dc2253f46b3b829b152cb3b8bcffffac262aa861b91f", "sheet": "设备清单", "range": "H4"}
+          ],
+          "sceneSpec": null,
+          "modelInfo": {"provider": "codex_offline_oracle", "model": "manual-multimodal-review", "modelVersion": "2026-08-12"},
+          "promptVersion": "codex-offline-oracle-v1",
+          "schemaVersion": "1.0",
+          "inputHash": "63555feede8ec4ced923dc2253f46b3b829b152cb3b8bcffffac262aa861b91f",
+          "advisoryOnly": true,
+          "isSimulated": true,
+          "dataStatus": "simulated",
+          "source": "codex_offline_oracle",
+          "disclaimer": "仅供 project-01 脱敏合成材料的离线回放与人工核验；不是产品 Provider 调用，不写入 FactVersion，不代表真实客户事实或统计模型有效性。"
+        },
+        "sourceAnchors": [
+          {"id": "anchor-excel-equipment-name", "kind": "excel", "materialId": "mat-gen-metal_processing-e1d2b78d0b-transaction-equipment-list", "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-transaction-equipment-list-v1", "contentHash": "63555feede8ec4ced923dc2253f46b3b829b152cb3b8bcffffac262aa861b91f", "sheet": "设备清单", "range": "C4"},
+          {"id": "anchor-excel-equipment-model", "kind": "excel", "materialId": "mat-gen-metal_processing-e1d2b78d0b-transaction-equipment-list", "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-transaction-equipment-list-v1", "contentHash": "63555feede8ec4ced923dc2253f46b3b829b152cb3b8bcffffac262aa861b91f", "sheet": "设备清单", "range": "E4"},
+          {"id": "anchor-excel-equipment-quantity", "kind": "excel", "materialId": "mat-gen-metal_processing-e1d2b78d0b-transaction-equipment-list", "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-transaction-equipment-list-v1", "contentHash": "63555feede8ec4ced923dc2253f46b3b829b152cb3b8bcffffac262aa861b91f", "sheet": "设备清单", "range": "F4"},
+          {"id": "anchor-excel-equipment-total", "kind": "excel", "materialId": "mat-gen-metal_processing-e1d2b78d0b-transaction-equipment-list", "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-transaction-equipment-list-v1", "contentHash": "63555feede8ec4ced923dc2253f46b3b829b152cb3b8bcffffac262aa861b91f", "sheet": "设备清单", "range": "H4"}
+        ],
+        "locatorBindings": [
+          {"sourceAnchorId": "anchor-excel-equipment-name", "locator": {"kind": "excel", "materialId": "mat-gen-metal_processing-e1d2b78d0b-transaction-equipment-list", "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-transaction-equipment-list-v1", "sheet": "设备清单", "range": "C4"}},
+          {"sourceAnchorId": "anchor-excel-equipment-model", "locator": {"kind": "excel", "materialId": "mat-gen-metal_processing-e1d2b78d0b-transaction-equipment-list", "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-transaction-equipment-list-v1", "sheet": "设备清单", "range": "E4"}},
+          {"sourceAnchorId": "anchor-excel-equipment-quantity", "locator": {"kind": "excel", "materialId": "mat-gen-metal_processing-e1d2b78d0b-transaction-equipment-list", "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-transaction-equipment-list-v1", "sheet": "设备清单", "range": "F4"}},
+          {"sourceAnchorId": "anchor-excel-equipment-total", "locator": {"kind": "excel", "materialId": "mat-gen-metal_processing-e1d2b78d0b-transaction-equipment-list", "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-transaction-equipment-list-v1", "sheet": "设备清单", "range": "H4"}}
+        ],
+        "error": null,
+        "advisoryOnly": true,
+        "isSimulated": true,
+        "dataStatus": "simulated",
+        "source": "codex_offline_oracle",
+        "disclaimer": "仅供 project-01 脱敏合成材料的离线回放与人工核验；不是产品 Provider 调用，不写入 FactVersion，不代表真实客户事实或统计模型有效性。",
+        "schemaVersion": "1.0"
+      },
+      "authorityWriteExpectation": "none",
+      "expectedFactVersionWrites": 0,
+      "oracleNotes": [
+        "单元格范围直接绑定真实工作簿第 4 行。",
+        "候选必须经人工确认后才能进入任何权威事实链。"
+      ]
+    },
+    {
+      "caseId": "project-01-image-scene",
+      "provenance": {
+        "generatedBy": "codex_offline_oracle",
+        "isSimulated": true,
+        "advisoryOnly": true,
+        "notAProviderCall": true
+      },
+      "primaryArtifactId": "project-01-equipment-image",
+      "supportingArtifactIds": ["project-01-controlled-scene"],
+      "promptTemplateRef": "prompt_template.md",
+      "request": {
+        "requestId": "oracle-request-project-01-image-scene",
+        "capabilityId": "material_intelligence",
+        "mode": "synthetic",
+        "trigger": "explicit_action",
+        "material": {
+          "projectId": "gen-metal_processing-e1d2b78d0b",
+          "materialId": "mat-gen-metal_processing-e1d2b78d0b-equipment-image",
+          "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-equipment-image-v1",
+          "contentHash": "ab76f7ea3853ee204101b8ef734115fe00c799d810bc4d9fe38c99b8663fc489",
+          "mediaKind": "image",
+          "sourceRef": "native-material-packs/project-01/images/SYN-01-001-E1D2-equipment-overview.png",
+          "dataClassification": "synthetic_demo",
+          "usageAuthorizationRef": null
+        },
+        "contextVersion": "codex-oracle-project-01-v1",
+        "projectContext": {
+          "dimensionId": "production",
+          "industryCode": "metal_precision_processing",
+          "locale": "zh-CN"
+        },
+        "fieldSchemas": [
+          {"fieldKey": "equipment_visual_category", "label": "设备视觉类别", "valueType": "string"}
+        ],
+        "taskGoals": ["observe", "extract_field_candidates", "scene_spec"],
+        "inputHash": "ab76f7ea3853ee204101b8ef734115fe00c799d810bc4d9fe38c99b8663fc489",
+        "schemaVersion": "1.0"
+      },
+      "expectedOutput": {
+        "requestId": "oracle-request-project-01-image-scene",
+        "runId": "oracle-run-project-01-image-scene",
+        "capabilityId": "material_intelligence",
+        "mode": "synthetic",
+        "status": "succeeded",
+        "materialId": "mat-gen-metal_processing-e1d2b78d0b-equipment-image",
+        "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-equipment-image-v1",
+        "inputHash": "ab76f7ea3853ee204101b8ef734115fe00c799d810bc4d9fe38c99b8663fc489",
+        "result": {
+          "projectId": "gen-metal_processing-e1d2b78d0b",
+          "materialId": "mat-gen-metal_processing-e1d2b78d0b-equipment-image",
+          "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-equipment-image-v1",
+          "contentHash": "ab76f7ea3853ee204101b8ef734115fe00c799d810bc4d9fe38c99b8663fc489",
+          "mediaKind": "image",
+          "contextVersion": "codex-oracle-project-01-v1",
+          "dataClassification": "synthetic_demo",
+          "status": "completed",
+          "confidence": 0.86,
+          "observations": [
+            {
+              "id": "oracle-observation-image-equipment",
+              "kind": "visual_detail",
+              "text": "前景为打开加工舱的数控加工设备，背景沿通道排列多台设备；底部文案明确说明该图为本地合成演示而非真实客户现场。",
+              "sourceAnchorIds": ["anchor-image-equipment-focal", "anchor-image-synthetic-caption"]
+            }
+          ],
+          "extractedFieldCandidates": [
+            {
+              "id": "candidate-image-equipment-category",
+              "fieldKey": "equipment_visual_category",
+              "label": "设备视觉类别",
+              "value": "数控加工设备",
+              "unit": null,
+              "status": "needs_review",
+              "sourceAnchorIds": ["anchor-image-equipment-focal"]
+            }
+          ],
+          "unresolvedItems": [],
+          "sourceAnchors": [
+            {
+              "id": "anchor-image-equipment-focal",
+              "kind": "image",
+              "materialId": "mat-gen-metal_processing-e1d2b78d0b-equipment-image",
+              "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-equipment-image-v1",
+              "contentHash": "ab76f7ea3853ee204101b8ef734115fe00c799d810bc4d9fe38c99b8663fc489",
+              "page": 1,
+              "bbox": {"x": 0.18, "y": 0.2, "width": 0.64, "height": 0.58},
+              "polygon": null,
+              "ocrTokenIds": [],
+              "charStart": null,
+              "charEnd": null
+            },
+            {
+              "id": "anchor-image-synthetic-caption",
+              "kind": "image",
+              "materialId": "mat-gen-metal_processing-e1d2b78d0b-equipment-image",
+              "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-equipment-image-v1",
+              "contentHash": "ab76f7ea3853ee204101b8ef734115fe00c799d810bc4d9fe38c99b8663fc489",
+              "page": 1,
+              "bbox": {"x": 0.02, "y": 0.86, "width": 0.75, "height": 0.11},
+              "polygon": null,
+              "ocrTokenIds": [],
+              "charStart": null,
+              "charEnd": null
+            }
+          ],
+          "sceneSpec": {
+            "cameraPreset": "perspective",
+            "objects": [
+              {"id": "scene-object-factory", "kind": "plane", "regionId": "scene-gen-metal_processing-e1d2b78d0b-factory", "position": {"x": 0, "y": 0, "z": 0}, "size": {"x": 6, "y": 0.2, "z": 6}, "rotation": {"x": 0, "y": 0, "z": 0}},
+              {"id": "scene-object-equipment", "kind": "box", "regionId": "scene-gen-metal_processing-e1d2b78d0b-equipment", "position": {"x": 2, "y": 0.5, "z": 1}, "size": {"x": 1.5, "y": 1.5, "z": 1.5}, "rotation": {"x": 0, "y": 0, "z": 0}},
+              {"id": "scene-object-process", "kind": "marker", "regionId": "scene-gen-metal_processing-e1d2b78d0b-process", "position": {"x": -2, "y": 0.5, "z": -1}, "size": {"x": 1.2, "y": 1.2, "z": 1.2}, "rotation": {"x": 0, "y": 0, "z": 0}}
+            ],
+            "hotspots": [
+              {"id": "scene-hotspot-factory", "objectId": "scene-object-factory", "regionId": "factory", "sourceAnchorId": "anchor-image-synthetic-caption"},
+              {"id": "scene-hotspot-equipment", "objectId": "scene-object-equipment", "regionId": "equipment", "sourceAnchorId": "anchor-image-equipment-focal"},
+              {"id": "scene-hotspot-process", "objectId": "scene-object-process", "regionId": "process", "sourceAnchorId": "anchor-image-equipment-focal"}
+            ]
+          },
+          "modelInfo": {"provider": "codex_offline_oracle", "model": "manual-multimodal-review", "modelVersion": "2026-08-12"},
+          "promptVersion": "codex-offline-oracle-v1",
+          "schemaVersion": "1.0",
+          "inputHash": "ab76f7ea3853ee204101b8ef734115fe00c799d810bc4d9fe38c99b8663fc489",
+          "advisoryOnly": true,
+          "isSimulated": true,
+          "dataStatus": "simulated",
+          "source": "codex_offline_oracle",
+          "disclaimer": "仅供 project-01 脱敏合成材料的离线回放与人工核验；不是产品 Provider 调用，不写入 FactVersion，不代表真实客户事实或统计模型有效性。"
+        },
+        "sourceAnchors": [
+          {"id": "anchor-image-equipment-focal", "kind": "image", "materialId": "mat-gen-metal_processing-e1d2b78d0b-equipment-image", "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-equipment-image-v1", "contentHash": "ab76f7ea3853ee204101b8ef734115fe00c799d810bc4d9fe38c99b8663fc489", "page": 1, "bbox": {"x": 0.18, "y": 0.2, "width": 0.64, "height": 0.58}, "polygon": null, "ocrTokenIds": [], "charStart": null, "charEnd": null},
+          {"id": "anchor-image-synthetic-caption", "kind": "image", "materialId": "mat-gen-metal_processing-e1d2b78d0b-equipment-image", "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-equipment-image-v1", "contentHash": "ab76f7ea3853ee204101b8ef734115fe00c799d810bc4d9fe38c99b8663fc489", "page": 1, "bbox": {"x": 0.02, "y": 0.86, "width": 0.75, "height": 0.11}, "polygon": null, "ocrTokenIds": [], "charStart": null, "charEnd": null}
+        ],
+        "locatorBindings": [
+          {"sourceAnchorId": "anchor-image-equipment-focal", "locator": {"kind": "image", "materialId": "mat-gen-metal_processing-e1d2b78d0b-equipment-image", "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-equipment-image-v1", "bbox": {"x": 0.18, "y": 0.2, "width": 0.64, "height": 0.58}}},
+          {"sourceAnchorId": "anchor-image-synthetic-caption", "locator": {"kind": "image", "materialId": "mat-gen-metal_processing-e1d2b78d0b-equipment-image", "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-equipment-image-v1", "bbox": {"x": 0.02, "y": 0.86, "width": 0.75, "height": 0.11}}}
+        ],
+        "error": null,
+        "advisoryOnly": true,
+        "isSimulated": true,
+        "dataStatus": "simulated",
+        "source": "codex_offline_oracle",
+        "disclaimer": "仅供 project-01 脱敏合成材料的离线回放与人工核验；不是产品 Provider 调用，不写入 FactVersion，不代表真实客户事实或统计模型有效性。",
+        "schemaVersion": "1.0"
+      },
+      "authorityWriteExpectation": "none",
+      "expectedFactVersionWrites": 0,
+      "oracleNotes": [
+        "设备视觉类别保持 needs_review，避免把图像印象写成型号事实。",
+        "SceneSpec 只复用受控 JSON 的三个位置点并绑定可见图像锚点。"
+      ]
+    }
+  ]
+}

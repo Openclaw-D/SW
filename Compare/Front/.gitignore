@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.vite/
+.next/
+.wrangler/
+.local/
+*.tsbuildinfo
+*.log
+
+# P5 demonstration originals are stored outside the repository through
+# COMPARE_MATERIAL_ROOT; do not re-add local archive copies to Git.
+public/p5-materials/

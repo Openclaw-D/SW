@@ -1,0 +1,435 @@
+{
+  "sceneSpecProvenance": {
+    "sourceRef": "runtime/native-material-packs/project-01/scene/SYN-01-001-E1D2-controlled-scene.json",
+    "contentHash": "fd1e63b1c2ca2ca327f9fcf4a44b71e558d808b4d8eb25b9729e9d912c29ff8b",
+    "mappedResultRequestId": "blind-req-image-01",
+    "hotspotLocatorPolicy": "Scene object coordinates come from the declarative scene JSON; hotspot sourceAnchorIds bind only to visually corresponding regions in the selected image because the formal SourceAnchor union has no scene kind."
+  },
+  "modelGatewayOutputs": [
+    {
+      "requestId": "blind-req-image-01",
+      "runId": "blind-run-image-01",
+      "capabilityId": "codex-offline-oracle-v1",
+      "mode": "synthetic",
+      "status": "needs_review",
+      "materialId": "mat-gen-metal_processing-e1d2b78d0b-equipment-image",
+      "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-equipment-image-v1",
+      "inputHash": "2ba14e3698b87d31b4db70ce211271b45bed6bf2158f2e0e16707e07c41db978",
+      "result": {
+        "projectId": "gen-metal_processing-e1d2b78d0b",
+        "materialId": "mat-gen-metal_processing-e1d2b78d0b-equipment-image",
+        "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-equipment-image-v1",
+        "contentHash": "ab76f7ea3853ee204101b8ef734115fe00c799d810bc4d9fe38c99b8663fc489",
+        "mediaKind": "image",
+        "contextVersion": "p5-blind-eval-v1",
+        "dataClassification": "synthetic_demo",
+        "status": "needs_review",
+        "confidence": 0.86,
+        "observations": [
+          {
+            "id": "obs-image-machine",
+            "kind": "visual_detail",
+            "text": "画面左侧可见封闭式金属加工设备，主轴/刀具位于上方，前景夹持一件圆环状金属工件。",
+            "sourceAnchorIds": ["anchor-image-machine", "anchor-image-workpiece"]
+          },
+          {
+            "id": "obs-image-line",
+            "kind": "visual_detail",
+            "text": "画面右侧有多台外观相近的白色封闭设备向后延伸，呈产线排列。",
+            "sourceAnchorIds": ["anchor-image-line"]
+          },
+          {
+            "id": "obs-image-overlay",
+            "kind": "ocr_text",
+            "text": "底部叠字标识项目号 SYN-01-001-E1D2、车铣复合中心设备总览（本地合成），并声明为本地合成演示原始图像、非真实客户现场。",
+            "sourceAnchorIds": ["anchor-image-overlay"]
+          }
+        ],
+        "extractedFieldCandidates": [
+          {
+            "id": "candidate-image-equipment-category",
+            "fieldKey": "equipmentCategory",
+            "label": "设备类别",
+            "value": "车铣复合中心",
+            "unit": null,
+            "status": "candidate",
+            "sourceAnchorIds": ["anchor-image-overlay"]
+          }
+        ],
+        "unresolvedItems": [
+          {
+            "id": "unresolved-image-make-model",
+            "kind": "ambiguous_content",
+            "question": "设备制造商、具体型号和铭牌参数是什么？",
+            "reason": "所选总览图没有可辨识的制造商或型号文字；仅凭设备外观不能可靠推断。",
+            "requiresHumanReview": true,
+            "sourceAnchorIds": ["anchor-image-machine"]
+          }
+        ],
+        "sourceAnchors": [
+          {
+            "id": "anchor-image-machine",
+            "materialId": "mat-gen-metal_processing-e1d2b78d0b-equipment-image",
+            "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-equipment-image-v1",
+            "contentHash": "ab76f7ea3853ee204101b8ef734115fe00c799d810bc4d9fe38c99b8663fc489",
+            "kind": "image",
+            "page": 1,
+            "bbox": { "x": 0.0, "y": 0.0, "width": 0.62, "height": 0.78 },
+            "polygon": null,
+            "ocrTokenIds": [],
+            "charStart": null,
+            "charEnd": null
+          },
+          {
+            "id": "anchor-image-line",
+            "materialId": "mat-gen-metal_processing-e1d2b78d0b-equipment-image",
+            "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-equipment-image-v1",
+            "contentHash": "ab76f7ea3853ee204101b8ef734115fe00c799d810bc4d9fe38c99b8663fc489",
+            "kind": "image",
+            "page": 1,
+            "bbox": { "x": 0.58, "y": 0.0, "width": 0.42, "height": 0.78 },
+            "polygon": null,
+            "ocrTokenIds": [],
+            "charStart": null,
+            "charEnd": null
+          },
+          {
+            "id": "anchor-image-workpiece",
+            "materialId": "mat-gen-metal_processing-e1d2b78d0b-equipment-image",
+            "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-equipment-image-v1",
+            "contentHash": "ab76f7ea3853ee204101b8ef734115fe00c799d810bc4d9fe38c99b8663fc489",
+            "kind": "image",
+            "page": 1,
+            "bbox": { "x": 0.08, "y": 0.47, "width": 0.4, "height": 0.31 },
+            "polygon": null,
+            "ocrTokenIds": [],
+            "charStart": null,
+            "charEnd": null
+          },
+          {
+            "id": "anchor-image-overlay",
+            "materialId": "mat-gen-metal_processing-e1d2b78d0b-equipment-image",
+            "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-equipment-image-v1",
+            "contentHash": "ab76f7ea3853ee204101b8ef734115fe00c799d810bc4d9fe38c99b8663fc489",
+            "kind": "image",
+            "page": 1,
+            "bbox": { "x": 0.0, "y": 0.78, "width": 1.0, "height": 0.22 },
+            "polygon": null,
+            "ocrTokenIds": [],
+            "charStart": null,
+            "charEnd": null
+          }
+        ],
+        "sceneSpec": {
+          "cameraPreset": "perspective",
+          "objects": [
+            {
+              "id": "scene-gen-metal_processing-e1d2b78d0b-factory",
+              "kind": "plane",
+              "regionId": "factory-region",
+              "position": { "x": 0.0, "y": 0.0, "z": 0.0 },
+              "size": { "x": 3.0, "y": 0.1, "z": 3.0 },
+              "rotation": { "x": 0.0, "y": 0.0, "z": 0.0 }
+            },
+            {
+              "id": "scene-gen-metal_processing-e1d2b78d0b-equipment",
+              "kind": "box",
+              "regionId": "equipment-region",
+              "position": { "x": 2.0, "y": 0.5, "z": 1.0 },
+              "size": { "x": 1.5, "y": 1.5, "z": 1.5 },
+              "rotation": { "x": 0.0, "y": 0.0, "z": 0.0 }
+            },
+            {
+              "id": "scene-gen-metal_processing-e1d2b78d0b-process",
+              "kind": "marker",
+              "regionId": "process-region",
+              "position": { "x": -2.0, "y": 0.5, "z": -1.0 },
+              "size": { "x": 1.2, "y": 1.2, "z": 1.2 },
+              "rotation": { "x": 0.0, "y": 0.0, "z": 0.0 }
+            }
+          ],
+          "hotspots": [
+            {
+              "id": "hotspot-factory",
+              "objectId": "scene-gen-metal_processing-e1d2b78d0b-factory",
+              "regionId": "factory-region",
+              "sourceAnchorId": "anchor-image-line"
+            },
+            {
+              "id": "hotspot-equipment",
+              "objectId": "scene-gen-metal_processing-e1d2b78d0b-equipment",
+              "regionId": "equipment-region",
+              "sourceAnchorId": "anchor-image-machine"
+            },
+            {
+              "id": "hotspot-process",
+              "objectId": "scene-gen-metal_processing-e1d2b78d0b-process",
+              "regionId": "process-region",
+              "sourceAnchorId": "anchor-image-workpiece"
+            }
+          ]
+        },
+        "modelInfo": {
+          "provider": "codex_isolated_blind_eval",
+          "model": "gpt-5",
+          "modelVersion": null
+        },
+        "promptVersion": "p5-mg-codex-offline-oracle-v1",
+        "schemaVersion": "1.0",
+        "inputHash": "2ba14e3698b87d31b4db70ce211271b45bed6bf2158f2e0e16707e07c41db978",
+        "advisoryOnly": true,
+        "isSimulated": true,
+        "dataStatus": "simulated",
+        "source": "codex_offline_oracle",
+        "disclaimer": "材料智能输出仅供人工核验参考；候选、观察与 SceneSpec 均不得直接写入权威事实、评分、决策、置信度、hard gate 或审批状态。"
+      },
+      "sourceAnchors": [
+        {
+          "id": "anchor-image-machine",
+          "materialId": "mat-gen-metal_processing-e1d2b78d0b-equipment-image",
+          "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-equipment-image-v1",
+          "contentHash": "ab76f7ea3853ee204101b8ef734115fe00c799d810bc4d9fe38c99b8663fc489",
+          "kind": "image",
+          "page": 1,
+          "bbox": { "x": 0.0, "y": 0.0, "width": 0.62, "height": 0.78 },
+          "polygon": null,
+          "ocrTokenIds": [],
+          "charStart": null,
+          "charEnd": null
+        },
+        {
+          "id": "anchor-image-line",
+          "materialId": "mat-gen-metal_processing-e1d2b78d0b-equipment-image",
+          "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-equipment-image-v1",
+          "contentHash": "ab76f7ea3853ee204101b8ef734115fe00c799d810bc4d9fe38c99b8663fc489",
+          "kind": "image",
+          "page": 1,
+          "bbox": { "x": 0.58, "y": 0.0, "width": 0.42, "height": 0.78 },
+          "polygon": null,
+          "ocrTokenIds": [],
+          "charStart": null,
+          "charEnd": null
+        },
+        {
+          "id": "anchor-image-workpiece",
+          "materialId": "mat-gen-metal_processing-e1d2b78d0b-equipment-image",
+          "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-equipment-image-v1",
+          "contentHash": "ab76f7ea3853ee204101b8ef734115fe00c799d810bc4d9fe38c99b8663fc489",
+          "kind": "image",
+          "page": 1,
+          "bbox": { "x": 0.08, "y": 0.47, "width": 0.4, "height": 0.31 },
+          "polygon": null,
+          "ocrTokenIds": [],
+          "charStart": null,
+          "charEnd": null
+        },
+        {
+          "id": "anchor-image-overlay",
+          "materialId": "mat-gen-metal_processing-e1d2b78d0b-equipment-image",
+          "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-equipment-image-v1",
+          "contentHash": "ab76f7ea3853ee204101b8ef734115fe00c799d810bc4d9fe38c99b8663fc489",
+          "kind": "image",
+          "page": 1,
+          "bbox": { "x": 0.0, "y": 0.78, "width": 1.0, "height": 0.22 },
+          "polygon": null,
+          "ocrTokenIds": [],
+          "charStart": null,
+          "charEnd": null
+        }
+      ],
+      "locatorBindings": [
+        { "sourceAnchorId": "anchor-image-machine", "locator": { "materialId": "mat-gen-metal_processing-e1d2b78d0b-equipment-image", "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-equipment-image-v1", "kind": "image", "bbox": { "x": 0.0, "y": 0.0, "width": 0.62, "height": 0.78 } } },
+        { "sourceAnchorId": "anchor-image-line", "locator": { "materialId": "mat-gen-metal_processing-e1d2b78d0b-equipment-image", "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-equipment-image-v1", "kind": "image", "bbox": { "x": 0.58, "y": 0.0, "width": 0.42, "height": 0.78 } } },
+        { "sourceAnchorId": "anchor-image-workpiece", "locator": { "materialId": "mat-gen-metal_processing-e1d2b78d0b-equipment-image", "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-equipment-image-v1", "kind": "image", "bbox": { "x": 0.08, "y": 0.47, "width": 0.4, "height": 0.31 } } },
+        { "sourceAnchorId": "anchor-image-overlay", "locator": { "materialId": "mat-gen-metal_processing-e1d2b78d0b-equipment-image", "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-equipment-image-v1", "kind": "image", "bbox": { "x": 0.0, "y": 0.78, "width": 1.0, "height": 0.22 } } }
+      ],
+      "error": null,
+      "advisoryOnly": true,
+      "isSimulated": true,
+      "dataStatus": "simulated",
+      "source": "codex_offline_oracle",
+      "disclaimer": "材料智能输出仅供人工核验参考；候选、观察与 SceneSpec 均不得直接写入权威事实、评分、决策、置信度、hard gate 或审批状态。",
+      "schemaVersion": "1.0"
+    },
+    {
+      "requestId": "blind-req-pdf-01",
+      "runId": "blind-run-pdf-01",
+      "capabilityId": "codex-offline-oracle-v1",
+      "mode": "synthetic",
+      "status": "succeeded",
+      "materialId": "mat-gen-metal_processing-e1d2b78d0b-transaction-purchase-contract",
+      "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-transaction-purchase-contract-v1",
+      "inputHash": "fd45b89db40e954ead6909ff296f1c9a663766aa627afefd875b36a39d7d2504",
+      "result": {
+        "projectId": "gen-metal_processing-e1d2b78d0b",
+        "materialId": "mat-gen-metal_processing-e1d2b78d0b-transaction-purchase-contract",
+        "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-transaction-purchase-contract-v1",
+        "contentHash": "03ae4657ef8277072385602a7a89c41931f6a68d0d07db897bc39825207ea1ad",
+        "mediaKind": "pdf",
+        "contextVersion": "p5-blind-eval-v1",
+        "dataClassification": "synthetic_demo",
+        "status": "completed",
+        "confidence": 0.98,
+        "observations": [
+          {
+            "id": "obs-pdf-table",
+            "kind": "structure",
+            "text": "第 1 页为买卖合同核验表，左列为字段名，右列为项目级脱敏模拟值。",
+            "sourceAnchorIds": ["anchor-pdf-contract", "anchor-pdf-total"]
+          },
+          {
+            "id": "obs-pdf-boundary",
+            "kind": "content_summary",
+            "text": "材料明确标注为完整脱敏模拟，并声明仅用于单项目事实勾稽，不代表真实原件或统计验证模型。",
+            "sourceAnchorIds": ["anchor-pdf-boundary"]
+          }
+        ],
+        "extractedFieldCandidates": [
+          { "id": "candidate-pdf-contract", "fieldKey": "purchaseContractNumber", "label": "买卖合同号", "value": "PO-SYN-01-001-E1D2-01", "unit": null, "status": "candidate", "sourceAnchorIds": ["anchor-pdf-contract"] },
+          { "id": "candidate-pdf-lease", "fieldKey": "relatedLeaseContractNumber", "label": "关联租赁合同号", "value": "FL-SYN-01-001-E1D2-01", "unit": null, "status": "candidate", "sourceAnchorIds": ["anchor-pdf-lease"] },
+          { "id": "candidate-pdf-supplier", "fieldKey": "supplierName", "label": "供应商", "value": "系统生成设备供应商乙", "unit": null, "status": "candidate", "sourceAnchorIds": ["anchor-pdf-supplier"] },
+          { "id": "candidate-pdf-model", "fieldKey": "equipmentModel", "label": "设备型号", "value": "HL-1200", "unit": null, "status": "candidate", "sourceAnchorIds": ["anchor-pdf-model"] },
+          { "id": "candidate-pdf-quantity", "fieldKey": "equipmentQuantity", "label": "设备数量", "value": 2, "unit": "台", "status": "candidate", "sourceAnchorIds": ["anchor-pdf-quantity"] },
+          { "id": "candidate-pdf-total", "fieldKey": "purchaseTotalAmount", "label": "合同总额", "value": 550.03, "unit": "万元", "status": "candidate", "sourceAnchorIds": ["anchor-pdf-total"] }
+        ],
+        "unresolvedItems": [],
+        "sourceAnchors": [
+          { "id": "anchor-pdf-contract", "materialId": "mat-gen-metal_processing-e1d2b78d0b-transaction-purchase-contract", "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-transaction-purchase-contract-v1", "contentHash": "03ae4657ef8277072385602a7a89c41931f6a68d0d07db897bc39825207ea1ad", "kind": "pdf", "page": 1, "bbox": { "x": 0.369, "y": 0.263, "width": 0.554, "height": 0.034 }, "polygon": null, "ocrTokenIds": [], "charStart": null, "charEnd": null },
+          { "id": "anchor-pdf-lease", "materialId": "mat-gen-metal_processing-e1d2b78d0b-transaction-purchase-contract", "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-transaction-purchase-contract-v1", "contentHash": "03ae4657ef8277072385602a7a89c41931f6a68d0d07db897bc39825207ea1ad", "kind": "pdf", "page": 1, "bbox": { "x": 0.369, "y": 0.297, "width": 0.554, "height": 0.033 }, "polygon": null, "ocrTokenIds": [], "charStart": null, "charEnd": null },
+          { "id": "anchor-pdf-supplier", "materialId": "mat-gen-metal_processing-e1d2b78d0b-transaction-purchase-contract", "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-transaction-purchase-contract-v1", "contentHash": "03ae4657ef8277072385602a7a89c41931f6a68d0d07db897bc39825207ea1ad", "kind": "pdf", "page": 1, "bbox": { "x": 0.369, "y": 0.33, "width": 0.554, "height": 0.034 }, "polygon": null, "ocrTokenIds": [], "charStart": null, "charEnd": null },
+          { "id": "anchor-pdf-model", "materialId": "mat-gen-metal_processing-e1d2b78d0b-transaction-purchase-contract", "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-transaction-purchase-contract-v1", "contentHash": "03ae4657ef8277072385602a7a89c41931f6a68d0d07db897bc39825207ea1ad", "kind": "pdf", "page": 1, "bbox": { "x": 0.369, "y": 0.364, "width": 0.554, "height": 0.033 }, "polygon": null, "ocrTokenIds": [], "charStart": null, "charEnd": null },
+          { "id": "anchor-pdf-quantity", "materialId": "mat-gen-metal_processing-e1d2b78d0b-transaction-purchase-contract", "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-transaction-purchase-contract-v1", "contentHash": "03ae4657ef8277072385602a7a89c41931f6a68d0d07db897bc39825207ea1ad", "kind": "pdf", "page": 1, "bbox": { "x": 0.369, "y": 0.397, "width": 0.554, "height": 0.034 }, "polygon": null, "ocrTokenIds": [], "charStart": null, "charEnd": null },
+          { "id": "anchor-pdf-total", "materialId": "mat-gen-metal_processing-e1d2b78d0b-transaction-purchase-contract", "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-transaction-purchase-contract-v1", "contentHash": "03ae4657ef8277072385602a7a89c41931f6a68d0d07db897bc39825207ea1ad", "kind": "pdf", "page": 1, "bbox": { "x": 0.369, "y": 0.431, "width": 0.554, "height": 0.033 }, "polygon": null, "ocrTokenIds": [], "charStart": null, "charEnd": null },
+          { "id": "anchor-pdf-boundary", "materialId": "mat-gen-metal_processing-e1d2b78d0b-transaction-purchase-contract", "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-transaction-purchase-contract-v1", "contentHash": "03ae4657ef8277072385602a7a89c41931f6a68d0d07db897bc39825207ea1ad", "kind": "pdf", "page": 1, "bbox": { "x": 0.369, "y": 0.497, "width": 0.554, "height": 0.034 }, "polygon": null, "ocrTokenIds": [], "charStart": null, "charEnd": null }
+        ],
+        "sceneSpec": null,
+        "modelInfo": { "provider": "codex_isolated_blind_eval", "model": "gpt-5", "modelVersion": null },
+        "promptVersion": "p5-mg-codex-offline-oracle-v1",
+        "schemaVersion": "1.0",
+        "inputHash": "fd45b89db40e954ead6909ff296f1c9a663766aa627afefd875b36a39d7d2504",
+        "advisoryOnly": true,
+        "isSimulated": true,
+        "dataStatus": "simulated",
+        "source": "codex_offline_oracle",
+        "disclaimer": "材料智能输出仅供人工核验参考；候选、观察与 SceneSpec 均不得直接写入权威事实、评分、决策、置信度、hard gate 或审批状态。"
+      },
+      "sourceAnchors": [
+        { "id": "anchor-pdf-contract", "materialId": "mat-gen-metal_processing-e1d2b78d0b-transaction-purchase-contract", "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-transaction-purchase-contract-v1", "contentHash": "03ae4657ef8277072385602a7a89c41931f6a68d0d07db897bc39825207ea1ad", "kind": "pdf", "page": 1, "bbox": { "x": 0.369, "y": 0.263, "width": 0.554, "height": 0.034 }, "polygon": null, "ocrTokenIds": [], "charStart": null, "charEnd": null },
+        { "id": "anchor-pdf-lease", "materialId": "mat-gen-metal_processing-e1d2b78d0b-transaction-purchase-contract", "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-transaction-purchase-contract-v1", "contentHash": "03ae4657ef8277072385602a7a89c41931f6a68d0d07db897bc39825207ea1ad", "kind": "pdf", "page": 1, "bbox": { "x": 0.369, "y": 0.297, "width": 0.554, "height": 0.033 }, "polygon": null, "ocrTokenIds": [], "charStart": null, "charEnd": null },
+        { "id": "anchor-pdf-supplier", "materialId": "mat-gen-metal_processing-e1d2b78d0b-transaction-purchase-contract", "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-transaction-purchase-contract-v1", "contentHash": "03ae4657ef8277072385602a7a89c41931f6a68d0d07db897bc39825207ea1ad", "kind": "pdf", "page": 1, "bbox": { "x": 0.369, "y": 0.33, "width": 0.554, "height": 0.034 }, "polygon": null, "ocrTokenIds": [], "charStart": null, "charEnd": null },
+        { "id": "anchor-pdf-model", "materialId": "mat-gen-metal_processing-e1d2b78d0b-transaction-purchase-contract", "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-transaction-purchase-contract-v1", "contentHash": "03ae4657ef8277072385602a7a89c41931f6a68d0d07db897bc39825207ea1ad", "kind": "pdf", "page": 1, "bbox": { "x": 0.369, "y": 0.364, "width": 0.554, "height": 0.033 }, "polygon": null, "ocrTokenIds": [], "charStart": null, "charEnd": null },
+        { "id": "anchor-pdf-quantity", "materialId": "mat-gen-metal_processing-e1d2b78d0b-transaction-purchase-contract", "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-transaction-purchase-contract-v1", "contentHash": "03ae4657ef8277072385602a7a89c41931f6a68d0d07db897bc39825207ea1ad", "kind": "pdf", "page": 1, "bbox": { "x": 0.369, "y": 0.397, "width": 0.554, "height": 0.034 }, "polygon": null, "ocrTokenIds": [], "charStart": null, "charEnd": null },
+        { "id": "anchor-pdf-total", "materialId": "mat-gen-metal_processing-e1d2b78d0b-transaction-purchase-contract", "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-transaction-purchase-contract-v1", "contentHash": "03ae4657ef8277072385602a7a89c41931f6a68d0d07db897bc39825207ea1ad", "kind": "pdf", "page": 1, "bbox": { "x": 0.369, "y": 0.431, "width": 0.554, "height": 0.033 }, "polygon": null, "ocrTokenIds": [], "charStart": null, "charEnd": null },
+        { "id": "anchor-pdf-boundary", "materialId": "mat-gen-metal_processing-e1d2b78d0b-transaction-purchase-contract", "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-transaction-purchase-contract-v1", "contentHash": "03ae4657ef8277072385602a7a89c41931f6a68d0d07db897bc39825207ea1ad", "kind": "pdf", "page": 1, "bbox": { "x": 0.369, "y": 0.497, "width": 0.554, "height": 0.034 }, "polygon": null, "ocrTokenIds": [], "charStart": null, "charEnd": null }
+      ],
+      "locatorBindings": [
+        { "sourceAnchorId": "anchor-pdf-contract", "locator": { "materialId": "mat-gen-metal_processing-e1d2b78d0b-transaction-purchase-contract", "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-transaction-purchase-contract-v1", "kind": "pdf", "page": 1, "bbox": { "x": 0.369, "y": 0.263, "width": 0.554, "height": 0.034 }, "textAnchor": "PO-SYN-01-001-E1D2-01" } },
+        { "sourceAnchorId": "anchor-pdf-lease", "locator": { "materialId": "mat-gen-metal_processing-e1d2b78d0b-transaction-purchase-contract", "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-transaction-purchase-contract-v1", "kind": "pdf", "page": 1, "bbox": { "x": 0.369, "y": 0.297, "width": 0.554, "height": 0.033 }, "textAnchor": "FL-SYN-01-001-E1D2-01" } },
+        { "sourceAnchorId": "anchor-pdf-supplier", "locator": { "materialId": "mat-gen-metal_processing-e1d2b78d0b-transaction-purchase-contract", "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-transaction-purchase-contract-v1", "kind": "pdf", "page": 1, "bbox": { "x": 0.369, "y": 0.33, "width": 0.554, "height": 0.034 }, "textAnchor": "系统生成设备供应商乙" } },
+        { "sourceAnchorId": "anchor-pdf-model", "locator": { "materialId": "mat-gen-metal_processing-e1d2b78d0b-transaction-purchase-contract", "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-transaction-purchase-contract-v1", "kind": "pdf", "page": 1, "bbox": { "x": 0.369, "y": 0.364, "width": 0.554, "height": 0.033 }, "textAnchor": "HL-1200" } },
+        { "sourceAnchorId": "anchor-pdf-quantity", "locator": { "materialId": "mat-gen-metal_processing-e1d2b78d0b-transaction-purchase-contract", "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-transaction-purchase-contract-v1", "kind": "pdf", "page": 1, "bbox": { "x": 0.369, "y": 0.397, "width": 0.554, "height": 0.034 }, "textAnchor": "2台" } },
+        { "sourceAnchorId": "anchor-pdf-total", "locator": { "materialId": "mat-gen-metal_processing-e1d2b78d0b-transaction-purchase-contract", "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-transaction-purchase-contract-v1", "kind": "pdf", "page": 1, "bbox": { "x": 0.369, "y": 0.431, "width": 0.554, "height": 0.033 }, "textAnchor": "550.03万元" } },
+        { "sourceAnchorId": "anchor-pdf-boundary", "locator": { "materialId": "mat-gen-metal_processing-e1d2b78d0b-transaction-purchase-contract", "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-transaction-purchase-contract-v1", "kind": "pdf", "page": 1, "bbox": { "x": 0.369, "y": 0.497, "width": 0.554, "height": 0.034 }, "textAnchor": "单项目事实勾稽，不代表真实原件或统计验证模型" } }
+      ],
+      "error": null,
+      "advisoryOnly": true,
+      "isSimulated": true,
+      "dataStatus": "simulated",
+      "source": "codex_offline_oracle",
+      "disclaimer": "材料智能输出仅供人工核验参考；候选、观察与 SceneSpec 均不得直接写入权威事实、评分、决策、置信度、hard gate 或审批状态。",
+      "schemaVersion": "1.0"
+    },
+    {
+      "requestId": "blind-req-excel-01",
+      "runId": "blind-run-excel-01",
+      "capabilityId": "codex-offline-oracle-v1",
+      "mode": "synthetic",
+      "status": "succeeded",
+      "materialId": "mat-gen-metal_processing-e1d2b78d0b-production-operations",
+      "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-production-operations-v1",
+      "inputHash": "985525730e0e432ab6ed502cce9b6dd8242ee6039f0c7efacac91d56a692fde5",
+      "result": {
+        "projectId": "gen-metal_processing-e1d2b78d0b",
+        "materialId": "mat-gen-metal_processing-e1d2b78d0b-production-operations",
+        "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-production-operations-v1",
+        "contentHash": "d91daf2577932e60c729f59bfc3e429098953c8746cbd72d379754c56e3855d3",
+        "mediaKind": "excel",
+        "contextVersion": "p5-blind-eval-v1",
+        "dataClassification": "synthetic_demo",
+        "status": "completed",
+        "confidence": 0.99,
+        "observations": [
+          {
+            "id": "obs-excel-structure",
+            "kind": "structure",
+            "text": "工作簿包含“生产记录”和“勾稽摘要”两个工作表；生产记录表 A3:G3 为表头，A4:G78 为 75 条逐日记录。",
+            "sourceAnchorIds": ["anchor-excel-data", "anchor-excel-count"]
+          },
+          {
+            "id": "obs-excel-period",
+            "kind": "content_summary",
+            "text": "逐日记录覆盖 2025-12-15 至 2026-02-27，设备型号列显示 HL-1200。",
+            "sourceAnchorIds": ["anchor-excel-dates", "anchor-excel-model"]
+          },
+          {
+            "id": "obs-excel-boundary",
+            "kind": "content_summary",
+            "text": "勾稽摘要明确声明该工作簿仅用于 P5 本地演示和单项目勾稽，不代表真实客户、真实交易或统计验证结论。",
+            "sourceAnchorIds": ["anchor-excel-boundary"]
+          }
+        ],
+        "extractedFieldCandidates": [
+          { "id": "candidate-excel-count", "fieldKey": "recordCount", "label": "记录总数", "value": 75, "unit": "条", "status": "candidate", "sourceAnchorIds": ["anchor-excel-count"] },
+          { "id": "candidate-excel-start", "fieldKey": "recordStartDate", "label": "记录起始日期", "value": "2025-12-15", "unit": null, "status": "candidate", "sourceAnchorIds": ["anchor-excel-start"] },
+          { "id": "candidate-excel-end", "fieldKey": "recordEndDate", "label": "记录结束日期", "value": "2026-02-27", "unit": null, "status": "candidate", "sourceAnchorIds": ["anchor-excel-end"] },
+          { "id": "candidate-excel-model", "fieldKey": "equipmentModel", "label": "设备型号", "value": "HL-1200", "unit": null, "status": "candidate", "sourceAnchorIds": ["anchor-excel-model"] }
+        ],
+        "unresolvedItems": [],
+        "sourceAnchors": [
+          { "id": "anchor-excel-data", "materialId": "mat-gen-metal_processing-e1d2b78d0b-production-operations", "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-production-operations-v1", "contentHash": "d91daf2577932e60c729f59bfc3e429098953c8746cbd72d379754c56e3855d3", "kind": "excel", "sheet": "生产记录", "range": "A3:G78" },
+          { "id": "anchor-excel-count", "materialId": "mat-gen-metal_processing-e1d2b78d0b-production-operations", "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-production-operations-v1", "contentHash": "d91daf2577932e60c729f59bfc3e429098953c8746cbd72d379754c56e3855d3", "kind": "excel", "sheet": "勾稽摘要", "range": "B8" },
+          { "id": "anchor-excel-start", "materialId": "mat-gen-metal_processing-e1d2b78d0b-production-operations", "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-production-operations-v1", "contentHash": "d91daf2577932e60c729f59bfc3e429098953c8746cbd72d379754c56e3855d3", "kind": "excel", "sheet": "生产记录", "range": "A4" },
+          { "id": "anchor-excel-end", "materialId": "mat-gen-metal_processing-e1d2b78d0b-production-operations", "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-production-operations-v1", "contentHash": "d91daf2577932e60c729f59bfc3e429098953c8746cbd72d379754c56e3855d3", "kind": "excel", "sheet": "生产记录", "range": "A78" },
+          { "id": "anchor-excel-dates", "materialId": "mat-gen-metal_processing-e1d2b78d0b-production-operations", "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-production-operations-v1", "contentHash": "d91daf2577932e60c729f59bfc3e429098953c8746cbd72d379754c56e3855d3", "kind": "excel", "sheet": "生产记录", "range": "A4:A78" },
+          { "id": "anchor-excel-model", "materialId": "mat-gen-metal_processing-e1d2b78d0b-production-operations", "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-production-operations-v1", "contentHash": "d91daf2577932e60c729f59bfc3e429098953c8746cbd72d379754c56e3855d3", "kind": "excel", "sheet": "生产记录", "range": "C4:C78" },
+          { "id": "anchor-excel-boundary", "materialId": "mat-gen-metal_processing-e1d2b78d0b-production-operations", "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-production-operations-v1", "contentHash": "d91daf2577932e60c729f59bfc3e429098953c8746cbd72d379754c56e3855d3", "kind": "excel", "sheet": "勾稽摘要", "range": "A10:B10" }
+        ],
+        "sceneSpec": null,
+        "modelInfo": { "provider": "codex_isolated_blind_eval", "model": "gpt-5", "modelVersion": null },
+        "promptVersion": "p5-mg-codex-offline-oracle-v1",
+        "schemaVersion": "1.0",
+        "inputHash": "985525730e0e432ab6ed502cce9b6dd8242ee6039f0c7efacac91d56a692fde5",
+        "advisoryOnly": true,
+        "isSimulated": true,
+        "dataStatus": "simulated",
+        "source": "codex_offline_oracle",
+        "disclaimer": "材料智能输出仅供人工核验参考；候选、观察与 SceneSpec 均不得直接写入权威事实、评分、决策、置信度、hard gate 或审批状态。"
+      },
+      "sourceAnchors": [
+        { "id": "anchor-excel-data", "materialId": "mat-gen-metal_processing-e1d2b78d0b-production-operations", "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-production-operations-v1", "contentHash": "d91daf2577932e60c729f59bfc3e429098953c8746cbd72d379754c56e3855d3", "kind": "excel", "sheet": "生产记录", "range": "A3:G78" },
+        { "id": "anchor-excel-count", "materialId": "mat-gen-metal_processing-e1d2b78d0b-production-operations", "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-production-operations-v1", "contentHash": "d91daf2577932e60c729f59bfc3e429098953c8746cbd72d379754c56e3855d3", "kind": "excel", "sheet": "勾稽摘要", "range": "B8" },
+        { "id": "anchor-excel-start", "materialId": "mat-gen-metal_processing-e1d2b78d0b-production-operations", "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-production-operations-v1", "contentHash": "d91daf2577932e60c729f59bfc3e429098953c8746cbd72d379754c56e3855d3", "kind": "excel", "sheet": "生产记录", "range": "A4" },
+        { "id": "anchor-excel-end", "materialId": "mat-gen-metal_processing-e1d2b78d0b-production-operations", "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-production-operations-v1", "contentHash": "d91daf2577932e60c729f59bfc3e429098953c8746cbd72d379754c56e3855d3", "kind": "excel", "sheet": "生产记录", "range": "A78" },
+        { "id": "anchor-excel-dates", "materialId": "mat-gen-metal_processing-e1d2b78d0b-production-operations", "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-production-operations-v1", "contentHash": "d91daf2577932e60c729f59bfc3e429098953c8746cbd72d379754c56e3855d3", "kind": "excel", "sheet": "生产记录", "range": "A4:A78" },
+        { "id": "anchor-excel-model", "materialId": "mat-gen-metal_processing-e1d2b78d0b-production-operations", "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-production-operations-v1", "contentHash": "d91daf2577932e60c729f59bfc3e429098953c8746cbd72d379754c56e3855d3", "kind": "excel", "sheet": "生产记录", "range": "C4:C78" },
+        { "id": "anchor-excel-boundary", "materialId": "mat-gen-metal_processing-e1d2b78d0b-production-operations", "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-production-operations-v1", "contentHash": "d91daf2577932e60c729f59bfc3e429098953c8746cbd72d379754c56e3855d3", "kind": "excel", "sheet": "勾稽摘要", "range": "A10:B10" }
+      ],
+      "locatorBindings": [
+        { "sourceAnchorId": "anchor-excel-data", "locator": { "materialId": "mat-gen-metal_processing-e1d2b78d0b-production-operations", "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-production-operations-v1", "kind": "excel", "sheet": "生产记录", "range": "A3:G78" } },
+        { "sourceAnchorId": "anchor-excel-count", "locator": { "materialId": "mat-gen-metal_processing-e1d2b78d0b-production-operations", "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-production-operations-v1", "kind": "excel", "sheet": "勾稽摘要", "range": "B8" } },
+        { "sourceAnchorId": "anchor-excel-start", "locator": { "materialId": "mat-gen-metal_processing-e1d2b78d0b-production-operations", "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-production-operations-v1", "kind": "excel", "sheet": "生产记录", "range": "A4" } },
+        { "sourceAnchorId": "anchor-excel-end", "locator": { "materialId": "mat-gen-metal_processing-e1d2b78d0b-production-operations", "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-production-operations-v1", "kind": "excel", "sheet": "生产记录", "range": "A78" } },
+        { "sourceAnchorId": "anchor-excel-dates", "locator": { "materialId": "mat-gen-metal_processing-e1d2b78d0b-production-operations", "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-production-operations-v1", "kind": "excel", "sheet": "生产记录", "range": "A4:A78" } },
+        { "sourceAnchorId": "anchor-excel-model", "locator": { "materialId": "mat-gen-metal_processing-e1d2b78d0b-production-operations", "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-production-operations-v1", "kind": "excel", "sheet": "生产记录", "range": "C4:C78" } },
+        { "sourceAnchorId": "anchor-excel-boundary", "locator": { "materialId": "mat-gen-metal_processing-e1d2b78d0b-production-operations", "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-production-operations-v1", "kind": "excel", "sheet": "勾稽摘要", "range": "A10:B10" } }
+      ],
+      "error": null,
+      "advisoryOnly": true,
+      "isSimulated": true,
+      "dataStatus": "simulated",
+      "source": "codex_offline_oracle",
+      "disclaimer": "材料智能输出仅供人工核验参考；候选、观察与 SceneSpec 均不得直接写入权威事实、评分、决策、置信度、hard gate 或审批状态。",
+      "schemaVersion": "1.0"
+    }
+  ]
+}

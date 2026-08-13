@@ -1,0 +1,149 @@
+{
+  "prompt": {
+    "sourceRef": "evals/model_gateway/codex_oracle/prompt_template.md",
+    "sha256": "14659ba177ba35c2064d3bd6b4f5b3e47eaac8fd86f8217eabf79a7a5cb3e184",
+    "version": "p5-mg-codex-offline-oracle-v1",
+    "inputHashMethod": "sha256(promptBytes || 0x00 || materialBytes)"
+  },
+  "materialReferences": [
+    {
+      "materialId": "mat-gen-metal_processing-e1d2b78d0b-equipment-image",
+      "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-equipment-image-v1",
+      "contentHash": "ab76f7ea3853ee204101b8ef734115fe00c799d810bc4d9fe38c99b8663fc489",
+      "mediaKind": "image",
+      "sourceRef": "runtime/native-material-packs/project-01/images/SYN-01-001-E1D2-equipment-overview.png"
+    },
+    {
+      "materialId": "mat-gen-metal_processing-e1d2b78d0b-transaction-purchase-contract",
+      "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-transaction-purchase-contract-v1",
+      "contentHash": "03ae4657ef8277072385602a7a89c41931f6a68d0d07db897bc39825207ea1ad",
+      "mediaKind": "pdf",
+      "sourceRef": "runtime/native-material-packs/project-01/pdf/SYN-01-001-E1D2-purchase-contract.pdf"
+    },
+    {
+      "materialId": "mat-gen-metal_processing-e1d2b78d0b-production-operations",
+      "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-production-operations-v1",
+      "contentHash": "d91daf2577932e60c729f59bfc3e429098953c8746cbd72d379754c56e3855d3",
+      "mediaKind": "excel",
+      "sourceRef": "runtime/native-material-packs/project-01/excel/SYN-01-001-E1D2-operations.xlsx"
+    },
+    {
+      "materialId": "mat-gen-metal_processing-e1d2b78d0b-production-controlled-scene",
+      "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-production-controlled-scene-v1",
+      "contentHash": "fd1e63b1c2ca2ca327f9fcf4a44b71e558d808b4d8eb25b9729e9d912c29ff8b",
+      "mediaKind": "scene",
+      "sourceRef": "runtime/native-material-packs/project-01/scene/SYN-01-001-E1D2-controlled-scene.json"
+    }
+  ],
+  "requests": [
+    {
+      "requestId": "blind-req-image-01",
+      "capabilityId": "codex-offline-oracle-v1",
+      "mode": "synthetic",
+      "trigger": "explicit_action",
+      "material": {
+        "projectId": "gen-metal_processing-e1d2b78d0b",
+        "materialId": "mat-gen-metal_processing-e1d2b78d0b-equipment-image",
+        "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-equipment-image-v1",
+        "contentHash": "ab76f7ea3853ee204101b8ef734115fe00c799d810bc4d9fe38c99b8663fc489",
+        "mediaKind": "image",
+        "sourceRef": "runtime/native-material-packs/project-01/images/SYN-01-001-E1D2-equipment-overview.png",
+        "dataClassification": "synthetic_demo",
+        "usageAuthorizationRef": "compare-p5-synthetic-v1"
+      },
+      "contextVersion": "p5-blind-eval-v1",
+      "projectContext": {
+        "dimensionId": "production",
+        "industryCode": "metal_processing",
+        "locale": "zh-CN"
+      },
+      "fieldSchemas": [
+        {
+          "fieldKey": "equipmentCategory",
+          "label": "设备类别",
+          "valueType": "string"
+        }
+      ],
+      "taskGoals": [
+        "observe",
+        "extract_field_candidates",
+        "identify_unresolved",
+        "scene_spec"
+      ],
+      "inputHash": "2ba14e3698b87d31b4db70ce211271b45bed6bf2158f2e0e16707e07c41db978",
+      "schemaVersion": "1.0"
+    },
+    {
+      "requestId": "blind-req-pdf-01",
+      "capabilityId": "codex-offline-oracle-v1",
+      "mode": "synthetic",
+      "trigger": "explicit_action",
+      "material": {
+        "projectId": "gen-metal_processing-e1d2b78d0b",
+        "materialId": "mat-gen-metal_processing-e1d2b78d0b-transaction-purchase-contract",
+        "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-transaction-purchase-contract-v1",
+        "contentHash": "03ae4657ef8277072385602a7a89c41931f6a68d0d07db897bc39825207ea1ad",
+        "mediaKind": "pdf",
+        "sourceRef": "runtime/native-material-packs/project-01/pdf/SYN-01-001-E1D2-purchase-contract.pdf",
+        "dataClassification": "synthetic_demo",
+        "usageAuthorizationRef": "compare-p5-synthetic-v1"
+      },
+      "contextVersion": "p5-blind-eval-v1",
+      "projectContext": {
+        "dimensionId": "transaction",
+        "industryCode": "metal_processing",
+        "locale": "zh-CN"
+      },
+      "fieldSchemas": [
+        { "fieldKey": "purchaseContractNumber", "label": "买卖合同号", "valueType": "string" },
+        { "fieldKey": "relatedLeaseContractNumber", "label": "关联租赁合同号", "valueType": "string" },
+        { "fieldKey": "supplierName", "label": "供应商", "valueType": "string" },
+        { "fieldKey": "equipmentModel", "label": "设备型号", "valueType": "string" },
+        { "fieldKey": "equipmentQuantity", "label": "设备数量", "valueType": "integer" },
+        { "fieldKey": "purchaseTotalAmount", "label": "合同总额", "valueType": "number" }
+      ],
+      "taskGoals": [
+        "observe",
+        "extract_field_candidates",
+        "identify_unresolved"
+      ],
+      "inputHash": "fd45b89db40e954ead6909ff296f1c9a663766aa627afefd875b36a39d7d2504",
+      "schemaVersion": "1.0"
+    },
+    {
+      "requestId": "blind-req-excel-01",
+      "capabilityId": "codex-offline-oracle-v1",
+      "mode": "synthetic",
+      "trigger": "explicit_action",
+      "material": {
+        "projectId": "gen-metal_processing-e1d2b78d0b",
+        "materialId": "mat-gen-metal_processing-e1d2b78d0b-production-operations",
+        "materialVersionId": "mat-gen-metal_processing-e1d2b78d0b-production-operations-v1",
+        "contentHash": "d91daf2577932e60c729f59bfc3e429098953c8746cbd72d379754c56e3855d3",
+        "mediaKind": "excel",
+        "sourceRef": "runtime/native-material-packs/project-01/excel/SYN-01-001-E1D2-operations.xlsx",
+        "dataClassification": "synthetic_demo",
+        "usageAuthorizationRef": "compare-p5-synthetic-v1"
+      },
+      "contextVersion": "p5-blind-eval-v1",
+      "projectContext": {
+        "dimensionId": "production",
+        "industryCode": "metal_processing",
+        "locale": "zh-CN"
+      },
+      "fieldSchemas": [
+        { "fieldKey": "recordCount", "label": "记录总数", "valueType": "integer" },
+        { "fieldKey": "recordStartDate", "label": "记录起始日期", "valueType": "string" },
+        { "fieldKey": "recordEndDate", "label": "记录结束日期", "valueType": "string" },
+        { "fieldKey": "equipmentModel", "label": "设备型号", "valueType": "string" }
+      ],
+      "taskGoals": [
+        "observe",
+        "extract_field_candidates",
+        "identify_unresolved"
+      ],
+      "inputHash": "985525730e0e432ab6ed502cce9b6dd8242ee6039f0c7efacac91d56a692fde5",
+      "schemaVersion": "1.0"
+    }
+  ]
+}

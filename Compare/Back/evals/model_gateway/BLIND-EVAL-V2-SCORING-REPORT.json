@@ -1,0 +1,370 @@
+{
+  "rubricVersion": "blind-eval-rubric-v2",
+  "gateState": "UNHELD",
+  "finalDecision": "FAIL",
+  "finalScoringExecuted": true,
+  "runId": "P5-BlindEval-R2",
+  "metrics": {
+    "schemaValidRate": 0.333333,
+    "materialBindingHashRate": 0.0,
+    "fieldAccuracyRate": 0.071429,
+    "numericCorrectnessRate": 1.0,
+    "unitCorrectnessRate": 1.0,
+    "locatorBindingOpenBoundsRate": 0.333333,
+    "carrierLocatorRuleRate": 0.071429,
+    "criticalUnresolvedRecallRate": 1.0,
+    "supportedExtraUnresolvedRate": 1.0,
+    "sceneSpecSafetyLinkageRate": 0.333333,
+    "telemetryCompletenessRate": 1.0,
+    "retryPolicyComplianceRate": 1.0,
+    "absoluteStopComplianceRate": 0.0,
+    "truthMetadataRate": 0.333333,
+    "unauthorizedFieldCount": 0,
+    "factVersionWrites": 0,
+    "minimumCarrierFieldAccuracyRate": 0.0,
+    "carrierFieldAccuracy": {
+      "excel": 0.0,
+      "image": 1.0,
+      "pdf": 0.0
+    },
+    "totalElapsedMs": 422273.0,
+    "carrierLatency": {
+      "excel": {
+        "count": 1,
+        "p50Ms": 25169.0,
+        "p95Ms": 25169.0,
+        "maxMs": 25169.0,
+        "targetMs": 90000.0,
+        "ceilingMs": 180000.0,
+        "score": 1.0
+      },
+      "image": {
+        "count": 1,
+        "p50Ms": 20702.0,
+        "p95Ms": 20702.0,
+        "maxMs": 20702.0,
+        "targetMs": 60000.0,
+        "ceilingMs": 120000.0,
+        "score": 1.0
+      },
+      "pdf": {
+        "count": 1,
+        "p50Ms": 54204.0,
+        "p95Ms": 54204.0,
+        "maxMs": 54204.0,
+        "targetMs": 90000.0,
+        "ceilingMs": 180000.0,
+        "score": 1.0
+      }
+    },
+    "latencyScore": 0.75,
+    "retryCount": 0,
+    "retryEfficiency": 1.0,
+    "weightedScore": 0.3
+  },
+  "thresholdEvaluation": {
+    "hardChecks": {
+      "schemaValidRate": false,
+      "materialBindingHashRate": false,
+      "numericCorrectnessRate": true,
+      "unitCorrectnessRate": true,
+      "locatorBindingOpenBoundsRate": false,
+      "carrierLocatorRuleRate": false,
+      "criticalUnresolvedRecallRate": true,
+      "supportedExtraUnresolvedRate": true,
+      "sceneSpecSafetyLinkageRate": false,
+      "telemetryCompletenessRate": true,
+      "retryPolicyComplianceRate": true,
+      "absoluteStopComplianceRate": false,
+      "truthMetadataRate": false,
+      "unauthorizedFieldCount": true,
+      "factVersionWrites": true
+    },
+    "partialChecks": {
+      "fieldAccuracyRate": false,
+      "minimumCarrierFieldAccuracyRate": false,
+      "latencyScore": true,
+      "weightedScore": false
+    },
+    "eligibleAfterExplicitUnhold": false
+  },
+  "unexpectedCaseIds": [],
+  "cases": [
+    {
+      "caseId": "excel",
+      "carrier": "excel",
+      "schemaValid": false,
+      "materialBindingHashValid": false,
+      "correctFields": 0,
+      "fieldChecks": 7,
+      "correctNumericValues": 0,
+      "numericChecks": 0,
+      "correctUnits": 0,
+      "unitChecks": 0,
+      "locatorBindingOpenBoundsValid": false,
+      "passedLocatorTargets": 0,
+      "locatorTargetChecks": 7,
+      "locatorTargets": [],
+      "recalledCriticalUnresolved": 0,
+      "criticalUnresolvedChecks": 0,
+      "criticalUnresolved": [],
+      "supportedExtraUnresolved": 0,
+      "extraUnresolvedChecks": 0,
+      "extraUnresolved": [],
+      "sceneSpecSafeAndLinked": false,
+      "telemetryComplete": true,
+      "retryPolicyCompliant": true,
+      "truthMetadataValid": false,
+      "unauthorizedFieldCount": 0,
+      "factVersionWrites": 0,
+      "elapsedMs": 25169.0,
+      "retryCount": 0,
+      "unexpectedFieldKeys": []
+    },
+    {
+      "caseId": "image",
+      "carrier": "image",
+      "schemaValid": true,
+      "materialBindingHashValid": false,
+      "correctFields": 1,
+      "fieldChecks": 1,
+      "correctNumericValues": 0,
+      "numericChecks": 0,
+      "correctUnits": 1,
+      "unitChecks": 1,
+      "locatorBindingOpenBoundsValid": true,
+      "passedLocatorTargets": 1,
+      "locatorTargetChecks": 1,
+      "locatorTargets": [
+        {
+          "semanticRole": "image:focal-object",
+          "kind": "image",
+          "sourceAnchorId": "img-focal-equipment",
+          "targetCoverage": 1.0,
+          "iou": 1.0,
+          "controlledRegionExactReuse": true,
+          "candidateLinked": true,
+          "passed": true
+        }
+      ],
+      "recalledCriticalUnresolved": 0,
+      "criticalUnresolvedChecks": 0,
+      "criticalUnresolved": [],
+      "supportedExtraUnresolved": 3,
+      "extraUnresolvedChecks": 3,
+      "extraUnresolved": [
+        {
+          "itemId": "unresolved-image-subtype",
+          "kind": "ambiguous_content",
+          "supported": true
+        },
+        {
+          "itemId": "unresolved-image-manufacturer",
+          "kind": "unreadable_content",
+          "supported": true
+        },
+        {
+          "itemId": "unresolved-image-model",
+          "kind": "unreadable_content",
+          "supported": true
+        }
+      ],
+      "sceneSpecSafeAndLinked": true,
+      "telemetryComplete": true,
+      "retryPolicyCompliant": true,
+      "truthMetadataValid": true,
+      "unauthorizedFieldCount": 0,
+      "factVersionWrites": 0,
+      "elapsedMs": 20702.0,
+      "retryCount": 0,
+      "unexpectedFieldKeys": []
+    },
+    {
+      "caseId": "pdf",
+      "carrier": "pdf",
+      "schemaValid": false,
+      "materialBindingHashValid": false,
+      "correctFields": 0,
+      "fieldChecks": 6,
+      "correctNumericValues": 0,
+      "numericChecks": 0,
+      "correctUnits": 0,
+      "unitChecks": 0,
+      "locatorBindingOpenBoundsValid": false,
+      "passedLocatorTargets": 0,
+      "locatorTargetChecks": 6,
+      "locatorTargets": [],
+      "recalledCriticalUnresolved": 0,
+      "criticalUnresolvedChecks": 0,
+      "criticalUnresolved": [],
+      "supportedExtraUnresolved": 0,
+      "extraUnresolvedChecks": 0,
+      "extraUnresolved": [],
+      "sceneSpecSafeAndLinked": false,
+      "telemetryComplete": true,
+      "retryPolicyCompliant": true,
+      "truthMetadataValid": false,
+      "unauthorizedFieldCount": 0,
+      "factVersionWrites": 0,
+      "elapsedMs": 54204.0,
+      "retryCount": 0,
+      "unexpectedFieldKeys": []
+    }
+  ],
+  "answerSources": [
+    "extractedFieldCandidates",
+    "unresolvedItems",
+    "sourceAnchors",
+    "locatorBindings",
+    "sceneSpec"
+  ],
+  "ignoredAsAnswers": [
+    "scoreGrade",
+    "decisionGrade",
+    "confidence",
+    "hardGate"
+  ],
+  "rubricGateStateAtFreeze": "HOLD",
+  "schemaEvidence": {
+    "image": {
+      "requestSchemaValid": true,
+      "outputSchemaValid": true,
+      "outputSchemaError": null
+    },
+    "pdf": {
+      "requestSchemaValid": true,
+      "outputSchemaValid": false,
+      "outputSchemaError": "1 validation error for ModelGatewayOutput\n  Value error, sourceAnchors must match the validated result [type=value_error, input_value={'requestId': 'p5-blind-r... 'schemaVersion': '1.0'}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.13/v/value_error"
+    },
+    "excel": {
+      "requestSchemaValid": true,
+      "outputSchemaValid": false,
+      "outputSchemaError": "1 validation error for ModelGatewayOutput\n  Value error, sourceAnchors must match the validated result [type=value_error, input_value={'requestId': 'p5-blind-r... 'schemaVersion': '1.0'}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.13/v/value_error"
+    }
+  },
+  "sourceVerification": {
+    "promptPath": "C:\\Users\\22673\\Desktop\\JW\\Compare\\Back\\evals\\model_gateway\\codex_oracle\\prompt_template.md",
+    "promptSha256": "106ed5171c7da6f87f4152a8cf3e7eae3550427042e4bd78f95ebd8cf8eb7a12",
+    "inputHashMethod": "sha256(promptV2Bytes || 0x00 || materialBytes)",
+    "image": {
+      "sourcePath": "C:\\Users\\22673\\Desktop\\JW\\Compare\\Back\\runtime\\native-material-packs\\project-01\\images\\SYN-01-001-E1D2-equipment-overview.png",
+      "sourceExists": true,
+      "contentHash": "ab76f7ea3853ee204101b8ef734115fe00c799d810bc4d9fe38c99b8663fc489",
+      "contentHashValid": true,
+      "canonicalInputHash": "8dc5677b58a6102b6f8dc91db2cafbdf474322700626d6e95d027f69c0016e1a",
+      "declaredInputHash": "ab76f7ea3853ee204101b8ef734115fe00c799d810bc4d9fe38c99b8663fc489",
+      "inputHashValid": false
+    },
+    "pdf": {
+      "sourcePath": "C:\\Users\\22673\\Desktop\\JW\\Compare\\Back\\runtime\\native-material-packs\\project-01\\pdf\\SYN-01-001-E1D2-purchase-contract.pdf",
+      "sourceExists": true,
+      "contentHash": "03ae4657ef8277072385602a7a89c41931f6a68d0d07db897bc39825207ea1ad",
+      "contentHashValid": true,
+      "canonicalInputHash": "0267f36cee3a2b7a81fae22262b20d0c9f161a19b468b39cfe8bada884528963",
+      "declaredInputHash": "03ae4657ef8277072385602a7a89c41931f6a68d0d07db897bc39825207ea1ad",
+      "inputHashValid": false
+    },
+    "excel": {
+      "sourcePath": "C:\\Users\\22673\\Desktop\\JW\\Compare\\Back\\runtime\\native-material-packs\\project-01\\excel\\SYN-01-001-E1D2-operations.xlsx",
+      "sourceExists": true,
+      "contentHash": "d91daf2577932e60c729f59bfc3e429098953c8746cbd72d379754c56e3855d3",
+      "contentHashValid": true,
+      "canonicalInputHash": "3dfa1b131c9df35ca0adbfeeae611612ba8a35fc1729878c39491208489fb0ed",
+      "declaredInputHash": "d91daf2577932e60c729f59bfc3e429098953c8746cbd72d379754c56e3855d3",
+      "inputHashValid": false
+    }
+  },
+  "executionEvidence": {
+    "runTelemetry": {
+      "runName": "P5-BlindEval-R2",
+      "generatedBy": "codex_isolated_blind_eval_v2",
+      "notAProviderCall": true,
+      "isSimulated": true,
+      "advisoryOnly": true,
+      "FactVersionWrites": 0,
+      "startedAt": "2026-08-12T13:42:02.945Z",
+      "finishedAt": "2026-08-12T13:49:05.218Z",
+      "totalElapsedMs": 422273,
+      "targetElapsedMs": 180000,
+      "absoluteCeilingMs": 300000,
+      "terminalStatus": "failed",
+      "stopReason": "absolute_time_ceiling_exceeded_during_artifact_assembly",
+      "cases": [
+        {
+          "caseId": "image",
+          "carrier": "image",
+          "startedAt": "2026-08-12T13:42:15.999Z",
+          "finishedAt": "2026-08-12T13:42:36.701Z",
+          "elapsedMs": 20702,
+          "attemptCount": 1,
+          "retryCount": 0,
+          "retryErrorCodes": [],
+          "terminalStatus": "needs_review",
+          "stopReason": "completed_with_anchor_backed_unresolved_items"
+        },
+        {
+          "caseId": "pdf",
+          "carrier": "pdf",
+          "startedAt": "2026-08-12T13:42:47.275Z",
+          "finishedAt": "2026-08-12T13:43:41.479Z",
+          "elapsedMs": 54204,
+          "attemptCount": 1,
+          "retryCount": 0,
+          "retryErrorCodes": [],
+          "terminalStatus": "needs_review",
+          "stopReason": "completed_with_anchor_backed_unresolved_items"
+        },
+        {
+          "caseId": "excel",
+          "carrier": "excel",
+          "startedAt": "2026-08-12T13:43:53.040Z",
+          "finishedAt": "2026-08-12T13:44:18.209Z",
+          "elapsedMs": 25169,
+          "attemptCount": 1,
+          "retryCount": 0,
+          "retryErrorCodes": [],
+          "terminalStatus": "needs_review",
+          "stopReason": "completed_with_anchor_backed_unresolved_items"
+        }
+      ],
+      "failures": [
+        {
+          "scope": "local_pdf_render_discovery",
+          "code": "local_renderer_path_unavailable",
+          "message": "Configured bundled pdftoppm path was unavailable; existing bundled pypdfium2 was used without provider retry."
+        },
+        {
+          "scope": "run",
+          "code": "absolute_time_ceiling_exceeded",
+          "message": "Artifact assembly finished after the 300000 ms absolute ceiling; run is reported failed and no further case or retry was started."
+        }
+      ]
+    },
+    "orphanArtifact": {
+      "path": "C:\\Users\\22673\\Desktop\\JW\\Compare\\Back\\evals\\model_gateway\\blind_run_v2\\_pdf_page.png",
+      "exists": true,
+      "releaseImpact": "artifact hygiene finding; not a provider retry"
+    }
+  },
+  "secondaryContentDiagnostic": {
+    "nonGating": true,
+    "reason": "PDF/Excel formal output schema failed; no additional result-only analysis was needed because hard Gate evidence is conclusive.",
+    "image": {
+      "genericCategoryVisuallySupported": true,
+      "controlledFocalRegionReused": true,
+      "extraUnresolvedItemsIndependentlySupported": 3
+    },
+    "pdf": {
+      "formalEnvelopeLocatorBindings": 0
+    },
+    "excel": {
+      "formalEnvelopeLocatorBindings": 0
+    }
+  },
+  "classification": {
+    "isSimulated": true,
+    "advisoryOnly": true,
+    "notAProviderCall": true,
+    "authority": "candidate-only; human confirmation required"
+  }
+}

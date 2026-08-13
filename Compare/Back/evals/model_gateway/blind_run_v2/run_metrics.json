@@ -1,0 +1,65 @@
+{
+  "runName": "P5-BlindEval-R2",
+  "generatedBy": "codex_isolated_blind_eval_v2",
+  "notAProviderCall": true,
+  "isSimulated": true,
+  "advisoryOnly": true,
+  "FactVersionWrites": 0,
+  "startedAt": "2026-08-12T13:42:02.945Z",
+  "finishedAt": "2026-08-12T13:49:05.218Z",
+  "totalElapsedMs": 422273,
+  "targetElapsedMs": 180000,
+  "absoluteCeilingMs": 300000,
+  "terminalStatus": "failed",
+  "stopReason": "absolute_time_ceiling_exceeded_during_artifact_assembly",
+  "cases": [
+    {
+      "caseId": "image",
+      "carrier": "image",
+      "startedAt": "2026-08-12T13:42:15.999Z",
+      "finishedAt": "2026-08-12T13:42:36.701Z",
+      "elapsedMs": 20702,
+      "attemptCount": 1,
+      "retryCount": 0,
+      "retryErrorCodes": [],
+      "terminalStatus": "needs_review",
+      "stopReason": "completed_with_anchor_backed_unresolved_items"
+    },
+    {
+      "caseId": "pdf",
+      "carrier": "pdf",
+      "startedAt": "2026-08-12T13:42:47.275Z",
+      "finishedAt": "2026-08-12T13:43:41.479Z",
+      "elapsedMs": 54204,
+      "attemptCount": 1,
+      "retryCount": 0,
+      "retryErrorCodes": [],
+      "terminalStatus": "needs_review",
+      "stopReason": "completed_with_anchor_backed_unresolved_items"
+    },
+    {
+      "caseId": "excel",
+      "carrier": "excel",
+      "startedAt": "2026-08-12T13:43:53.040Z",
+      "finishedAt": "2026-08-12T13:44:18.209Z",
+      "elapsedMs": 25169,
+      "attemptCount": 1,
+      "retryCount": 0,
+      "retryErrorCodes": [],
+      "terminalStatus": "needs_review",
+      "stopReason": "completed_with_anchor_backed_unresolved_items"
+    }
+  ],
+  "failures": [
+    {
+      "scope": "local_pdf_render_discovery",
+      "code": "local_renderer_path_unavailable",
+      "message": "Configured bundled pdftoppm path was unavailable; existing bundled pypdfium2 was used without provider retry."
+    },
+    {
+      "scope": "run",
+      "code": "absolute_time_ceiling_exceeded",
+      "message": "Artifact assembly finished after the 300000 ms absolute ceiling; run is reported failed and no further case or retry was started."
+    }
+  ]
+}

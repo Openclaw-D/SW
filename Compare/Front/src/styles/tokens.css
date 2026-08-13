@@ -1,0 +1,125 @@
+:root {
+  color-scheme: light;
+
+  --color-canvas: #f7f7f5;
+  --color-surface: #ffffff;
+  --color-surface-soft: #fbfbfa;
+  --color-surface-muted: #f1f1ef;
+  --color-surface-hover: #ececea;
+  --color-text: #191919;
+  --color-text-secondary: #4f4f4a;
+  --color-text-tertiary: #696963;
+  --color-border: #ddddda;
+  --color-border-strong: #c8c8c3;
+  --color-focus: #2f6f4e;
+  --color-selection: #68717d;
+  --color-selection-soft: #e8eaed;
+
+  --dimension-compliance: #2f8a5b;
+  --dimension-transaction: #d38c22;
+  --dimension-production: #b57820;
+  --dimension-revenue: #6f59b6;
+  --dimension-debt: #4677b8;
+  --dimension-cashflow: #4f82cf;
+
+  --grade-a: #22c55e;
+  --grade-b: #2563eb;
+  --grade-c: #f59e0b;
+  --grade-d: #dc2626;
+  --grade-e: #7c3aed;
+
+  --risk-support: #22c55e;
+  --risk-attention: #2563eb;
+  --risk-confirm: #f59e0b;
+  --risk-risk: #dc2626;
+  --risk-forbid: #7c3aed;
+
+  --material-confirmed: #1f8a4c;
+  --material-confirmed-soft: #e8f5ec;
+  --material-review: #b98500;
+  --material-review-soft: #fff5d9;
+  --material-conflict: #7653b7;
+  --material-conflict-soft: #f0eafb;
+  --evidence-pending: #986d00;
+  --evidence-unverifiable: #68469f;
+  --actor-business: #1f7650;
+  --actor-business-soft: #e8f3ed;
+  --actor-risk: #68469f;
+  --actor-risk-soft: #f0eafb;
+  --policy-gate: #9a6116;
+  --policy-gate-soft: #fff3df;
+  --color-error: #9f3030;
+
+  --font-family-sans: Inter, "SF Pro Text", "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --font-size-xs: 12px;
+  --font-size-sm: 13px;
+  --font-size-md: 14px;
+  --font-size-lg: 16px;
+  --font-size-xl: 20px;
+  --font-size-2xl: 24px;
+  --font-size-3xl: 30px;
+  --line-height-tight: 1.2;
+  --line-height-normal: 1.55;
+  --font-weight-regular: 400;
+  --font-weight-medium: 550;
+  --font-weight-semibold: 650;
+  --font-weight-bold: 750;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 32px;
+  --space-8: 40px;
+  --space-9: 48px;
+
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 9px;
+  --radius-lg: 12px;
+  --radius-pill: 999px;
+
+  --border-width: 1px;
+  --shadow-soft: 0 1px 2px rgb(0 0 0 / 4%), 0 8px 24px rgb(0 0 0 / 3%);
+  --shadow-focus: 0 0 0 3px rgb(47 111 78 / 14%);
+  --duration-fast: 120ms;
+  --duration-normal: 200ms;
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+
+  --layout-topbar-height: 56px;
+  --layout-navigation-width: 212px;
+  --layout-material-width: clamp(430px, 35vw, 640px);
+  --layout-collaboration-height: 286px;
+  --layout-main-min-width: 560px;
+  --layout-page-max-width: 980px;
+  --layout-pane-padding-x: 28px;
+  --layout-pane-padding-y: 20px;
+  --layout-divider-hit: 8px;
+
+  --control-height-sm: 30px;
+  --control-height-md: 36px;
+  --dial-size: 164px;
+  --dial-core-size: 58px;
+  --dial-icon-size: 32px;
+  --collaboration-header-height: 40px;
+  --material-tabs-height: 54px;
+}
+
+@media (max-width: 1560px) {
+  :root {
+    --layout-navigation-width: 194px;
+    --layout-material-width: clamp(410px, 34vw, 540px);
+    --layout-collaboration-height: 272px;
+    --layout-pane-padding-x: 24px;
+    --dial-size: 150px;
+  }
+}
+
+@media (max-height: 960px) {
+  :root {
+    --layout-collaboration-height: 260px;
+    --layout-pane-padding-y: 16px;
+  }
+}

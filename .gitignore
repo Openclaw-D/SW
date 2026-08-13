@@ -1,0 +1,37 @@
+# Local dependencies and environments
+**/node_modules/
+**/.venv/
+**/venv/
+
+# Generated output and caches
+**/dist/
+**/build/
+!Front/build/
+!Front/build/sites-vite-plugin.ts
+**/.next/
+**/.vinext/
+**/.wrangler/
+**/.pytest_cache/
+**/__pycache__/
+**/coverage/
+**/*.tsbuildinfo
+**/*.log
+
+# Local runtime data and secrets
+**/.env
+**/.env.*
+!**/.env.example
+Back/data/*.db*
+Back/data/*.sqlite*
+Back/storage/
+
+# Codex-local state
+**/.codex-remote-attachments/
+**/work/
+**/outputs/
+
+# OS and editor state
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

@@ -1,0 +1,113 @@
+{
+  "taskName": "P5-ProviderReplay-R3",
+  "schemaVersion": "1.0",
+  "status": "PASS",
+  "providerReplayKind": "production-real-mode-mock-direct-adapter-replay",
+  "canonicalInputHashAlgorithm": "sha256(utf8(canonical-json(formal ModelGatewayRequest without inputHash)))",
+  "transport": {
+    "kind": "mock-direct-provider-seam",
+    "gatewayMode": "real",
+    "externalNetworkCalls": 0,
+    "isRealExternalProviderCall": false
+  },
+  "sourceResult": {
+    "generatedBy": "codex_isolated_blind_eval_v3",
+    "source": "codex_offline_oracle",
+    "isSimulated": true,
+    "advisoryOnly": true,
+    "notAProviderCall": true
+  },
+  "adaptedGatewayTruth": {
+    "mode": "real",
+    "isSimulated": false,
+    "dataStatus": "provider_generated_unverified",
+    "source": "openai_responses_api",
+    "meaning": "production seam contract projection only; not evidence of an external provider API call"
+  },
+  "sourceRun": {
+    "taskName": "P5-BlindEval-R3",
+    "generatedBy": "codex_isolated_blind_eval_v3",
+    "notAProviderCall": true,
+    "factVersionWrites": 0,
+    "elapsedMs": 282735,
+    "targetElapsedMs": 180000,
+    "targetElapsedMet": false,
+    "absoluteStopMs": 300000,
+    "absoluteStopMet": true
+  },
+  "summary": {
+    "caseCount": 3,
+    "passed": 3,
+    "failed": 0,
+    "externalNetworkCalls": 0,
+    "firstExecutionProviderCalls": 3,
+    "replayProviderCalls": 0,
+    "factVersionWrites": 0
+  },
+  "globalFailureReasons": [],
+  "cases": [
+    {
+      "caseId": "image-equipment-overview",
+      "materialId": "mat-gen-metal_processing-e1d2b78d0b-equipment-image",
+      "mediaKind": "image",
+      "status": "PASS",
+      "failureReasons": [],
+      "canonicalInputHash": "9bbf4701be12b64f75db7e3e1329fc828f27a438fc8085b811fcd5adf9f2d7a6",
+      "rawInputHashPresent": false,
+      "rawBindingValidated": true,
+      "semanticDigestMatch": true,
+      "gatewayStatus": "needs_review",
+      "sourceAnchorCount": 2,
+      "locatorBindingCount": 2,
+      "firstExecutionProviderCalls": 1,
+      "replayProviderCalls": 0,
+      "idempotentReplay": true,
+      "recordRedacted": true,
+      "factVersionWrites": 0,
+      "sourceAttemptCount": 1,
+      "sourceRetryCount": 0
+    },
+    {
+      "caseId": "pdf-purchase-contract",
+      "materialId": "mat-gen-metal_processing-e1d2b78d0b-transaction-purchase-contract",
+      "mediaKind": "pdf",
+      "status": "PASS",
+      "failureReasons": [],
+      "canonicalInputHash": "4e571913daa40a2c8a42b77b5ce1d6f2310c61fe92bbc1459ef09b5f5e695fb2",
+      "rawInputHashPresent": false,
+      "rawBindingValidated": true,
+      "semanticDigestMatch": true,
+      "gatewayStatus": "succeeded",
+      "sourceAnchorCount": 6,
+      "locatorBindingCount": 6,
+      "firstExecutionProviderCalls": 1,
+      "replayProviderCalls": 0,
+      "idempotentReplay": true,
+      "recordRedacted": true,
+      "factVersionWrites": 0,
+      "sourceAttemptCount": 1,
+      "sourceRetryCount": 0
+    },
+    {
+      "caseId": "excel-operations",
+      "materialId": "mat-gen-metal_processing-e1d2b78d0b-production-operations",
+      "mediaKind": "excel",
+      "status": "PASS",
+      "failureReasons": [],
+      "canonicalInputHash": "10c37d0a62db583c74a952faa837fb6e4c2d24aa7a2865aca96ad311f8786f27",
+      "rawInputHashPresent": false,
+      "rawBindingValidated": true,
+      "semanticDigestMatch": true,
+      "gatewayStatus": "succeeded",
+      "sourceAnchorCount": 7,
+      "locatorBindingCount": 7,
+      "firstExecutionProviderCalls": 1,
+      "replayProviderCalls": 0,
+      "idempotentReplay": true,
+      "recordRedacted": true,
+      "factVersionWrites": 0,
+      "sourceAttemptCount": 1,
+      "sourceRetryCount": 0
+    }
+  ]
+}

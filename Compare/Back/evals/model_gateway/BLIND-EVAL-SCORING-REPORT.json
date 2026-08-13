@@ -1,0 +1,1098 @@
+{
+  "rubricVersion": "blind-eval-rubric-v1",
+  "gateState": "UNHELD",
+  "finalDecision": "FAIL",
+  "finalScoringExecuted": true,
+  "runId": "P5-BlindEval",
+  "metrics": {
+    "schemaValidRate": 1.0,
+    "materialBindingHashRate": 1.0,
+    "fieldAccuracyRate": 0.909091,
+    "numericCorrectnessRate": 1.0,
+    "unitCorrectnessRate": 1.0,
+    "locatorExactnessRate": 0.777778,
+    "locatorOpenabilityRate": 1.0,
+    "unresolvedHonestyRate": 0.666667,
+    "sceneSpecSafetyLinkageRate": 1.0,
+    "unauthorizedFieldCount": 0,
+    "factVersionWrites": 0,
+    "telemetryCompletenessRate": 0.0,
+    "retryPolicyComplianceRate": 0.0,
+    "minimumCarrierFieldAccuracyRate": 0.0,
+    "carrierFieldAccuracy": {
+      "excel": 1.0,
+      "image": 0.0,
+      "pdf": 1.0
+    },
+    "totalElapsedMs": 782232.0,
+    "carrierLatency": {
+      "excel": {
+        "count": 1,
+        "p50Ms": 102000.0,
+        "p95Ms": 102000.0,
+        "maxMs": 102000.0,
+        "targetMs": 90000.0,
+        "ceilingMs": 180000.0,
+        "score": 0.933333
+      },
+      "image": {
+        "count": 1,
+        "p50Ms": 96000.0,
+        "p95Ms": 96000.0,
+        "maxMs": 96000.0,
+        "targetMs": 60000.0,
+        "ceilingMs": 120000.0,
+        "score": 0.7
+      },
+      "pdf": {
+        "count": 1,
+        "p50Ms": 105000.0,
+        "p95Ms": 105000.0,
+        "maxMs": 105000.0,
+        "targetMs": 90000.0,
+        "ceilingMs": 180000.0,
+        "score": 0.916667
+      }
+    },
+    "latencyScore": 0.6375,
+    "retryCount": 8,
+    "retryEfficiency": 0.0,
+    "weightedScore": 0.763864
+  },
+  "thresholdEvaluation": {
+    "hardChecks": {
+      "schemaValidRate": true,
+      "materialBindingHashRate": true,
+      "numericCorrectnessRate": true,
+      "unitCorrectnessRate": true,
+      "locatorExactnessRate": false,
+      "locatorOpenabilityRate": true,
+      "unresolvedHonestyRate": false,
+      "sceneSpecSafetyLinkageRate": true,
+      "telemetryCompletenessRate": false,
+      "retryPolicyComplianceRate": false,
+      "unauthorizedFieldCount": true,
+      "factVersionWrites": true
+    },
+    "partialChecks": {
+      "fieldAccuracyRate": true,
+      "minimumCarrierFieldAccuracyRate": false,
+      "latencyScore": true,
+      "weightedScore": false
+    },
+    "eligibleAfterExplicitUnhold": false
+  },
+  "unexpectedCaseIds": [],
+  "cases": [
+    {
+      "caseId": "blind-req-excel-01",
+      "carrier": "excel",
+      "schemaValid": true,
+      "materialBindingHashValid": true,
+      "correctFields": 4,
+      "fieldChecks": 4,
+      "correctNumericValues": 1,
+      "numericChecks": 1,
+      "correctUnits": 4,
+      "unitChecks": 4,
+      "exactLocators": 7,
+      "locatorChecks": 7,
+      "openableLocators": 7,
+      "openabilityChecks": 7,
+      "unresolvedHonest": true,
+      "sceneSpecSafeAndLinked": true,
+      "unauthorizedFieldCount": 0,
+      "factVersionWrites": 0,
+      "elapsedMs": 102000.0,
+      "retryCount": 3,
+      "retryPolicyCompliant": false,
+      "unexpectedFieldKeys": []
+    },
+    {
+      "caseId": "blind-req-image-01",
+      "carrier": "image",
+      "schemaValid": true,
+      "materialBindingHashValid": true,
+      "correctFields": 0,
+      "fieldChecks": 1,
+      "correctNumericValues": 0,
+      "numericChecks": 0,
+      "correctUnits": 1,
+      "unitChecks": 1,
+      "exactLocators": 0,
+      "locatorChecks": 4,
+      "openableLocators": 4,
+      "openabilityChecks": 4,
+      "unresolvedHonest": false,
+      "sceneSpecSafeAndLinked": true,
+      "unauthorizedFieldCount": 0,
+      "factVersionWrites": 0,
+      "elapsedMs": 96000.0,
+      "retryCount": 3,
+      "retryPolicyCompliant": false,
+      "unexpectedFieldKeys": []
+    },
+    {
+      "caseId": "blind-req-pdf-01",
+      "carrier": "pdf",
+      "schemaValid": true,
+      "materialBindingHashValid": true,
+      "correctFields": 6,
+      "fieldChecks": 6,
+      "correctNumericValues": 2,
+      "numericChecks": 2,
+      "correctUnits": 6,
+      "unitChecks": 6,
+      "exactLocators": 7,
+      "locatorChecks": 7,
+      "openableLocators": 7,
+      "openabilityChecks": 7,
+      "unresolvedHonest": true,
+      "sceneSpecSafeAndLinked": true,
+      "unauthorizedFieldCount": 0,
+      "factVersionWrites": 0,
+      "elapsedMs": 105000.0,
+      "retryCount": 2,
+      "retryPolicyCompliant": false,
+      "unexpectedFieldKeys": []
+    }
+  ],
+  "answerSources": [
+    "extractedFieldCandidates",
+    "unresolvedItems",
+    "sourceAnchors",
+    "locatorBindings",
+    "sceneSpec"
+  ],
+  "ignoredAsAnswers": [
+    "scoreGrade",
+    "decisionGrade",
+    "confidence",
+    "hardGate"
+  ],
+  "rubricGateStateAtFreeze": "HOLD",
+  "classification": {
+    "isSimulated": true,
+    "advisoryOnly": true,
+    "notAProviderCall": true,
+    "providerExecution": "not executed",
+    "authority": "candidate-only; human confirmation required"
+  },
+  "sourceVerification": {
+    "promptSourceRef": "evals/model_gateway/codex_oracle/prompt_template.md",
+    "promptSha256": "14659ba177ba35c2064d3bd6b4f5b3e47eaac8fd86f8217eabf79a7a5cb3e184",
+    "promptHashValid": true,
+    "allMaterialHashesValid": true,
+    "allInputHashesValid": true,
+    "materials": {
+      "blind-req-image-01": {
+        "sourceRef": "runtime/native-material-packs/project-01/images/SYN-01-001-E1D2-equipment-overview.png",
+        "sourcePath": "C:\\Users\\22673\\Desktop\\JW\\Compare\\Back\\runtime\\native-material-packs\\project-01\\images\\SYN-01-001-E1D2-equipment-overview.png",
+        "contentHash": "ab76f7ea3853ee204101b8ef734115fe00c799d810bc4d9fe38c99b8663fc489",
+        "contentHashValid": true,
+        "inputHash": "2ba14e3698b87d31b4db70ce211271b45bed6bf2158f2e0e16707e07c41db978",
+        "inputHashValid": true,
+        "manifestMaterial": {
+          "id": "mat-gen-metal_processing-e1d2b78d0b-equipment-image",
+          "versionId": "mat-gen-metal_processing-e1d2b78d0b-equipment-image-v1",
+          "fileName": "SYN-01-001-E1D2-equipment-overview.png",
+          "label": "车铣复合中心设备总览（本地合成）",
+          "availability": "available",
+          "isSimulated": true,
+          "sourceLabel": "Compare 项目级确定性合成资产；不是客户现场、厂家图片、测绘或真实资产重建",
+          "kind": "image",
+          "mimeType": "image/png",
+          "assetUrl": "/p5-materials/project-01/equipment-overview.png",
+          "pixelWidth": 960,
+          "pixelHeight": 540,
+          "description": "车铣复合中心 / HL-1200 的项目级合成总览图，不作为真实客户事实。",
+          "focalArea": {
+            "x": 0.18,
+            "y": 0.2,
+            "width": 0.64,
+            "height": 0.58
+          }
+        }
+      },
+      "blind-req-pdf-01": {
+        "sourceRef": "runtime/native-material-packs/project-01/pdf/SYN-01-001-E1D2-purchase-contract.pdf",
+        "sourcePath": "C:\\Users\\22673\\Desktop\\JW\\Compare\\Back\\runtime\\native-material-packs\\project-01\\pdf\\SYN-01-001-E1D2-purchase-contract.pdf",
+        "contentHash": "03ae4657ef8277072385602a7a89c41931f6a68d0d07db897bc39825207ea1ad",
+        "contentHashValid": true,
+        "inputHash": "fd45b89db40e954ead6909ff296f1c9a663766aa627afefd875b36a39d7d2504",
+        "inputHashValid": true,
+        "manifestMaterial": {
+          "id": "mat-gen-metal_processing-e1d2b78d0b-transaction-purchase-contract",
+          "versionId": "mat-gen-metal_processing-e1d2b78d0b-transaction-purchase-contract-v1",
+          "fileName": "SYN-01-001-E1D2-purchase-contract.pdf",
+          "label": "买卖合同（完整脱敏模拟）",
+          "availability": "available",
+          "isSimulated": true,
+          "sourceLabel": "完整脱敏的确定性业务规则生成数据；仅用于单项目事实核验与交互验证，不代表真实客户、厂商核验参数、历史统计样本或统计模型；完整脱敏 synthetic fixture，不是真实原件",
+          "kind": "pdf",
+          "mimeType": "application/pdf",
+          "pageCount": 1,
+          "pages": [
+            {
+              "page": 1,
+              "title": "买卖合同",
+              "lines": [
+                "系统生成·精工甲辰有限公司",
+                "合同号：PO-SYN-01-001-E1D2-01",
+                "关联租赁合同：FL-SYN-01-001-E1D2-01",
+                "供应商：系统生成设备供应商乙",
+                "设备：HL-1200",
+                "数量：2台",
+                "总额：550.03万元"
+              ]
+            }
+          ]
+        }
+      },
+      "blind-req-excel-01": {
+        "sourceRef": "runtime/native-material-packs/project-01/excel/SYN-01-001-E1D2-operations.xlsx",
+        "sourcePath": "C:\\Users\\22673\\Desktop\\JW\\Compare\\Back\\runtime\\native-material-packs\\project-01\\excel\\SYN-01-001-E1D2-operations.xlsx",
+        "contentHash": "d91daf2577932e60c729f59bfc3e429098953c8746cbd72d379754c56e3855d3",
+        "contentHashValid": true,
+        "inputHash": "985525730e0e432ab6ed502cce9b6dd8242ee6039f0c7efacac91d56a692fde5",
+        "inputHashValid": true,
+        "manifestMaterial": {
+          "id": "mat-gen-metal_processing-e1d2b78d0b-production-operations",
+          "versionId": "mat-gen-metal_processing-e1d2b78d0b-production-operations-v1",
+          "fileName": "SYN-01-001-E1D2-operations.xlsx",
+          "label": "用电/产量/人员记录（完整脱敏模拟）",
+          "availability": "available",
+          "isSimulated": true,
+          "sourceLabel": "完整脱敏的确定性业务规则生成数据；仅用于单项目事实核验与交互验证，不代表真实客户、厂商核验参数、历史统计样本或统计模型；完整脱敏 synthetic fixture，不是真实原件",
+          "kind": "excel",
+          "mimeType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          "sheets": [
+            {
+              "name": "生产记录",
+              "columns": [
+                "日期",
+                "项目编号",
+                "设备型号",
+                "用电量(kWh)",
+                "产量(件)",
+                "在岗人数",
+                "利用率(%)"
+              ],
+              "rows": [
+                [
+                  "2025-12-15",
+                  "SYN-01-001-E1D2",
+                  "HL-1200",
+                  1332,
+                  665,
+                  68,
+                  88.8
+                ],
+                [
+                  "2025-12-16",
+                  "SYN-01-001-E1D2",
+                  "HL-1200",
+                  1373,
+                  638,
+                  65,
+                  88.8
+                ],
+                [
+                  "2025-12-17",
+                  "SYN-01-001-E1D2",
+                  "HL-1200",
+                  1472,
+                  674,
+                  67,
+                  86.5
+                ],
+                [
+                  "2025-12-18",
+                  "SYN-01-001-E1D2",
+                  "HL-1200",
+                  1351,
+                  689,
+                  67,
+                  87.8
+                ],
+                [
+                  "2025-12-19",
+                  "SYN-01-001-E1D2",
+                  "HL-1200",
+                  1446,
+                  688,
+                  67,
+                  88.1
+                ],
+                [
+                  "2025-12-20",
+                  "SYN-01-001-E1D2",
+                  "HL-1200",
+                  902,
+                  415,
+                  68,
+                  58.0
+                ],
+                [
+                  "2025-12-21",
+                  "SYN-01-001-E1D2",
+                  "HL-1200",
+                  554,
+                  283,
+                  68,
+                  35.7
+                ],
+                [
+                  "2025-12-22",
+                  "SYN-01-001-E1D2",
+                  "HL-1200",
+                  1349,
+                  631,
+                  68,
+                  85.5
+                ],
+                [
+                  "2025-12-23",
+                  "SYN-01-001-E1D2",
+                  "HL-1200",
+                  1430,
+                  661,
+                  68,
+                  88.4
+                ],
+                [
+                  "2025-12-24",
+                  "SYN-01-001-E1D2",
+                  "HL-1200",
+                  1403,
+                  638,
+                  69,
+                  86.3
+                ],
+                [
+                  "2025-12-25",
+                  "SYN-01-001-E1D2",
+                  "HL-1200",
+                  1355,
+                  661,
+                  65,
+                  88.2
+                ],
+                [
+                  "2025-12-26",
+                  "SYN-01-001-E1D2",
+                  "HL-1200",
+                  1440,
+                  617,
+                  67,
+                  86.0
+                ],
+                [
+                  "2025-12-27",
+                  "SYN-01-001-E1D2",
+                  "HL-1200",
+                  897,
+                  419,
+                  67,
+                  56.7
+                ],
+                [
+                  "2025-12-28",
+                  "SYN-01-001-E1D2",
+                  "HL-1200",
+                  566,
+                  287,
+                  68,
+                  37.9
+                ],
+                [
+                  "2025-12-29",
+                  "SYN-01-001-E1D2",
+                  "HL-1200",
+                  1475,
+                  653,
+                  68,
+                  87.7
+                ],
+                [
+                  "2025-12-30",
+                  "SYN-01-001-E1D2",
+                  "HL-1200",
+                  1376,
+                  678,
+                  68,
+                  88.5
+                ],
+                [
+                  "2025-12-31",
+                  "SYN-01-001-E1D2",
+                  "HL-1200",
+                  1439,
+                  680,
+                  66,
+                  85.8
+                ],
+                [
+                  "2026-01-01",
+                  "SYN-01-001-E1D2",
+                  "HL-1200",
+                  1411,
+                  670,
+                  66,
+                  85.9
+                ],
+                [
+                  "2026-01-02",
+                  "SYN-01-001-E1D2",
+                  "HL-1200",
+                  1339,
+                  682,
+                  67,
+                  88.1
+                ],
+                [
+                  "2026-01-03",
+                  "SYN-01-001-E1D2",
+                  "HL-1200",
+                  920,
+                  465,
+                  66,
+                  60.6
+                ],
+                [
+                  "2026-01-04",
+                  "SYN-01-001-E1D2",
+                  "HL-1200",
+                  559,
+                  274,
+                  66,
+                  36.8
+                ],
+                [
+                  "2026-01-05",
+                  "SYN-01-001-E1D2",
+                  "HL-1200",
+                  1387,
+                  648,
+                  66,
+                  88.1
+                ],
+                [
+                  "2026-01-06",
+                  "SYN-01-001-E1D2",
+                  "HL-1200",
+                  1478,
+                  630,
+                  68,
+                  86.4
+                ],
+                [
+                  "2026-01-07",
+                  "SYN-01-001-E1D2",
+                  "HL-1200",
+                  1461,
+                  657,
+                  66,
+                  88.5
+                ],
+                [
+                  "2026-01-08",
+                  "SYN-01-001-E1D2",
+                  "HL-1200",
+                  1357,
+                  656,
+                  67,
+                  84.9
+                ],
+                [
+                  "2026-01-09",
+                  "SYN-01-001-E1D2",
+                  "HL-1200",
+                  1416,
+                  650,
+                  67,
+                  87.3
+                ],
+                [
+                  "2026-01-10",
+                  "SYN-01-001-E1D2",
+                  "HL-1200",
+                  964,
+                  490,
+                  69,
+                  61.3
+                ],
+                [
+                  "2026-01-11",
+                  "SYN-01-001-E1D2",
+                  "HL-1200",
+                  567,
+                  252,
+                  65,
+                  35.0
+                ],
+                [
+                  "2026-01-12",
+                  "SYN-01-001-E1D2",
+                  "HL-1200",
+                  1335,
+                  652,
+                  67,
+                  84.8
+                ],
+                [
+                  "2026-01-13",
+                  "SYN-01-001-E1D2",
+                  "HL-1200",
+                  1378,
+                  667,
+                  67,
+                  88.7
+                ],
+                [
+                  "2026-01-14",
+                  "SYN-01-001-E1D2",
+                  "HL-1200",
+                  1325,
+                  657,
+                  68,
+                  85.1
+                ],
+                [
+                  "2026-01-15",
+                  "SYN-01-001-E1D2",
+                  "HL-1200",
+                  1465,
+                  713,
+                  69,
+                  89.0
+                ],
+                [
+                  "2026-01-16",
+                  "SYN-01-001-E1D2",
+                  "HL-1200",
+                  1480,
+                  650,
+                  65,
+                  85.7
+                ],
+                [
+                  "2026-01-17",
+                  "SYN-01-001-E1D2",
+                  "HL-1200",
+                  969,
+                  441,
+                  67,
+                  57.6
+                ],
+                [
+                  "2026-01-18",
+                  "SYN-01-001-E1D2",
+                  "HL-1200",
+                  575,
+                  248,
+                  66,
+                  33.9
+                ],
+                [
+                  "2026-01-19",
+                  "SYN-01-001-E1D2",
+                  "HL-1200",
+                  1340,
+                  701,
+                  69,
+                  87.6
+                ],
+                [
+                  "2026-01-20",
+                  "SYN-01-001-E1D2",
+                  "HL-1200",
+                  1429,
+                  703,
+                  66,
+                  87.8
+                ],
+                [
+                  "2026-01-21",
+                  "SYN-01-001-E1D2",
+                  "HL-1200",
+                  1420,
+                  636,
+                  66,
+                  87.7
+                ],
+                [
+                  "2026-01-22",
+                  "SYN-01-001-E1D2",
+                  "HL-1200",
+                  1460,
+                  662,
+                  67,
+                  89.0
+                ],
+                [
+                  "2026-01-23",
+                  "SYN-01-001-E1D2",
+                  "HL-1200",
+                  1333,
+                  692,
+                  65,
+                  87.1
+                ],
+                [
+                  "2026-01-24",
+                  "SYN-01-001-E1D2",
+                  "HL-1200",
+                  903,
+                  438,
+                  68,
+                  57.4
+                ],
+                [
+                  "2026-01-25",
+                  "SYN-01-001-E1D2",
+                  "HL-1200",
+                  579,
+                  250,
+                  65,
+                  34.3
+                ],
+                [
+                  "2026-01-26",
+                  "SYN-01-001-E1D2",
+                  "HL-1200",
+                  1404,
+                  639,
+                  69,
+                  88.8
+                ],
+                [
+                  "2026-01-27",
+                  "SYN-01-001-E1D2",
+                  "HL-1200",
+                  1333,
+                  650,
+                  66,
+                  87.1
+                ],
+                [
+                  "2026-01-28",
+                  "SYN-01-001-E1D2",
+                  "HL-1200",
+                  1413,
+                  629,
+                  69,
+                  88.1
+                ],
+                [
+                  "2026-01-29",
+                  "SYN-01-001-E1D2",
+                  "HL-1200",
+                  1401,
+                  626,
+                  66,
+                  87.2
+                ],
+                [
+                  "2026-01-30",
+                  "SYN-01-001-E1D2",
+                  "HL-1200",
+                  1433,
+                  703,
+                  68,
+                  88.6
+                ],
+                [
+                  "2026-01-31",
+                  "SYN-01-001-E1D2",
+                  "HL-1200",
+                  994,
+                  477,
+                  68,
+                  60.7
+                ],
+                [
+                  "2026-02-01",
+                  "SYN-01-001-E1D2",
+                  "HL-1200",
+                  601,
+                  270,
+                  66,
+                  37.0
+                ],
+                [
+                  "2026-02-02",
+                  "SYN-01-001-E1D2",
+                  "HL-1200",
+                  1347,
+                  701,
+                  68,
+                  87.6
+                ],
+                [
+                  "2026-02-03",
+                  "SYN-01-001-E1D2",
+                  "HL-1200",
+                  1439,
+                  625,
+                  69,
+                  84.4
+                ],
+                [
+                  "2026-02-04",
+                  "SYN-01-001-E1D2",
+                  "HL-1200",
+                  1360,
+                  676,
+                  66,
+                  88.3
+                ],
+                [
+                  "2026-02-05",
+                  "SYN-01-001-E1D2",
+                  "HL-1200",
+                  1348,
+                  667,
+                  65,
+                  85.4
+                ],
+                [
+                  "2026-02-06",
+                  "SYN-01-001-E1D2",
+                  "HL-1200",
+                  1318,
+                  635,
+                  67,
+                  86.1
+                ],
+                [
+                  "2026-02-07",
+                  "SYN-01-001-E1D2",
+                  "HL-1200",
+                  1008,
+                  490,
+                  68,
+                  61.3
+                ],
+                [
+                  "2026-02-08",
+                  "SYN-01-001-E1D2",
+                  "HL-1200",
+                  589,
+                  299,
+                  66,
+                  38.6
+                ],
+                [
+                  "2026-02-09",
+                  "SYN-01-001-E1D2",
+                  "HL-1200",
+                  1394,
+                  660,
+                  68,
+                  87.7
+                ],
+                [
+                  "2026-02-10",
+                  "SYN-01-001-E1D2",
+                  "HL-1200",
+                  1420,
+                  625,
+                  67,
+                  85.5
+                ],
+                [
+                  "2026-02-11",
+                  "SYN-01-001-E1D2",
+                  "HL-1200",
+                  1470,
+                  648,
+                  67,
+                  86.5
+                ],
+                [
+                  "2026-02-12",
+                  "SYN-01-001-E1D2",
+                  "HL-1200",
+                  1333,
+                  676,
+                  67,
+                  89.0
+                ],
+                [
+                  "2026-02-13",
+                  "SYN-01-001-E1D2",
+                  "HL-1200",
+                  1462,
+                  665,
+                  69,
+                  87.0
+                ],
+                [
+                  "2026-02-14",
+                  "SYN-01-001-E1D2",
+                  "HL-1200",
+                  1003,
+                  455,
+                  66,
+                  59.0
+                ],
+                [
+                  "2026-02-15",
+                  "SYN-01-001-E1D2",
+                  "HL-1200",
+                  571,
+                  288,
+                  67,
+                  37.1
+                ],
+                [
+                  "2026-02-16",
+                  "SYN-01-001-E1D2",
+                  "HL-1200",
+                  1379,
+                  691,
+                  67,
+                  88.0
+                ],
+                [
+                  "2026-02-17",
+                  "SYN-01-001-E1D2",
+                  "HL-1200",
+                  1410,
+                  668,
+                  67,
+                  87.7
+                ],
+                [
+                  "2026-02-18",
+                  "SYN-01-001-E1D2",
+                  "HL-1200",
+                  1318,
+                  637,
+                  68,
+                  88.6
+                ],
+                [
+                  "2026-02-19",
+                  "SYN-01-001-E1D2",
+                  "HL-1200",
+                  1347,
+                  642,
+                  67,
+                  87.0
+                ],
+                [
+                  "2026-02-20",
+                  "SYN-01-001-E1D2",
+                  "HL-1200",
+                  1408,
+                  699,
+                  67,
+                  88.6
+                ],
+                [
+                  "2026-02-21",
+                  "SYN-01-001-E1D2",
+                  "HL-1200",
+                  946,
+                  423,
+                  66,
+                  57.6
+                ],
+                [
+                  "2026-02-22",
+                  "SYN-01-001-E1D2",
+                  "HL-1200",
+                  568,
+                  268,
+                  67,
+                  35.1
+                ],
+                [
+                  "2026-02-23",
+                  "SYN-01-001-E1D2",
+                  "HL-1200",
+                  1318,
+                  631,
+                  69,
+                  85.0
+                ],
+                [
+                  "2026-02-24",
+                  "SYN-01-001-E1D2",
+                  "HL-1200",
+                  1460,
+                  652,
+                  66,
+                  87.7
+                ],
+                [
+                  "2026-02-25",
+                  "SYN-01-001-E1D2",
+                  "HL-1200",
+                  1480,
+                  653,
+                  65,
+                  84.8
+                ],
+                [
+                  "2026-02-26",
+                  "SYN-01-001-E1D2",
+                  "HL-1200",
+                  1410,
+                  623,
+                  67,
+                  85.4
+                ],
+                [
+                  "2026-02-27",
+                  "SYN-01-001-E1D2",
+                  "HL-1200",
+                  1445,
+                  647,
+                  67,
+                  88.5
+                ]
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "artifactRoot": "C:\\Users\\22673\\Desktop\\JW\\Compare\\Back\\evals\\model_gateway\\blind_run"
+  },
+  "telemetryEvidence": {
+    "totalElapsedMs": 782232,
+    "failureCount": 8,
+    "retryCount": 8,
+    "perCaseAttributionAvailable": false,
+    "retryCodesAvailable": false,
+    "adapterPolicy": "Global retries are distributed deterministically only to preserve the reported count; each is marked as an unattributed, non-provider failure and therefore cannot satisfy the frozen retry Gate.",
+    "conservativeRetryAllocation": {
+      "blind-req-excel-01": 3,
+      "blind-req-image-01": 3,
+      "blind-req-pdf-01": 2
+    },
+    "failures": [
+      {
+        "operation": "read optional formal scene_spec.py",
+        "reason": "file does not exist; SceneSpec is consolidated in material_intelligence.py",
+        "recovered": true
+      },
+      {
+        "operation": "read optional formal source_anchor.py",
+        "reason": "file does not exist; SourceAnchor is consolidated in material_intelligence.py",
+        "recovered": true
+      },
+      {
+        "operation": "resolve pdftotext",
+        "reason": "bundled runtime did not expose pdftotext",
+        "recovered": true
+      },
+      {
+        "operation": "render PDF through Poppler wrapper",
+        "reason": "Windows wrapper returned path-not-found",
+        "recovered": true
+      },
+      {
+        "operation": "inline input-hash calculation",
+        "reason": "PowerShell/Python quoting produced a syntax error",
+        "recovered": true
+      },
+      {
+        "operation": "schema parse with Compare/Back/.venv",
+        "reason": "local virtual environment executable does not exist",
+        "recovered": true
+      },
+      {
+        "operation": "recursive scratch cleanup",
+        "reason": "local command policy rejected recursive Remove-Item before execution",
+        "recovered": true
+      },
+      {
+        "operation": "explicit Remove-Item scratch cleanup",
+        "reason": "local command policy rejected Remove-Item before execution",
+        "recovered": true
+      }
+    ],
+    "locatorOpenability": {
+      "blind-req-image-01": {
+        "openableSourceAnchorIds": [
+          "anchor-image-line",
+          "anchor-image-machine",
+          "anchor-image-overlay",
+          "anchor-image-workpiece"
+        ],
+        "rejectedSourceAnchorIds": {}
+      },
+      "blind-req-pdf-01": {
+        "openableSourceAnchorIds": [
+          "anchor-pdf-boundary",
+          "anchor-pdf-contract",
+          "anchor-pdf-lease",
+          "anchor-pdf-model",
+          "anchor-pdf-quantity",
+          "anchor-pdf-supplier",
+          "anchor-pdf-total"
+        ],
+        "rejectedSourceAnchorIds": {}
+      },
+      "blind-req-excel-01": {
+        "openableSourceAnchorIds": [
+          "anchor-excel-boundary",
+          "anchor-excel-count",
+          "anchor-excel-data",
+          "anchor-excel-dates",
+          "anchor-excel-end",
+          "anchor-excel-model",
+          "anchor-excel-start"
+        ],
+        "rejectedSourceAnchorIds": {}
+      }
+    },
+    "factVersionWrites": 0,
+    "factVersionWritesEvidence": "Isolated blind-run declaration plus absence of authoritative output fields; no production write path was invoked."
+  },
+  "perCarrier": {
+    "excel": {
+      "caseId": "blind-req-excel-01",
+      "fieldAccuracyRate": 1.0,
+      "numericCorrectnessRate": 1.0,
+      "unitCorrectnessRate": 1.0,
+      "locatorExactnessRate": 1.0,
+      "locatorOpenabilityRate": 1.0,
+      "unresolvedHonest": true,
+      "sceneSpecSafeAndLinked": true,
+      "elapsedMs": 102000.0,
+      "retryCount": 3,
+      "retryPolicyCompliant": false
+    },
+    "image": {
+      "caseId": "blind-req-image-01",
+      "fieldAccuracyRate": 0.0,
+      "numericCorrectnessRate": null,
+      "unitCorrectnessRate": 1.0,
+      "locatorExactnessRate": 0.0,
+      "locatorOpenabilityRate": 1.0,
+      "unresolvedHonest": false,
+      "sceneSpecSafeAndLinked": true,
+      "elapsedMs": 96000.0,
+      "retryCount": 3,
+      "retryPolicyCompliant": false
+    },
+    "pdf": {
+      "caseId": "blind-req-pdf-01",
+      "fieldAccuracyRate": 1.0,
+      "numericCorrectnessRate": 1.0,
+      "unitCorrectnessRate": 1.0,
+      "locatorExactnessRate": 1.0,
+      "locatorOpenabilityRate": 1.0,
+      "unresolvedHonest": true,
+      "sceneSpecSafeAndLinked": true,
+      "elapsedMs": 105000.0,
+      "retryCount": 2,
+      "retryPolicyCompliant": false
+    }
+  }
+}

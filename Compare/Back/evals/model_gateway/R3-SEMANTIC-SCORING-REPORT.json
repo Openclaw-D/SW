@@ -1,0 +1,482 @@
+{
+  "rubricVersion": "blind-eval-rubric-v2",
+  "gateState": "UNHELD",
+  "finalDecision": "PASS",
+  "finalScoringExecuted": true,
+  "runId": "P5-BlindEval-R3",
+  "metrics": {
+    "schemaValidRate": 1.0,
+    "materialBindingHashRate": 1.0,
+    "fieldAccuracyRate": 0.928571,
+    "numericCorrectnessRate": 1.0,
+    "unitCorrectnessRate": 1.0,
+    "locatorBindingOpenBoundsRate": 1.0,
+    "carrierLocatorRuleRate": 1.0,
+    "criticalUnresolvedRecallRate": 1.0,
+    "supportedExtraUnresolvedRate": 1.0,
+    "sceneSpecSafetyLinkageRate": 1.0,
+    "telemetryCompletenessRate": 1.0,
+    "retryPolicyComplianceRate": 1.0,
+    "absoluteStopComplianceRate": 1.0,
+    "truthMetadataRate": 1.0,
+    "unauthorizedFieldCount": 0,
+    "factVersionWrites": 0,
+    "minimumCarrierFieldAccuracyRate": 0.857143,
+    "carrierFieldAccuracy": {
+      "excel": 0.857143,
+      "image": 1.0,
+      "pdf": 1.0
+    },
+    "totalElapsedMs": 282735.0,
+    "carrierLatency": {
+      "excel": {
+        "count": 1,
+        "p50Ms": 47555.0,
+        "p95Ms": 47555.0,
+        "maxMs": 47555.0,
+        "targetMs": 90000.0,
+        "ceilingMs": 180000.0,
+        "score": 1.0
+      },
+      "image": {
+        "count": 1,
+        "p50Ms": 47555.0,
+        "p95Ms": 47555.0,
+        "maxMs": 47555.0,
+        "targetMs": 60000.0,
+        "ceilingMs": 120000.0,
+        "score": 1.0
+      },
+      "pdf": {
+        "count": 1,
+        "p50Ms": 62912.0,
+        "p95Ms": 62912.0,
+        "maxMs": 62912.0,
+        "targetMs": 90000.0,
+        "ceilingMs": 180000.0,
+        "score": 1.0
+      }
+    },
+    "latencyScore": 0.892984,
+    "retryCount": 0,
+    "retryEfficiency": 1.0,
+    "weightedScore": 0.928596
+  },
+  "thresholdEvaluation": {
+    "hardChecks": {
+      "schemaValidRate": true,
+      "materialBindingHashRate": true,
+      "numericCorrectnessRate": true,
+      "unitCorrectnessRate": true,
+      "locatorBindingOpenBoundsRate": true,
+      "carrierLocatorRuleRate": true,
+      "criticalUnresolvedRecallRate": true,
+      "supportedExtraUnresolvedRate": true,
+      "sceneSpecSafetyLinkageRate": true,
+      "telemetryCompletenessRate": true,
+      "retryPolicyComplianceRate": true,
+      "absoluteStopComplianceRate": true,
+      "truthMetadataRate": true,
+      "unauthorizedFieldCount": true,
+      "factVersionWrites": true
+    },
+    "partialChecks": {
+      "fieldAccuracyRate": true,
+      "minimumCarrierFieldAccuracyRate": true,
+      "latencyScore": true,
+      "weightedScore": true
+    },
+    "eligibleAfterExplicitUnhold": true
+  },
+  "unexpectedCaseIds": [],
+  "cases": [
+    {
+      "caseId": "excel-operations",
+      "carrier": "excel",
+      "schemaValid": true,
+      "materialBindingHashValid": true,
+      "correctFields": 6,
+      "fieldChecks": 7,
+      "correctNumericValues": 4,
+      "numericChecks": 4,
+      "correctUnits": 6,
+      "unitChecks": 6,
+      "locatorBindingOpenBoundsValid": true,
+      "passedLocatorTargets": 6,
+      "locatorTargetChecks": 6,
+      "locatorTargets": [
+        {
+          "semanticRole": "field:productionRecord.date",
+          "kind": "excel",
+          "sourceAnchorId": "anchor-excel-a4",
+          "targetCoverage": null,
+          "iou": null,
+          "controlledRegionExactReuse": false,
+          "candidateLinked": true,
+          "passed": true
+        },
+        {
+          "semanticRole": "field:productionRecord.equipmentModel",
+          "kind": "excel",
+          "sourceAnchorId": "anchor-excel-c4",
+          "targetCoverage": null,
+          "iou": null,
+          "controlledRegionExactReuse": false,
+          "candidateLinked": true,
+          "passed": true
+        },
+        {
+          "semanticRole": "field:productionRecord.electricityUsage",
+          "kind": "excel",
+          "sourceAnchorId": "anchor-excel-d4",
+          "targetCoverage": null,
+          "iou": null,
+          "controlledRegionExactReuse": false,
+          "candidateLinked": true,
+          "passed": true
+        },
+        {
+          "semanticRole": "field:productionRecord.output",
+          "kind": "excel",
+          "sourceAnchorId": "anchor-excel-e4",
+          "targetCoverage": null,
+          "iou": null,
+          "controlledRegionExactReuse": false,
+          "candidateLinked": true,
+          "passed": true
+        },
+        {
+          "semanticRole": "field:productionRecord.headcount",
+          "kind": "excel",
+          "sourceAnchorId": "anchor-excel-f4",
+          "targetCoverage": null,
+          "iou": null,
+          "controlledRegionExactReuse": false,
+          "candidateLinked": true,
+          "passed": true
+        },
+        {
+          "semanticRole": "field:productionRecord.utilization",
+          "kind": "excel",
+          "sourceAnchorId": "anchor-excel-g4",
+          "targetCoverage": null,
+          "iou": null,
+          "controlledRegionExactReuse": false,
+          "candidateLinked": true,
+          "passed": true
+        }
+      ],
+      "recalledCriticalUnresolved": 0,
+      "criticalUnresolvedChecks": 0,
+      "criticalUnresolved": [],
+      "supportedExtraUnresolved": 0,
+      "extraUnresolvedChecks": 0,
+      "extraUnresolved": [],
+      "sceneSpecSafeAndLinked": true,
+      "telemetryComplete": true,
+      "retryPolicyCompliant": true,
+      "truthMetadataValid": true,
+      "unauthorizedFieldCount": 0,
+      "factVersionWrites": 0,
+      "elapsedMs": 47555.0,
+      "retryCount": 0,
+      "unexpectedFieldKeys": []
+    },
+    {
+      "caseId": "image-equipment-overview",
+      "carrier": "image",
+      "schemaValid": true,
+      "materialBindingHashValid": true,
+      "correctFields": 1,
+      "fieldChecks": 1,
+      "correctNumericValues": 0,
+      "numericChecks": 0,
+      "correctUnits": 1,
+      "unitChecks": 1,
+      "locatorBindingOpenBoundsValid": true,
+      "passedLocatorTargets": 1,
+      "locatorTargetChecks": 1,
+      "locatorTargets": [
+        {
+          "semanticRole": "field:equipment.category",
+          "kind": "image",
+          "sourceAnchorId": "anchor-image-equipment-focal",
+          "targetCoverage": 1.0,
+          "iou": 1.0,
+          "controlledRegionExactReuse": true,
+          "candidateLinked": true,
+          "passed": true
+        }
+      ],
+      "recalledCriticalUnresolved": 0,
+      "criticalUnresolvedChecks": 0,
+      "criticalUnresolved": [],
+      "supportedExtraUnresolved": 1,
+      "extraUnresolvedChecks": 1,
+      "extraUnresolved": [
+        {
+          "itemId": "unresolved-image-manufacturer-model",
+          "kind": "unreadable_content",
+          "supported": true
+        }
+      ],
+      "sceneSpecSafeAndLinked": true,
+      "telemetryComplete": true,
+      "retryPolicyCompliant": true,
+      "truthMetadataValid": true,
+      "unauthorizedFieldCount": 0,
+      "factVersionWrites": 0,
+      "elapsedMs": 47555.0,
+      "retryCount": 0,
+      "unexpectedFieldKeys": []
+    },
+    {
+      "caseId": "pdf-purchase-contract",
+      "carrier": "pdf",
+      "schemaValid": true,
+      "materialBindingHashValid": true,
+      "correctFields": 6,
+      "fieldChecks": 6,
+      "correctNumericValues": 2,
+      "numericChecks": 2,
+      "correctUnits": 6,
+      "unitChecks": 6,
+      "locatorBindingOpenBoundsValid": true,
+      "passedLocatorTargets": 6,
+      "locatorTargetChecks": 6,
+      "locatorTargets": [
+        {
+          "semanticRole": "field:purchaseContract.number",
+          "kind": "pdf",
+          "sourceAnchorId": "anchor-pdf-contract",
+          "targetCoverage": null,
+          "iou": null,
+          "controlledRegionExactReuse": false,
+          "candidateLinked": true,
+          "passed": true
+        },
+        {
+          "semanticRole": "field:purchaseContract.linkedLeaseContract",
+          "kind": "pdf",
+          "sourceAnchorId": "anchor-pdf-lease",
+          "targetCoverage": null,
+          "iou": null,
+          "controlledRegionExactReuse": false,
+          "candidateLinked": true,
+          "passed": true
+        },
+        {
+          "semanticRole": "field:purchaseContract.supplier",
+          "kind": "pdf",
+          "sourceAnchorId": "anchor-pdf-supplier",
+          "targetCoverage": null,
+          "iou": null,
+          "controlledRegionExactReuse": false,
+          "candidateLinked": true,
+          "passed": true
+        },
+        {
+          "semanticRole": "field:purchaseContract.equipmentModel",
+          "kind": "pdf",
+          "sourceAnchorId": "anchor-pdf-equipment",
+          "targetCoverage": null,
+          "iou": null,
+          "controlledRegionExactReuse": false,
+          "candidateLinked": true,
+          "passed": true
+        },
+        {
+          "semanticRole": "field:purchaseContract.quantity",
+          "kind": "pdf",
+          "sourceAnchorId": "anchor-pdf-quantity",
+          "targetCoverage": null,
+          "iou": null,
+          "controlledRegionExactReuse": false,
+          "candidateLinked": true,
+          "passed": true
+        },
+        {
+          "semanticRole": "field:purchaseContract.totalAmount",
+          "kind": "pdf",
+          "sourceAnchorId": "anchor-pdf-amount",
+          "targetCoverage": null,
+          "iou": null,
+          "controlledRegionExactReuse": false,
+          "candidateLinked": true,
+          "passed": true
+        }
+      ],
+      "recalledCriticalUnresolved": 0,
+      "criticalUnresolvedChecks": 0,
+      "criticalUnresolved": [],
+      "supportedExtraUnresolved": 0,
+      "extraUnresolvedChecks": 0,
+      "extraUnresolved": [],
+      "sceneSpecSafeAndLinked": true,
+      "telemetryComplete": true,
+      "retryPolicyCompliant": true,
+      "truthMetadataValid": true,
+      "unauthorizedFieldCount": 0,
+      "factVersionWrites": 0,
+      "elapsedMs": 62912.0,
+      "retryCount": 0,
+      "unexpectedFieldKeys": []
+    }
+  ],
+  "answerSources": [
+    "extractedFieldCandidates",
+    "unresolvedItems",
+    "sourceAnchors",
+    "locatorBindings",
+    "sceneSpec"
+  ],
+  "ignoredAsAnswers": [
+    "scoreGrade",
+    "decisionGrade",
+    "confidence",
+    "hardGate"
+  ],
+  "rubricGateStateAtFreeze": "HOLD",
+  "semanticGatePassed": true,
+  "providerReplayGate": {
+    "passed": true,
+    "status": "PASS",
+    "kind": "production-real-mode-mock-direct-adapter-replay",
+    "caseCount": 3,
+    "passedCases": 3,
+    "failedCases": 0,
+    "externalNetworkCalls": 0,
+    "realExternalProviderCall": false,
+    "canonicalInputHashAlgorithm": "sha256(utf8(canonical-json(formal ModelGatewayRequest without inputHash)))",
+    "factVersionWrites": 0,
+    "reportPath": "C:\\Users\\22673\\Desktop\\JW\\Compare\\Back\\evals\\model_gateway\\provider_replay\\R3-PROVIDER-REPLAY-REPORT.json"
+  },
+  "rawSchemaEvidence": {
+    "image-equipment-overview": {
+      "valid": true,
+      "error": null
+    },
+    "pdf-purchase-contract": {
+      "valid": true,
+      "error": null
+    },
+    "excel-operations": {
+      "valid": true,
+      "error": null
+    }
+  },
+  "sourceAudit": {
+    "image-equipment-overview": {
+      "sourcePath": "C:\\Users\\22673\\Desktop\\JW\\Compare\\Back\\runtime\\native-material-packs\\project-01\\images\\SYN-01-001-E1D2-equipment-overview.png",
+      "contentHash": "ab76f7ea3853ee204101b8ef734115fe00c799d810bc4d9fe38c99b8663fc489",
+      "contentHashValid": true,
+      "anchors": {
+        "anchor-image-equipment-focal": {
+          "openable": true,
+          "sourceValueValid": true
+        },
+        "anchor-image-overview": {
+          "openable": true,
+          "sourceValueValid": true
+        }
+      }
+    },
+    "pdf-purchase-contract": {
+      "sourcePath": "C:\\Users\\22673\\Desktop\\JW\\Compare\\Back\\runtime\\native-material-packs\\project-01\\pdf\\SYN-01-001-E1D2-purchase-contract.pdf",
+      "contentHash": "03ae4657ef8277072385602a7a89c41931f6a68d0d07db897bc39825207ea1ad",
+      "contentHashValid": true,
+      "anchors": {
+        "anchor-pdf-contract": {
+          "openable": true,
+          "sourceValueValid": true
+        },
+        "anchor-pdf-lease": {
+          "openable": true,
+          "sourceValueValid": true
+        },
+        "anchor-pdf-supplier": {
+          "openable": true,
+          "sourceValueValid": true
+        },
+        "anchor-pdf-equipment": {
+          "openable": true,
+          "sourceValueValid": true
+        },
+        "anchor-pdf-quantity": {
+          "openable": true,
+          "sourceValueValid": true
+        },
+        "anchor-pdf-amount": {
+          "openable": true,
+          "sourceValueValid": true
+        }
+      }
+    },
+    "excel-operations": {
+      "sourcePath": "C:\\Users\\22673\\Desktop\\JW\\Compare\\Back\\runtime\\native-material-packs\\project-01\\excel\\SYN-01-001-E1D2-operations.xlsx",
+      "contentHash": "d91daf2577932e60c729f59bfc3e429098953c8746cbd72d379754c56e3855d3",
+      "contentHashValid": true,
+      "anchors": {
+        "anchor-excel-header": {
+          "openable": true,
+          "sourceValueValid": true
+        },
+        "anchor-excel-a4": {
+          "openable": true,
+          "sourceValueValid": true
+        },
+        "anchor-excel-c4": {
+          "openable": true,
+          "sourceValueValid": true
+        },
+        "anchor-excel-d4": {
+          "openable": true,
+          "sourceValueValid": true
+        },
+        "anchor-excel-e4": {
+          "openable": true,
+          "sourceValueValid": true
+        },
+        "anchor-excel-f4": {
+          "openable": true,
+          "sourceValueValid": true
+        },
+        "anchor-excel-g4": {
+          "openable": true,
+          "sourceValueValid": true
+        }
+      }
+    }
+  },
+  "inputHashTreatment": {
+    "rawInputHashPresent": false,
+    "semanticPenalty": false,
+    "reason": "R3 raw producer did not own gateway envelope/inputHash; production canonical binding is scored once by ProviderReplay Gate."
+  },
+  "processQuality": {
+    "inputSelectionErrorCount": 1,
+    "allExcludedFromOutput": true,
+    "providerRetryCountImpact": 0,
+    "classification": "evaluator_flow_finding_not_provider_retry",
+    "gatePassed": true,
+    "events": [
+      {
+        "errorCode": "local_input_selection_error",
+        "files": [
+          "pdf/SYN-01-001-E1D2-主体与登记核验.pdf",
+          "excel/SYN-01-001-E1D2-完整脱敏业务数据.xlsx"
+        ],
+        "retryable": false,
+        "usedInOutput": false,
+        "note": "错误原件已排除；计时未重置。"
+      }
+    ]
+  },
+  "classification": {
+    "isSimulated": true,
+    "advisoryOnly": true,
+    "notAProviderCall": true,
+    "realExternalProviderCall": false,
+    "authority": "candidate-only; human confirmation required"
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "taskName": "P5-BlindEval-R3",
+  "generatedBy": "codex_isolated_blind_eval_v3",
+  "isSimulated": true,
+  "advisoryOnly": true,
+  "notAProviderCall": true,
+  "FactVersionWrites": 0,
+  "runStartedAt": "2026-08-12T14:01:03.6005061Z",
+  "runFinishedAt": "2026-08-12T14:05:46.3353068Z",
+  "elapsedMs": 282735,
+  "targetElapsedMs": 180000,
+  "absoluteStopMs": 300000,
+  "retryPolicy": {"maxRetriesPerCase": 1, "allowedErrorCodes": ["rate_limited", "timeout", "provider_unavailable"]},
+  "inputSelectionErrors": [
+    {
+      "errorCode": "local_input_selection_error",
+      "files": ["pdf/SYN-01-001-E1D2-主体与登记核验.pdf", "excel/SYN-01-001-E1D2-完整脱敏业务数据.xlsx"],
+      "retryable": false,
+      "usedInOutput": false,
+      "note": "错误原件已排除；计时未重置。"
+    }
+  ],
+  "cases": [
+    {"caseId": "image-equipment-overview", "carrier": "image", "startedAt": "2026-08-12T14:01:03.6005061Z", "finishedAt": "2026-08-12T14:01:51.1557247Z", "elapsedMs": 47555, "attemptCount": 1, "retryCount": 0, "retryErrorCodes": [], "terminalStatus": "completed"},
+    {"caseId": "pdf-purchase-contract", "carrier": "pdf", "startedAt": "2026-08-12T14:01:03.6005061Z", "finishedAt": "2026-08-12T14:02:06.5125911Z", "elapsedMs": 62912, "attemptCount": 1, "retryCount": 0, "retryErrorCodes": [], "terminalStatus": "completed", "stopReason": "PDF raster preview unavailable locally; semantic extraction retained exact page/text-layer bbox locators without provider retry."},
+    {"caseId": "excel-operations", "carrier": "excel", "startedAt": "2026-08-12T14:01:03.6005061Z", "finishedAt": "2026-08-12T14:01:51.1557247Z", "elapsedMs": 47555, "attemptCount": 1, "retryCount": 0, "retryErrorCodes": [], "terminalStatus": "completed"}
+  ],
+  "inputHashHandling": "omitted_from_raw_model_results; not calculated or copied by this isolated semantic producer",
+  "gatewayEnvelopeWritten": false,
+  "providerRecordWritten": false,
+  "selfAssessment": null
+}

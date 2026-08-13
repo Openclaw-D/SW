@@ -1,0 +1,41 @@
+import type { ApprovalState, ApprovalTransition, ProjectSummary } from "../contracts/workbench";
+import { displayBusinessName } from "../lib/workbenchLogic";
+import { Button, Divider } from "./ui";
+import { copy, formatServiceMessage, type PublicLocale } from "../lib/publicLocale";
+
+function GlobalApprovalActions({ approval, pending, message, onTransition, locale }: { approval: ApprovalState | null; pending: boolean; message: string | null; onTransition: (transition: ApprovalTransition) => void; locale: PublicLocale }) {
+  const status = approval?.status ?? "draft";
+  const unresolvedGateCount = approval?.blockingRuleIds.length ?? 0;
+  const blocked = !approval || approval.hardGateStatus !== "pass" || approval.riskVeto;
+  const completionBlocked = pending || status !== "submitted";
+  const statusText = blocked
+    ? copy(locale, `${unresolvedGateCount} policy gates remain uncleared. Server rules: ${unresolvedGateCount ? approval?.blockingRuleIds.join(", ") : "not loaded"}. The server rechecks them on completion.`, `当前 ${unresolvedGateCount} 个制度 Gate 未解除；服务端规则：${unresolvedGateCount ? approval?.blockingRuleIds.join("、") : "待读取"}；完成将由服务端复核。`)
+    : copy(locale, "The server gate passed. The final action still uses the server approval workflow.", "服务端 Gate 已通过；最终动作仍由服务端审批。");
+  return <div aria-label={copy(locale, "Project approval actions", "项目审批操作")} className="global-approval-actions" data-semantic-localized="true"><span title={statusText}>{blocked ? copy(locale, `Gate not cleared · ${unresolvedGateCount}`, `Gate ${unresolvedGateCount} 未解除`) : copy(locale, "Gate passed", "Gate 已通过")}</span><div><Button aria-pressed={status === "draft"} disabled={pending || !approval || !["draft", "returned"].includes(status)} onClick={() => onTransition("save_draft")}>{copy(locale, "Save draft", "暂存")}</Button><Button aria-pressed={status === "returned"} disabled={pending || status !== "submitted"} onClick={() => onTransition("return")}>{copy(locale, "Return", "退回")}</Button><Button aria-pressed={status === "submitted"} disabled={pending || !["draft", "returned"].includes(status)} onClick={() => onTransition("submit")} variant="primary">{copy(locale, "Submit", "提交")}</Button><Button aria-label={blocked ? copy(locale, "Complete approval; the server will validate the hard gate", "完成审批，服务端将校验 hard gate") : copy(locale, "Complete approval", "完成审批")} aria-pressed={status === "completed"} disabled={completionBlocked} onClick={() => onTransition("complete")}>{pending ? copy(locale, "Submitting…", "提交中…") : copy(locale, "Complete", "完成")}</Button></div>{message ? <small className="composer-error" role="alert">{formatServiceMessage(message, locale)}</small> : null}</div>;
+}
+
+export function TopBar({ project, projectNo, hardConstraintCount, policyHitCount, approval, approvalPending, approvalMessage, onApprovalTransition, onOpenConclusionReport, onResetLayout, onBack, locale, onLocaleChange }: { project: ProjectSummary; projectNo: string; hardConstraintCount: number; policyHitCount: number; approval: ApprovalState | null; approvalPending: boolean; approvalMessage: string | null; onApprovalTransition: (transition: ApprovalTransition) => void; onOpenConclusionReport: () => void; onResetLayout: () => void; onBack: () => void; locale: PublicLocale; onLocaleChange?: (locale: PublicLocale) => void }) {
+  return (
+    <header className="top-bar" data-semantic-localized="true">
+      <Button aria-label={copy(locale, "Back to project directory", "返回项目选择")} onClick={onBack}>{copy(locale, "Back", "返回")}</Button>
+      <div className="project-title">
+        <span>Signal Council · 见微</span>
+        <b className="project-number" data-project-id={project.id} title={copy(locale, `Internal project ID: ${project.id}`, `内部项目 ID：${project.id}`)}>{projectNo}</b>
+        <strong>{locale === "en" ? "Finance lease evidence workbench — de-identified project" : displayBusinessName(project.name, "项目名称待补")}</strong>
+      </div>
+      <div className="project-summary" aria-label={copy(locale, "Project summary", "项目摘要")}>
+        <span><b>{project.materialCount}</b> {copy(locale, "materials", "份材料")}</span>
+        <Divider vertical />
+        <span>{copy(locale, "Hard rules", "制度约束")} <b>{hardConstraintCount}</b></span>
+        <Divider vertical />
+        <span>{copy(locale, "Findings", "命中")} <b>{policyHitCount}</b></span>
+        <Divider vertical />
+        <span className="summary-issues">{copy(locale, "Review issues", "协同问题")} <b>{project.collaborationIssueCount}</b></span>
+        <Button aria-label={copy(locale, "Open project conclusion report", "打开项目结论报告")} onClick={onOpenConclusionReport}>{copy(locale, "Conclusion", "结论")}</Button>
+        <Button aria-label={copy(locale, "Restore layout", "恢复默认布局")} onClick={onResetLayout}>{copy(locale, "Reset", "恢复")}</Button>
+        {onLocaleChange ? <span className="topbar-language" data-language-control><button aria-pressed={locale === "zh-CN"} onClick={() => onLocaleChange("zh-CN")} type="button">中</button><button aria-label="English" aria-pressed={locale === "en"} onClick={() => onLocaleChange("en")} type="button">E</button></span> : null}
+      </div>
+      <GlobalApprovalActions approval={approval} locale={locale} message={approvalMessage} onTransition={onApprovalTransition} pending={approvalPending} />
+    </header>
+  );
+}
