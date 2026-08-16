@@ -1,6 +1,6 @@
 # Indicator-source registry
 
-This registry records primary-source directions for the deterministic V1 business-rule reference dataset. It is not evidence that a source was fetched at runtime, that a customer complies with it, that a rule is legally determinative, or that Signal Council has statistically validated a risk model.
+This registry records primary-source directions for the deterministic V1 business-rule reference dataset. It is not evidence that a source was fetched at runtime, that a customer complies with it, that a rule is legally determinative, or that signal-council has statistically validated a risk model.
 
 The canonical source titles and authority names remain in Chinese where they are official Mainland China primary-source names. They are cited as source identifiers, not as untranslated public operating instructions. Before any real-data or decision use, recheck the current official text, effective date, scope, jurisdiction, customer authorisation, and source completeness.
 

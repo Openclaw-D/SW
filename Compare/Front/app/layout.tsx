@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Signal Council · 见微 | Evidence workbench",
+  title: "signal-council | Evidence workbench",
   description: "De-identified finance-lease evidence workbench with advisory output and human gates.",
 };
 

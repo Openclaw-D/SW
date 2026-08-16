@@ -274,6 +274,9 @@ def test_openapi_freezes_paths_headers_and_expected_version() -> None:
     schema = create_app(service=ContractService()).openapi()
     expected_paths = {
         "/health",
+        "/api/v1/auth/login",
+        "/api/v1/auth/me",
+        "/api/v1/auth/logout",
         "/api/v1/projects",
         "/api/v1/projects/{projectId}/workbench",
         "/api/v1/projects/{projectId}/materials",

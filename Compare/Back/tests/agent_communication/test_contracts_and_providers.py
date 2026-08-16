@@ -8,6 +8,7 @@ from pydantic import ValidationError
 
 from app.contracts.agent_communication import (
     AGENT_COMMUNICATION_SCHEMA_VERSION,
+    AgentChatMessageRequest,
     AgentFocusEvent,
     AgentMessage,
     AgentProviderContext,
@@ -119,7 +120,7 @@ def _response(
     ).encode()
 
 
-def test_single_focus_contract_removes_public_multi_channel_controls() -> None:
+def test_lightweight_group_chat_contract_keeps_agent_routing_explicit() -> None:
     assert AGENT_COMMUNICATION_SCHEMA_VERSION == "2.0"
     assert set(GeneratedAgentContent.model_fields) == {
         "reply_text",
@@ -131,10 +132,15 @@ def test_single_focus_contract_removes_public_multi_channel_controls() -> None:
     }
     assert set(AgentTurnRequest.model_fields) == {
         "instruction",
+        "target_agent_role",
+        "source_message_id",
         "reply_to_message_id",
         "evidence_targets",
         "expected_version",
         "locale",
+        "response_depth",
+        "response_focus",
+        "custom_guidance",
     }
     schema_text = json.dumps(AgentTurnRequest.model_json_schema(by_alias=True))
     for removed in (
@@ -147,6 +153,12 @@ def test_single_focus_contract_removes_public_multi_channel_controls() -> None:
         "audienceSnapshot",
     ):
         assert removed not in schema_text
+    message = AgentChatMessageRequest.model_validate(
+        {"content": "先补一条正常讨论，不触发 Agent。", "locale": "zh-CN"}
+    )
+    assert message.reply_to_message_id is None
+    with pytest.raises(ValidationError):
+        _request(targetAgentRole="risk")
 
 
 def test_thread_focus_event_and_advisory_message_are_strict() -> None:

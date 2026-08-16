@@ -21,7 +21,7 @@ test("server-renders the Compare P01 entry without starter metadata", async () =
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
 
   const html = await response.text();
-  assert.match(html, /<title>Signal Council · 见微 \| Evidence workbench<\/title>/i);
+  assert.match(html, /<title>signal-council \| Evidence workbench<\/title>/i);
   assert.match(html, /Preparing the public demo/);
   assert.doesNotMatch(html, /项目池/);
   assert.doesNotMatch(html, /codex-preview/i);

@@ -1,23 +1,37 @@
 import { useEffect, useRef, useState } from "react";
-import type { CSSProperties, PointerEvent as ReactPointerEvent } from "react";
+import type { CSSProperties, KeyboardEvent as ReactKeyboardEvent, PointerEvent as ReactPointerEvent } from "react";
+import type { AccountRole } from "../contracts/authentication";
+import type { AgentActivityState, AgentMessage, AgentResponsePreferences, ChatAgentRole, CollaborationContextReference } from "../contracts/agentCommunication";
 import { DIMENSION_IDS, MATERIAL_BUSINESS_FOLDERS } from "../contracts/workbench";
 import type { DimensionId, DocumentMaterial, EvidenceReference, ExcelMaterial, FactVersion, ImageMaterial, Material, MaterialBusinessFolder, MediaMaterial, PdfMaterial, ReviewEvidenceSelectionGroup, ReviewEvidenceTarget } from "../contracts/workbench";
-import type { ExtractedFieldCandidate, SourceAnchor, StoredMaterialIntelligence, StoredSceneSpec } from "../contracts/materialIntelligence";
+import { evidenceRefForSourceAnchor, type ExtractedFieldCandidate, type MaterialImportPreflight, type MaterialImportResult, type MaterialUploadReceipt, type SourceAnchor, type StoredMaterialIntelligence, type StoredSceneSpec } from "../contracts/materialIntelligence";
 import type { ModelGatewayRuntimeState } from "../contracts/modelGateway";
 import { useLockedWheel } from "../lib/useLockedWheel";
 import { materialDimensionIndex } from "../lib/materialIndex";
 import { businessFolderFor, isOriginalMaterial, materialPreviewUrl, materialRelativePath } from "../lib/materialBusinessFolders";
 import type { OriginalMaterial } from "../lib/materialBusinessFolders";
 import type { EvidenceSelectionResolution } from "../lib/workbenchLogic";
-import { excelRangeContains, excelRangeScrollTarget, materialHitCounts, materialTabPresentation } from "../lib/workbenchLogic";
+import { clamp, excelRangeContains, excelRangeScrollTarget, LAYOUT_LIMITS, materialHitCounts, materialTabPresentation } from "../lib/workbenchLogic";
 import { Icon } from "./icons";
 import { Button, EmptyState } from "./ui";
 import { MaterialSceneSpecPreview } from "./MaterialSceneSpecPreview";
+import { A2ACollaborationPanel } from "./A2ACollaborationPanel";
 import { copy, formatCanonicalLabel, formatCanonicalNarrative, formatCanonicalText, formatDataStatus, formatServiceMessage, formatUnit, IMAGE_TO_3D_BOUNDARY, usePublicLocale, type PublicLocale } from "../lib/publicLocale";
 
 type LocatedSelectionItem = Extract<EvidenceSelectionResolution, { status: "located" }>["items"][number];
 type MaterialKindFilter = "all" | OriginalMaterial["kind"];
 type MaterialDimensionFilter = "all" | "unassigned" | DimensionId;
+
+export interface MaterialPaneGroupChat {
+  accountRole: AccountRole;
+  agentMessages: AgentMessage[];
+  agentActivity: AgentActivityState | null;
+  agentError: string | null;
+  selectedTarget: ReviewEvidenceTarget | null;
+  onSubmitMessage: (message: string, targetAgentRole: ChatAgentRole | null, reference: CollaborationContextReference | null, preferences: AgentResponsePreferences) => Promise<void>;
+  onImportMaterialPackage: (file: File) => Promise<{ receipt: MaterialUploadReceipt; preflight: MaterialImportPreflight }>;
+  onConfirmMaterialImport: (preflight: MaterialImportPreflight) => Promise<MaterialImportResult>;
+}
 
 const DIMENSION_LABELS: Record<DimensionId, string> = {
   compliance: "合规",
@@ -130,7 +144,7 @@ function ModelGatewayStatus({ runtime, onCancel, onRetry }: { runtime: ModelGate
   </section>;
 }
 
-function MaterialIntelligencePanel({ intelligence, scene, status, message, runtime, confirmingCandidateId, confirmedCandidateIds, activeAnchorId, onRun, onCancel, onConfirm, onAnchorActivate }: {
+function MaterialIntelligencePanel({ intelligence, scene, status, message, runtime, confirmingCandidateId, confirmedCandidateIds, activeAnchorId, canEdit, onRun, onCancel, onConfirm, onAnchorActivate }: {
   intelligence: StoredMaterialIntelligence | null;
   scene: StoredSceneSpec | null;
   status: "idle" | "loading" | "ready" | "empty" | "error";
@@ -139,6 +153,7 @@ function MaterialIntelligencePanel({ intelligence, scene, status, message, runti
   confirmingCandidateId: string | null;
   confirmedCandidateIds: Set<string>;
   activeAnchorId: string | null;
+  canEdit: boolean;
   onRun: () => void;
   onCancel: () => void;
   onConfirm: (candidate: ExtractedFieldCandidate, reason: string) => void;
@@ -147,12 +162,12 @@ function MaterialIntelligencePanel({ intelligence, scene, status, message, runti
   const locale = usePublicLocale();
   const [reason, setReason] = useState("");
   if (status === "loading") return <section className="material-intelligence-panel" aria-busy="true" data-semantic-localized><header><strong>{copy(locale, "Material intelligence assistance", "材料智能辅助")}</strong><span>{copy(locale, "Reading the server result…", "正在读取服务端结果…")}</span></header><ModelGatewayStatus onCancel={onCancel} onRetry={onRun} runtime={runtime} /></section>;
-  if (!intelligence) return <section className={`material-intelligence-panel status-${status}`} data-semantic-localized><header><div><strong>{copy(locale, "Material intelligence assistance", "材料智能辅助")}</strong><span>{copy(locale, "Candidates never write authoritative facts automatically", "候选不会自动写入权威事实")}</span></div><Button onClick={onRun}>{copy(locale, "Run recognition manually", "人工触发识别")}</Button></header><p>{message ? formatServiceMessage(message, locale) : copy(locale, "This material has no intelligence result. The configured provider is called only after an explicit human action.", "当前材料尚无 intelligence 结果；只会在明确人工动作后调用已配置 provider。")}</p><ModelGatewayStatus onCancel={onCancel} onRetry={onRun} runtime={runtime} /></section>;
+  if (!intelligence) return <section className={`material-intelligence-panel status-${status}`} data-semantic-localized><header><div><strong>{copy(locale, "Material intelligence assistance", "材料智能辅助")}</strong><span>{copy(locale, "Candidates never write authoritative facts automatically", "候选不会自动写入权威事实")}</span></div>{canEdit ? <Button onClick={onRun}>{copy(locale, "Run recognition manually", "人工触发识别")}</Button> : <span className="role-readonly-status">{copy(locale, "Business-only action · read-only", "仅业务可操作 · 当前只读")}</span>}</header><p>{message ? formatServiceMessage(message, locale) : copy(locale, "This material has no intelligence result. The configured provider is called only after an explicit human action.", "当前材料尚无 intelligence 结果；只会在明确人工动作后调用已配置 provider。")}</p>{canEdit ? <ModelGatewayStatus onCancel={onCancel} onRetry={onRun} runtime={runtime} /> : null}</section>;
   const { result } = intelligence;
   return <section className="material-intelligence-panel" aria-label={copy(locale, "Material intelligence candidates and provenance", "材料智能候选与来源")} data-semantic-localized>
     <header><div><strong>{copy(locale, "Material intelligence assistance", "材料智能辅助")}</strong><span>{result.modelInfo?.provider ?? copy(locale, "provider unavailable", "provider 不可用")} · {result.modelInfo?.model ?? copy(locale, "No model", "无模型")}</span></div><span className="simulation-pill">{result.isSimulated ? copy(locale, "Synthetic simulation", "合成模拟") : copy(locale, "Controlled material", "受控材料")}</span></header>
     {message ? <p aria-live="polite" className="intelligence-status-message">{formatServiceMessage(message, locale)}</p> : null}
-    <ModelGatewayStatus onCancel={onCancel} onRetry={onRun} runtime={runtime} />
+    {canEdit ? <ModelGatewayStatus onCancel={onCancel} onRetry={onRun} runtime={runtime} /> : <p className="role-readonly-status">{copy(locale, "Business-only action · read-only", "仅业务可操作 · 当前只读")}</p>}
     <div className="intelligence-provenance">
       <dl><div><dt>{copy(locale, "Material version", "材料版本")}</dt><dd>{result.materialVersionId}</dd></div><div><dt>SHA-256</dt><dd title={result.contentHash}>{result.contentHash}</dd></div><div><dt>{copy(locale, "Classification", "分类")}</dt><dd>{formatCanonicalLabel(result.dataClassification, locale)}</dd></div><div><dt>{copy(locale, "Confidence", "置信")}</dt><dd>{Math.round(result.confidence * 100)}%</dd></div></dl>
       <p>{copy(locale, `This is a traceable advisory candidate only; isSimulated: ${String(result.isSimulated)}. It is not statistically validated model output.`, `结果仅是可溯源辅助候选；isSimulated: ${String(result.isSimulated)}，不得解释为真实模型统计验证。`)}</p>
@@ -163,7 +178,7 @@ function MaterialIntelligencePanel({ intelligence, scene, status, message, runti
     </div>
     <section className="candidate-list"><h3>{copy(locale, "Candidates · human confirmation required", "候选 · 必须人工确认")}</h3>{result.extractedFieldCandidates.length ? result.extractedFieldCandidates.map((candidate) => {
       const confirmed = confirmedCandidateIds.has(candidate.id);
-      return <article className={confirmed ? "is-confirmed" : ""} key={candidate.id}><header><span><b>{formatCanonicalLabel(candidate.label, locale)}</b><small>{candidate.fieldKey}</small></span><em>{formatDataStatus(candidate.status, locale)}</em></header><p>{candidate.value === null ? copy(locale, "Empty value", "空值") : formatCanonicalNarrative(String(candidate.value), locale)}{candidate.unit ? ` ${formatUnit(candidate.unit, locale)}` : ""}</p><small>{copy(locale, "Anchors", "锚点")}：{candidate.sourceAnchorIds.join(" · ")}</small>{confirmed ? <strong className="candidate-confirmed">{copy(locale, "Human-confirmed; the authoritative workbench has been refreshed", "已由人工确认并刷新权威工作台")}</strong> : <div className="candidate-action"><label><span>{copy(locale, "Human confirmation reason", "人工确认理由")}</span><input aria-label={copy(locale, `Reason for confirming ${formatCanonicalLabel(candidate.label, locale)}`, `确认${candidate.label}的理由`)} onChange={(event) => setReason(event.target.value)} placeholder={copy(locale, "Describe the original material and locator you checked", "说明已核对的原材料与定位")} value={reason} /></label><Button disabled={reason.trim().length < 4 || confirmingCandidateId !== null} onClick={() => onConfirm(candidate, reason.trim())}>{confirmingCandidateId === candidate.id ? copy(locale, "Confirming…", "确认中…") : copy(locale, "Confirm candidate", "人工确认候选")}</Button></div>}</article>;
+      return <article className={confirmed ? "is-confirmed" : ""} key={candidate.id}><header><span><b>{formatCanonicalLabel(candidate.label, locale)}</b><small>{candidate.fieldKey}</small></span><em>{formatDataStatus(candidate.status, locale)}</em></header><p>{candidate.value === null ? copy(locale, "Empty value", "空值") : formatCanonicalNarrative(String(candidate.value), locale)}{candidate.unit ? ` ${formatUnit(candidate.unit, locale)}` : ""}</p><small>{copy(locale, "Anchors", "锚点")}：{candidate.sourceAnchorIds.join(" · ")}</small>{confirmed ? <strong className="candidate-confirmed">{copy(locale, "Human-confirmed; the authoritative workbench has been refreshed", "已由人工确认并刷新权威工作台")}</strong> : canEdit ? <div className="candidate-action"><label><span>{copy(locale, "Human confirmation reason", "人工确认理由")}</span><input aria-label={copy(locale, `Reason for confirming ${formatCanonicalLabel(candidate.label, locale)}`, `确认${candidate.label}的理由`)} onChange={(event) => setReason(event.target.value)} placeholder={copy(locale, "Describe the original material and locator you checked", "说明已核对的原材料与定位")} value={reason} /></label><Button disabled={reason.trim().length < 4 || confirmingCandidateId !== null} onClick={() => onConfirm(candidate, reason.trim())}>{confirmingCandidateId === candidate.id ? copy(locale, "Confirming…", "确认中…") : copy(locale, "Confirm candidate", "人工确认候选")}</Button></div> : <strong className="role-readonly-status">{copy(locale, "Business-only confirmation · read-only", "仅业务可确认 · 当前只读")}</strong>}</article>;
     }) : <p className="intelligence-empty">{copy(locale, "This result contains no field candidates.", "当前结果没有字段候选。")}</p>}</section>
     {scene ? <MaterialSceneSpecPreview activeAnchorId={activeAnchorId} onHotspotActivate={onAnchorActivate} scene={scene} /> : <div className="scene-spec-empty"><strong>{copy(locale, "No SceneSpec", "无 SceneSpec")}</strong><span>{copy(locale, "This material has no controlled spatial preview. No 3D content will be generated or guessed.", "当前材料没有受控空间示意；不会生成或猜测三维内容。")}</span><small>{IMAGE_TO_3D_BOUNDARY[locale]}</small></div>}
   </section>;
@@ -260,6 +275,19 @@ function LocatorBox({ item, onEvidenceActivate, visibleHeightRatio = 1 }: { item
   );
 }
 
+type VisualAnnotationDraft = {
+  bbox: { x: number; y: number; width: number; height: number };
+  snapshotDataUrl: string | null;
+  sourceAnchor: Extract<SourceAnchor, { kind: "image" }> | null;
+};
+
+function bboxOverlapScore(left: { x: number; y: number; width: number; height: number }, right: { x: number; y: number; width: number; height: number }) {
+  const width = Math.max(0, Math.min(left.x + left.width, right.x + right.width) - Math.max(left.x, right.x));
+  const height = Math.max(0, Math.min(left.y + left.height, right.y + right.height) - Math.max(left.y, right.y));
+  const intersection = width * height;
+  return intersection / Math.max(0.000001, Math.min(left.width * left.height, right.width * right.height));
+}
+
 function PdfPreview({ material, selectionItems, onEvidenceActivate }: { material: PdfMaterial; selectionItems: LocatedSelectionItem[]; onEvidenceActivate: (target: ReviewEvidenceTarget) => void }) {
   const locale = usePublicLocale();
   const pdfItems = selectionItems.filter((item) => item.evidence.locator?.kind === "pdf" && item.evidence.locator.materialId === material.id);
@@ -285,14 +313,17 @@ function DocumentPreview({ material }: { material: DocumentMaterial }) {
   </div>;
 }
 
-function ImagePreview({ material, selectionItems, onEvidenceActivate }: { material: ImageMaterial; selectionItems: LocatedSelectionItem[]; onEvidenceActivate: (target: ReviewEvidenceTarget) => void }) {
+function ImagePreview({ material, selectionItems, intelligence, annotationRequestKey, onAnnotationModeChange, onEvidenceActivate, onVisualAnnotation }: { material: ImageMaterial; selectionItems: LocatedSelectionItem[]; intelligence: StoredMaterialIntelligence | null; annotationRequestKey: number; onAnnotationModeChange: (active: boolean) => void; onEvidenceActivate: (target: ReviewEvidenceTarget) => void; onVisualAnnotation: (draft: VisualAnnotationDraft) => void }) {
   const locale = usePublicLocale();
   const imageItems = selectionItems.filter((item) => item.evidence.locator?.kind === "image" && item.evidence.locator.materialId === material.id);
   const viewportRef = useRef<HTMLDivElement>(null);
   const layerRef = useRef<HTMLElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
   const panRef = useRef<{ pointerId: number; startX: number; startY: number; originX: number; originY: number } | null>(null);
+  const annotationDragRef = useRef<{ pointerId: number; startX: number; startY: number; imageRect: DOMRect; viewportRect: DOMRect; bbox: VisualAnnotationDraft["bbox"] } | null>(null);
   const [view, setView] = useState({ scale: 1, x: 0, y: 0 });
+  const [annotationMode, setAnnotationMode] = useState(false);
+  const [annotationPixels, setAnnotationPixels] = useState<{ left: number; top: number; width: number; height: number } | null>(null);
   const sourceUrl = materialPreviewUrl(material);
   const projectPhoto = isProjectPhoto(material);
   const visibleHeightRatio = projectPhoto ? PROJECT_PHOTO_VISIBLE_RATIO : 1;
@@ -307,6 +338,12 @@ function ImagePreview({ material, selectionItems, onEvidenceActivate }: { materi
     });
     return () => window.cancelAnimationFrame(frame);
   }, [material.id, sourceUrl]);
+  useEffect(() => {
+    if (!annotationRequestKey || !sourceUrl) return;
+    setAnnotationMode(true);
+    onAnnotationModeChange(true);
+    setAnnotationPixels(null);
+  }, [annotationRequestKey, onAnnotationModeChange, sourceUrl]);
   const zoom = (delta: number) => setView((current) => ({ ...current, scale: Math.max(1, Math.min(8, current.scale + delta)) }));
   useLockedWheel(viewportRef, (event) => zoom(event.deltaY < 0 ? .2 : -.2));
   const reset = () => setView({ scale: 1, x: 0, y: 0 });
@@ -319,15 +356,70 @@ function ImagePreview({ material, selectionItems, onEvidenceActivate }: { materi
   const beginPan = (event: ReactPointerEvent<HTMLDivElement>) => {
     const target = event.target instanceof Element ? event.target : null;
     if (target?.closest("[data-image-interactive='true']")) return;
+    if (annotationMode) {
+      const image = imageRef.current;
+      const viewport = viewportRef.current;
+      if (!image || !viewport) return;
+      const imageRect = image.getBoundingClientRect();
+      const viewportRect = viewport.getBoundingClientRect();
+      if (event.clientX < imageRect.left || event.clientX > imageRect.right || event.clientY < imageRect.top || event.clientY > imageRect.bottom) return;
+      event.currentTarget.setPointerCapture(event.pointerId);
+      const startX = clamp(event.clientX, imageRect.left, imageRect.right);
+      const startY = clamp(event.clientY, imageRect.top, imageRect.bottom);
+      annotationDragRef.current = { pointerId: event.pointerId, startX, startY, imageRect, viewportRect, bbox: { x: 0, y: 0, width: 0, height: 0 } };
+      setAnnotationPixels({ left: startX - viewportRect.left, top: startY - viewportRect.top, width: 0, height: 0 });
+      return;
+    }
     event.currentTarget.setPointerCapture(event.pointerId);
     panRef.current = { pointerId: event.pointerId, startX: event.clientX, startY: event.clientY, originX: view.x, originY: view.y };
   };
   const movePan = (event: ReactPointerEvent<HTMLDivElement>) => {
+    const annotation = annotationDragRef.current;
+    if (annotation?.pointerId === event.pointerId) {
+      const endX = clamp(event.clientX, annotation.imageRect.left, annotation.imageRect.right);
+      const endY = clamp(event.clientY, annotation.imageRect.top, annotation.imageRect.bottom);
+      const left = Math.min(annotation.startX, endX);
+      const top = Math.min(annotation.startY, endY);
+      annotation.bbox = {
+        x: (left - annotation.imageRect.left) / annotation.imageRect.width,
+        y: (top - annotation.imageRect.top) / annotation.imageRect.height,
+        width: Math.abs(endX - annotation.startX) / annotation.imageRect.width,
+        height: Math.abs(endY - annotation.startY) / annotation.imageRect.height,
+      };
+      setAnnotationPixels({ left: left - annotation.viewportRect.left, top: top - annotation.viewportRect.top, width: Math.abs(endX - annotation.startX), height: Math.abs(endY - annotation.startY) });
+      return;
+    }
     const pan = panRef.current;
     if (!pan || pan.pointerId !== event.pointerId) return;
     setView((current) => ({ ...current, x: pan.originX + event.clientX - pan.startX, y: pan.originY + event.clientY - pan.startY }));
   };
   const endPan = (event: ReactPointerEvent<HTMLDivElement>) => {
+    const annotation = annotationDragRef.current;
+    if (annotation?.pointerId === event.pointerId) {
+      annotationDragRef.current = null;
+      const bbox = annotation.bbox;
+      if (bbox.width >= 0.01 && bbox.height >= 0.01) {
+        const anchors = (intelligence?.result.sourceAnchors ?? []).filter((anchor): anchor is Extract<SourceAnchor, { kind: "image" }> => anchor.kind === "image" && anchor.materialId === material.id && anchor.materialVersionId === material.versionId && anchor.ocrTokenIds.length > 0);
+        const ranked = anchors.map((anchor) => ({ anchor, score: bboxOverlapScore(bbox, anchor.bbox) })).sort((left, right) => right.score - left.score);
+        const sourceAnchor = ranked[0]?.score >= 0.15 ? ranked[0].anchor : null;
+        let snapshotDataUrl: string | null = null;
+        const image = imageRef.current;
+        if (image?.naturalWidth && image.naturalHeight) {
+          try {
+            const canvas = document.createElement("canvas");
+            canvas.width = Math.max(1, Math.round(bbox.width * image.naturalWidth));
+            canvas.height = Math.max(1, Math.round(bbox.height * image.naturalHeight));
+            canvas.getContext("2d")?.drawImage(image, bbox.x * image.naturalWidth, bbox.y * image.naturalHeight, bbox.width * image.naturalWidth, bbox.height * image.naturalHeight, 0, 0, canvas.width, canvas.height);
+            snapshotDataUrl = canvas.toDataURL("image/jpeg", 0.82);
+          } catch { snapshotDataUrl = null; }
+        }
+        onVisualAnnotation({ bbox, snapshotDataUrl, sourceAnchor });
+        setAnnotationMode(false);
+        onAnnotationModeChange(false);
+      }
+      if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
+      return;
+    }
     if (panRef.current?.pointerId !== event.pointerId) return;
     panRef.current = null;
     if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
@@ -344,12 +436,13 @@ function ImagePreview({ material, selectionItems, onEvidenceActivate }: { materi
           <Button aria-label={copy(locale, "View image at original pixels", "按原始像素查看图片")} onClick={showOriginalSize} title={copy(locale, "View at 1:1", "一比一查看")}>1:1</Button>
           <Button aria-label={copy(locale, "Reset original-image view", "重置原始图片视图")} onClick={reset} title={copy(locale, "Reset view", "重置视图")}>{copy(locale, "Reset", "重置")}</Button>
           <a className="material-original-file-link" href={sourceUrl} rel="noreferrer" target="_blank">{copy(locale, "Original size", "原尺寸")}</a>
+          <Button aria-pressed={annotationMode} onClick={() => { setAnnotationMode((value) => { const next = !value; onAnnotationModeChange(next); return next; }); setAnnotationPixels(null); }} title={copy(locale, "Select an image region and match OCR anchors", "框选图片区域并匹配 OCR 锚点")}>{copy(locale, "Annotate", "框选注释")}</Button>
         </div> : null}
       </div>
       {sourceUrl ? <div
         aria-label={copy(locale, "Original image; drag to pan and use the wheel to zoom", "原始图片；可拖动平移、滚轮缩放")}
         aria-busy={imageLoadState === "loading"}
-        className="image-original-viewport"
+        className={`image-original-viewport ${annotationMode ? "is-annotating" : ""}`}
         onPointerCancel={endPan}
         onPointerDown={beginPan}
         onPointerMove={movePan}
@@ -361,6 +454,7 @@ function ImagePreview({ material, selectionItems, onEvidenceActivate }: { materi
           {imageItems.map((item) => <LocatorBox item={item} key={item.evidence.id} onEvidenceActivate={onEvidenceActivate} visibleHeightRatio={visibleHeightRatio} />)}
           {imageLoadState !== "ready" ? <span className={`image-load-state status-${imageLoadState}`} role="status">{imageLoadState === "error" ? copy(locale, "Failed to read source image", "原图读取失败") : copy(locale, "Reading source image…", "正在读取原图")}</span> : null}
         </figure>
+        {annotationPixels ? <span aria-hidden="true" className="material-annotation-selection" style={annotationPixels} /> : null}
       </div> : <div className="image-source-empty" role="status"><strong>{copy(locale, "Source image pending", "原图待接入")}</strong><span>{formatCanonicalText(material.fileName, locale)}</span></div>}
     </div>
   );
@@ -400,7 +494,13 @@ export function MaterialPane({
   onCancelIntelligence,
   onConfirmCandidate,
   onIntelligenceAnchorActivate,
+  canEditIntelligence,
   locale,
+  groupChat,
+  chatRatio,
+  chatMaximized,
+  onChatRatioChange,
+  onChatMaximizedChange,
 }: {
   materials: Material[];
   facts: FactVersion[];
@@ -426,11 +526,23 @@ export function MaterialPane({
   onCancelIntelligence: () => void;
   onConfirmCandidate: (candidate: ExtractedFieldCandidate, reason: string) => void;
   onIntelligenceAnchorActivate: (sourceAnchorId: string) => void;
+  canEditIntelligence: boolean;
   locale: PublicLocale;
+  groupChat: MaterialPaneGroupChat;
+  chatRatio: number;
+  chatMaximized: boolean;
+  onChatRatioChange: (ratio: number) => void;
+  onChatMaximizedChange: (maximized: boolean) => void;
 }) {
   const [dimensionFilter, setDimensionFilter] = useState<MaterialDimensionFilter>("all");
   const [kindFilter, setKindFilter] = useState<MaterialKindFilter>("all");
   const [collapsedFolders, setCollapsedFolders] = useState<Set<MaterialBusinessFolder>>(() => new Set());
+  const [sourceCollapsed, setSourceCollapsed] = useState(false);
+  const [chatCollapsed, setChatCollapsed] = useState(false);
+  const [visualAnnotation, setVisualAnnotation] = useState<Extract<CollaborationContextReference, { kind: "material_annotation" }> | null>(null);
+  const [annotationRequestKey, setAnnotationRequestKey] = useState(0);
+  const [annotationRequestNotice, setAnnotationRequestNotice] = useState<string | null>(null);
+  const [annotationWorkspaceMode, setAnnotationWorkspaceMode] = useState(false);
   const originalMaterials = materials.filter(isOriginalMaterial);
   const dimensionsByMaterial = materialDimensionIndex(facts, evidence);
   const resolving = !!selectionGroup && !evidenceSelectionResolution;
@@ -456,6 +568,75 @@ export function MaterialPane({
     ?? originalMaterials.find((item) => item.id === firstHitMaterialId)
     ?? originalMaterials.find((item) => item.id === lastSelectedMaterialIdRef.current)
     ?? (unresolved || resolving ? undefined : originalMaterials[0]);
+  useEffect(() => setVisualAnnotation(null), [selected?.id, selected?.versionId]);
+  const selectedEvidence = groupChat.selectedTarget ? evidence.find((item) => item.id === groupChat.selectedTarget?.evidenceRef) : undefined;
+  const selectedSourceAnchor = selectedEvidence ? intelligence?.result.sourceAnchors.find((anchor) => evidenceRefForSourceAnchor(anchor.id) === selectedEvidence.id) : undefined;
+  const exactAnnotation = selected && groupChat.selectedTarget && selectedEvidence?.locator?.materialId === selected.id
+    ? {
+        kind: "material_annotation" as const,
+        id: `annotation-element-${selected.versionId}-${selectedEvidence.id}`,
+        label: `${selected.fileName} · ${selectedEvidence.label}`,
+        createdAt: new Date(0).toISOString(),
+        materialId: selected.id,
+        materialVersionId: selected.versionId,
+        locatorMethod: "element" as const,
+        matchStatus: "exact" as const,
+        sourceAnchorId: selectedSourceAnchor?.id ?? null,
+        region: selectedEvidence.locator.kind === "image" || selectedEvidence.locator.kind === "pdf" ? selectedEvidence.locator.bbox : null,
+        snapshotDataUrl: null,
+        evidenceTargets: [groupChat.selectedTarget],
+      }
+    : null;
+  const annotationReference = visualAnnotation ?? exactAnnotation;
+  const acceptVisualAnnotation = ({ bbox, snapshotDataUrl, sourceAnchor }: VisualAnnotationDraft) => {
+    if (!selected) return;
+    const evidenceRef = sourceAnchor ? evidenceRefForSourceAnchor(sourceAnchor.id) : null;
+    const matchedEvidence = evidenceRef ? evidence.find((item) => item.id === evidenceRef) : undefined;
+    const matchedFact = evidenceRef ? facts.find((item) => item.evidenceRefs.includes(evidenceRef)) : undefined;
+    const selectedTarget = groupChat.selectedTarget?.evidenceRef === evidenceRef ? groupChat.selectedTarget : null;
+    const target = matchedEvidence && (matchedFact || selectedTarget) ? {
+      evidenceRef: matchedEvidence.id,
+      evidenceRefs: matchedFact?.evidenceRefs ?? selectedTarget?.evidenceRefs ?? [matchedEvidence.id],
+      dimensionId: matchedFact?.dimensionId ?? selectedTarget!.dimensionId,
+      reviewTargetId: matchedFact?.id ?? selectedTarget!.reviewTargetId,
+      factVersionId: matchedFact?.id ?? selectedTarget!.factVersionId,
+    } satisfies ReviewEvidenceTarget : null;
+    setVisualAnnotation({
+      kind: "material_annotation",
+      id: `annotation-ocr-${selected.versionId}-${Date.now()}`,
+      label: sourceAnchor ? `${selected.fileName} · OCR ${sourceAnchor.ocrTokenIds.length} tokens` : `${selected.fileName} · OCR 待匹配区域`,
+      createdAt: new Date(0).toISOString(),
+      materialId: selected.id,
+      materialVersionId: selected.versionId,
+      locatorMethod: "ocr_region",
+      matchStatus: "pending",
+      sourceAnchorId: sourceAnchor?.id ?? null,
+      region: bbox,
+      snapshotDataUrl,
+      evidenceTargets: target ? [target] : [],
+    });
+    setAnnotationRequestNotice(copy(locale, "The region is ready. Attach the annotation in the group composer, then add your question.", "区域已生成；请在群聊中点击“附加注释”，再输入你的问题。"));
+    setAnnotationWorkspaceMode(false);
+  };
+  const requestVisualAnnotation = () => {
+    setSourceCollapsed(false);
+    setChatCollapsed(false);
+    onChatMaximizedChange(false);
+    if (chatRatio > 30) onChatRatioChange(30);
+    const imageMaterial = selected?.kind === "image" && materialPreviewUrl(selected)
+      ? selected
+      : originalMaterials.find((item): item is ImageMaterial => item.kind === "image" && Boolean(materialPreviewUrl(item)));
+    if (!imageMaterial) {
+      setAnnotationWorkspaceMode(false);
+      setAnnotationRequestNotice(copy(locale, "No displayable source image is available. Select a located evidence element first to attach its exact location.", "当前没有可框选的原始图片；请先选择带定位的证据元素，再附加其精确位置。"));
+      return;
+    }
+    if (selected?.id !== imageMaterial.id) onMaterialSelect(imageMaterial.id);
+    setVisualAnnotation(null);
+    setAnnotationWorkspaceMode(true);
+    setAnnotationRequestNotice(copy(locale, "Drag a box on the source image. OCR matching remains pending until a human confirms it.", "已进入框选模式：请在原始图片上拖出区域；OCR 匹配需人工确认。"));
+    setAnnotationRequestKey((current) => current + 1);
+  };
   const filteredMaterials = originalMaterials.filter((material) => {
     const dimensions = dimensionsByMaterial.get(material.id);
     const matchesDimension = dimensionFilter === "all"
@@ -477,6 +658,57 @@ export function MaterialPane({
     if (next.has(folder)) next.delete(folder); else next.add(folder);
     return next;
   });
+  const beginChatResize = (event: ReactPointerEvent<HTMLDivElement>) => {
+    const divider = event.currentTarget;
+    const pane = divider.closest<HTMLElement>(".material-pane");
+    if (!pane) return;
+    setSourceCollapsed(false);
+    setChatCollapsed(false);
+    const pointerId = event.pointerId;
+    divider.setPointerCapture(pointerId);
+    let nextRatio = chatRatio;
+    let frameId: number | null = null;
+    const applyResize = () => {
+      frameId = null;
+      pane.style.setProperty("--layout-source-share", `${100 - nextRatio}fr`);
+      pane.style.setProperty("--layout-chat-share", `${nextRatio}fr`);
+      divider.setAttribute("aria-valuenow", String(Math.round(nextRatio)));
+    };
+    const move = (pointerEvent: PointerEvent) => {
+      if (pointerEvent.pointerId !== pointerId) return;
+      const rect = pane.getBoundingClientRect();
+      nextRatio = clamp(((rect.bottom - pointerEvent.clientY) / Math.max(1, rect.height)) * 100, ...LAYOUT_LIMITS.collaborationRatio);
+      if (frameId === null) frameId = window.requestAnimationFrame(applyResize);
+    };
+    const cleanup = () => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", stop);
+      window.removeEventListener("pointercancel", stop);
+      window.removeEventListener("blur", stop);
+      if (divider.hasPointerCapture(pointerId)) divider.releasePointerCapture(pointerId);
+    };
+    function stop(stopEvent?: Event) {
+      if (stopEvent instanceof PointerEvent && stopEvent.pointerId !== pointerId) return;
+      if (frameId !== null) window.cancelAnimationFrame(frameId);
+      applyResize();
+      onChatRatioChange(nextRatio);
+      cleanup();
+    }
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", stop);
+    window.addEventListener("pointercancel", stop);
+    window.addEventListener("blur", stop);
+  };
+  const resizeChatWithKeyboard = (event: ReactKeyboardEvent<HTMLDivElement>) => {
+    if (!["ArrowUp", "ArrowDown", "Home", "End"].includes(event.key)) return;
+    event.preventDefault();
+    setSourceCollapsed(false);
+    setChatCollapsed(false);
+    if (event.key === "Home") { onChatRatioChange(LAYOUT_LIMITS.collaborationRatio[0]); return; }
+    if (event.key === "End") { onChatRatioChange(LAYOUT_LIMITS.collaborationRatio[1]); return; }
+    const direction = event.key === "ArrowUp" ? 1 : -1;
+    onChatRatioChange(clamp(chatRatio + direction * (event.shiftKey ? 5 : 2), ...LAYOUT_LIMITS.collaborationRatio));
+  };
   const showPreview = () => {
     if (errorMessage) return <div><EmptyState detail={formatServiceMessage(errorMessage, locale)} title={copy(locale, "Material read failed", "材料读取失败")} />{onRetry ? <Button onClick={onRetry}>{copy(locale, "Retry", "重试")}</Button> : null}</div>;
     if (resolving) return <EmptyState detail={copy(locale, "The selection group was saved. Material versions and all locator regions are being verified in the background.", "选择组已保存，正在后台核对材料版本与全部定位区域。")} title={copy(locale, "Resolving in background", "后台解析中")} />;
@@ -486,17 +718,18 @@ export function MaterialPane({
     if (selected.kind === "excel") return <SpreadsheetPreview material={selected} onEvidenceActivate={onEvidenceActivate} selectionItems={selectedItems} />;
     if (selected.kind === "pdf") return <PdfPreview material={selected} onEvidenceActivate={onEvidenceActivate} selectionItems={selectedItems} />;
     if (selected.kind === "document") return <DocumentPreview material={selected} />;
-    if (selected.kind === "image") return <ImagePreview material={selected} onEvidenceActivate={onEvidenceActivate} selectionItems={selectedItems} />;
+    if (selected.kind === "image") return <ImagePreview annotationRequestKey={annotationRequestKey} intelligence={intelligence} material={selected} onAnnotationModeChange={setAnnotationWorkspaceMode} onEvidenceActivate={onEvidenceActivate} onVisualAnnotation={acceptVisualAnnotation} selectionItems={selectedItems} />;
     if (selected.kind === "media") { const poster = materials.find((item): item is ImageMaterial => item.id === selected.posterMaterialId && item.kind === "image"); return <MediaPreview material={selected} posterUrl={poster ? materialPreviewUrl(poster) : undefined} />; }
     return <EmptyState detail={copy(locale, "Derived analysis is not displayed as an original. Select an original file from one of the five business folders.", "派生分析不会作为原件显示；请从五类业务目录选择原始文件。")} title={copy(locale, "Not an original material", "非原始材料")} />;
   };
 
   return (
-    <aside className={`material-pane ${collapsed ? "is-collapsed" : ""}`} aria-label={copy(locale, "Original materials", "原始材料区域")} data-semantic-localized id="material-pane">
+    <aside className={`material-pane has-project-chat ${collapsed ? "is-collapsed" : ""} ${sourceCollapsed ? "is-source-collapsed" : ""} ${chatCollapsed ? "is-chat-collapsed" : ""} ${chatMaximized ? "is-chat-maximized" : ""} ${annotationWorkspaceMode ? "is-annotation-workspace" : ""}`} aria-label={copy(locale, "Original materials and project group chat", "原始材料与项目群聊区域")} data-semantic-localized id="material-pane" style={{ "--layout-source-share": `${100 - chatRatio}fr`, "--layout-chat-share": `${chatRatio}fr` } as CSSProperties}>
       {collapsed ? (
         <button aria-controls="material-pane" aria-expanded={false} aria-label={copy(locale, "Expand original materials from the upper-right corner", "从右上角展开原始材料")} className="pane-corner-anchor material-corner-anchor" onClick={onToggleCollapsed} title={copy(locale, "Expand original materials from the upper-right corner", "从右上角展开原始材料")} type="button"><span aria-hidden="true" className="pane-corner-glyph">↙</span></button>
       ) : (
         <>
+          <section className="material-source-workspace">
           <header className="pane-heading">
             <div><h2>{copy(locale, "Original materials", "原始材料")}</h2></div>
             <div className="pane-actions"><Button aria-controls="material-pane" aria-expanded aria-label={copy(locale, "Collapse original materials to the upper-right corner", "收起原始材料至右上角")} className="pane-corner-anchor material-corner-anchor" onClick={onToggleCollapsed} title={copy(locale, "Collapse original materials to the upper-right corner", "收起原始材料至右上角")}><span aria-hidden="true" className="pane-corner-glyph">↗</span></Button></div>
@@ -527,8 +760,12 @@ export function MaterialPane({
               {visibleMaterials.length === 0 ? <p className="material-index-empty">{copy(locale, "No original materials match the current filters.", "当前筛选没有原始材料。")}</p> : null}
             </div>
           </div>
-          <div className="material-preview" ref={previewScrollRef}>{showPreview()}<MaterialIntelligencePanel activeAnchorId={activeIntelligenceAnchorId} confirmedCandidateIds={confirmedCandidateIds} confirmingCandidateId={confirmingCandidateId} intelligence={intelligence} message={intelligenceMessage} onAnchorActivate={onIntelligenceAnchorActivate} onCancel={onCancelIntelligence} onConfirm={onConfirmCandidate} onRun={onRunIntelligence} runtime={modelGatewayRuntime} scene={selected?.kind === "image" ? null : sceneSpec} status={intelligenceStatus} /></div>
-          <footer className={`material-note resolution-${resolving ? "pending" : selectedOriginalUnavailable || selectedAssetUnavailable || selectedRawAssetUnsupported ? "unverifiable" : evidenceSelectionResolution?.status ?? "idle"}`}><Icon name="link" /><span>{resolving ? <><b>{copy(locale, "Resolving in background", "后台解析")}</b> · {copy(locale, "previous highlights cleared", "旧高亮已清除")}</> : selectedOriginalUnavailable ? <><b>{selectedOriginalUnavailable.title}</b> · {selectedOriginalUnavailable.detail}</> : selectedAssetUnavailable ? <><b>{copy(locale, "Location incomplete", "定位未完成")}</b> · {copy(locale, "site source image pending", "现场原图待接入")}</> : selectedRawAssetUnsupported ? <><b>{copy(locale, "Location incomplete", "定位未完成")}</b> · {copy(locale, "original asset pending", "原始资产待接入")}</> : evidenceSelectionResolution ? evidenceSelectionResolution.status === "located" ? <b>{displayHitCount} {copy(locale, "regions", "个区域")}</b> : <><b>{copy(locale, "Location incomplete", "定位未完成")}</b> · {formatServiceMessage(evidenceSelectionResolution.message.replace(/[。；]+$/u, ""), locale)}</> : <b>{copy(locale, "Original material", "原始材料")}</b>}</span></footer>
+          <div className="material-preview" ref={previewScrollRef}>{showPreview()}<MaterialIntelligencePanel activeAnchorId={activeIntelligenceAnchorId} canEdit={canEditIntelligence} confirmedCandidateIds={confirmedCandidateIds} confirmingCandidateId={confirmingCandidateId} intelligence={intelligence} message={intelligenceMessage} onAnchorActivate={onIntelligenceAnchorActivate} onCancel={onCancelIntelligence} onConfirm={onConfirmCandidate} onRun={onRunIntelligence} runtime={modelGatewayRuntime} scene={selected?.kind === "image" ? null : sceneSpec} status={intelligenceStatus} /></div>
+          <footer className={`material-note resolution-${resolving ? "pending" : selectedOriginalUnavailable || selectedAssetUnavailable || selectedRawAssetUnsupported ? "unverifiable" : evidenceSelectionResolution?.status ?? "idle"}`}><Icon name="link" /><span>{visualAnnotation ? <><b>{copy(locale, "Visual annotation", "视觉注释")}</b> · {visualAnnotation.evidenceTargets.length ? copy(locale, "OCR anchor candidate found; human confirmation required", "已找到 OCR 锚点候选，需人工确认") : copy(locale, "No OCR anchor match; keep pending", "未匹配到 OCR 锚点，保持待确认")}</> : annotationRequestNotice ? <><b>{copy(locale, "Annotation", "注释")}</b> · {annotationRequestNotice}</> : resolving ? <><b>{copy(locale, "Resolving in background", "后台解析")}</b> · {copy(locale, "previous highlights cleared", "旧高亮已清除")}</> : selectedOriginalUnavailable ? <><b>{selectedOriginalUnavailable.title}</b> · {selectedOriginalUnavailable.detail}</> : selectedAssetUnavailable ? <><b>{copy(locale, "Location incomplete", "定位未完成")}</b> · {copy(locale, "site source image pending", "现场原图待接入")}</> : selectedRawAssetUnsupported ? <><b>{copy(locale, "Location incomplete", "定位未完成")}</b> · {copy(locale, "original asset pending", "原始资产待接入")}</> : evidenceSelectionResolution ? evidenceSelectionResolution.status === "located" ? <b>{displayHitCount} {copy(locale, "regions", "个区域")}</b> : <><b>{copy(locale, "Location incomplete", "定位未完成")}</b> · {formatServiceMessage(evidenceSelectionResolution.message.replace(/[。；]+$/u, ""), locale)}</> : <b>{copy(locale, "Original material", "原始材料")}</b>}</span>{visualAnnotation ? <div className="material-annotation-actions">{visualAnnotation.matchStatus === "pending" && visualAnnotation.evidenceTargets.length ? <Button onClick={() => setVisualAnnotation({ ...visualAnnotation, matchStatus: "confirmed" })}>{copy(locale, "Confirm OCR match", "确认 OCR 匹配")}</Button> : null}<Button onClick={() => { setVisualAnnotation(null); setAnnotationRequestNotice(null); setAnnotationWorkspaceMode(false); }}>{copy(locale, "Clear", "清除")}</Button></div> : null}</footer>
+          </section>
+          <div aria-label={copy(locale, "Resize original materials and project group chat", "调整原始材料与项目群聊高度")} aria-orientation="horizontal" aria-valuemax={LAYOUT_LIMITS.collaborationRatio[1]} aria-valuemin={LAYOUT_LIMITS.collaborationRatio[0]} aria-valuenow={Math.round(chatRatio)} aria-valuetext={copy(locale, `Project chat height: ${Math.round(chatRatio)}%`, `项目群聊高度 ${Math.round(chatRatio)}%`)} className="material-split-divider" onKeyDown={resizeChatWithKeyboard} onPointerDown={beginChatResize} role="separator" tabIndex={0}>
+          </div>
+          <div className="material-chat-slot"><A2ACollaborationPanel accountRole={groupChat.accountRole} agentActivity={groupChat.agentActivity} agentError={groupChat.agentError} agentMessages={groupChat.agentMessages} annotationReference={annotationReference} collapsed={chatCollapsed} evidence={evidence} maximized={chatMaximized} onAgentEvidenceActivate={(target) => onEvidenceActivate(target)} onConfirmMaterialImport={groupChat.onConfirmMaterialImport} onImportMaterialPackage={groupChat.onImportMaterialPackage} onRequestAnnotation={requestVisualAnnotation} onSubmitMessage={groupChat.onSubmitMessage} onToggleMaximized={() => { setChatCollapsed(false); onChatMaximizedChange(!chatMaximized); }} selectedTarget={groupChat.selectedTarget} /></div>
         </>
       )}
     </aside>

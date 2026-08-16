@@ -16,6 +16,8 @@ from fastapi.testclient import TestClient
 from app.main import app
 
 with TestClient(app, raise_server_exceptions=False) as client:
+    login = client.post('/api/v1/auth/login', json={'username': 'business', 'password': '123456'})
+    assert login.status_code == 200, login.text
     projects = client.get('/api/v1/projects')
     assert projects.status_code == 200, projects.text
     data = projects.json()['data']

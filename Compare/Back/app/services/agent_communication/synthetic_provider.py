@@ -27,6 +27,7 @@ _PROJECT_MARKERS = frozenset(
         "业务",
         "风控",
         "领导",
+        "系统",
         "材料",
         "证据",
         "事实",
@@ -231,7 +232,7 @@ def _risk_content(
     if blocked:
         return GeneratedAgentContent(
             reply_text=(
-                "当前存在 hard gate、风险否决或阻断制度结果。风控侧只能提示阻断事实并提交领导协调，"
+                "当前存在 hard gate、风险否决或阻断制度结果。风控侧只能提示阻断事实并提交系统汇总，"
                 "任何 Agent 都不能覆盖该状态。"
             ),
             observations=observations,
@@ -268,16 +269,16 @@ def _leadership_content(
     gaps = _context_has_gaps(context)
     citations = context.citation_allowlist[:3]
     actions = (
-        "业务侧先补齐原件与版本说明，风控侧在同一证据范围内复核，完成后再回到领导通道汇总。"
+        "业务侧先补齐原件与版本说明，风控侧在同一证据范围内复核，完成后再由系统汇总。"
         if gaps
         else "业务侧确认事实口径，风控侧确认风险与制度口径，再由人工决定是否推进正式 Gate。"
     )
     questions = ["请业务与风控分别确认各自下一步负责人和完成条件。"] if gaps else []
     return GeneratedAgentContent(
-        reply_text=f"领导侧已汇总“{topic}”。{actions}",
+        reply_text=f"系统 Agent 已汇总“{topic}”。{actions}",
         observations=[
             f"汇总范围仅限项目“{context.project_summary.name}”和当前可见消息。",
-            "领导协调权不覆盖 FactVersion、hard gate、风险否决或审批不变量。",
+            "系统 Agent 不覆盖 FactVersion、hard gate、风险否决或审批不变量。",
             f"本次输入绑定标识为 {assembled_input.input_hash[:12]}。",
         ],
         questions=questions,
@@ -322,7 +323,7 @@ def _role_label(role: AgentRole) -> str:
     return {
         AgentRole.BUSINESS: "业务侧",
         AgentRole.RISK: "风控侧",
-        AgentRole.LEADERSHIP: "领导侧",
+        AgentRole.LEADERSHIP: "系统 Agent",
     }[role]
 
 

@@ -71,7 +71,10 @@ class SeedService:
     def seed_once(self) -> int:
         seed_key = f"workbench:{self.generator.identity}"
         with self.repository.transaction(write=True) as connection:
-            if self.repository.seed_run_exists(seed_key, connection):
+            if any(
+                self.repository.seed_run_exists(candidate, connection)
+                for candidate in self._compatible_seed_keys(seed_key)
+            ):
                 return 0
             # Generate only after the durable marker check.  A restart of an
             # already seeded 24-project database must not rebuild the full
@@ -88,6 +91,21 @@ class SeedService:
                 connection=connection,
             )
         return len(bundles)
+
+    @staticmethod
+    def _compatible_seed_keys(seed_key: str) -> tuple[str, ...]:
+        """Keep pre-profile local databases restartable without reseeding them."""
+        identity = seed_key.removeprefix("workbench:")
+        parts = identity.rsplit(":", 3)
+        if (
+            len(parts) == 4
+            and parts[1] in {"standard", "varied"}
+            and parts[2].lstrip("-").isdigit()
+            and parts[3].isdigit()
+        ):
+            legacy = f"workbench:{parts[0]}:{parts[2]}:{parts[3]}"
+            return seed_key, legacy
+        return (seed_key,)
 
     def _seed_bundle(self, bundle: GeneratedProjectBundle, connection: Any) -> None:
         catalog = ProjectCatalogItem.model_validate(bundle.catalog)

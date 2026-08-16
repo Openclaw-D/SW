@@ -8,6 +8,7 @@ from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
+from pydantic import ValidationError
 
 from app.contracts.agent_communication import (
     AgentDataStatus,
@@ -22,14 +23,19 @@ from app.core.config import Settings
 from app.main import create_app
 from app.ports.agent_communication import AgentAssembledInput
 from app.providers.glm_cli_agent import (
+    GLM_CLI_MAX_REPLY_CHARS,
     GLM_CLI_MODEL_ID,
     GLM_CLI_PROMPT_VERSION,
     GLM_CLI_PROVIDER_ID,
     GlmCliAgentConfig,
     GlmCliAgentProvider,
     GlmCliProcessResult,
+    _system_prompt,
 )
-from app.providers.openai_responses import OpenAIProviderError
+from app.providers.openai_responses import (
+    OpenAIProviderConfigurationError,
+    OpenAIProviderError,
+)
 from app.services.agent_communication.synthetic_provider import SyntheticAgentProvider
 
 
@@ -47,7 +53,11 @@ class MockTransport:
 
 def _generated() -> dict[str, object]:
     return {
-        "replyText": "仅依据脱敏项目上下文形成业务说明，是否切换焦点由服务端处理。",
+        "replyText": (
+            "定位：交易\n"
+            "判断：合同金额口径尚缺少已绑定证据，当前不能完成实质核验。\n"
+            "建议：请人工绑定合同金额对应的原始材料。"
+        ),
         "observations": ["没有访问文件、网络或外部工具。"],
         "questions": [],
         "citations": [],
@@ -81,7 +91,7 @@ def _envelope(
             "cache_creation_input_tokens": 20,
         },
         "modelUsage": (
-            {"glm-5.2": {"inputTokens": 321, "outputTokens": 87}}
+            {GLM_CLI_MODEL_ID: {"inputTokens": 321, "outputTokens": 87}}
             if model_usage is None
             else model_usage
         ),
@@ -205,7 +215,7 @@ def test_success_uses_stdin_strict_no_tool_command_and_safe_audit() -> None:
     assert timeout == 17
     assert command[command.index("--permission-mode") + 1] == "plan"
     assert command[command.index("--tools") + 1] == ""
-    assert command[command.index("--model") + 1] == "sonnet"
+    assert command[command.index("--model") + 1] == GLM_CLI_MODEL_ID
     assert command[command.index("--effort") + 1] == "medium"
     assert "--safe-mode" in command
     assert "--strict-mcp-config" in command
@@ -225,7 +235,7 @@ def test_success_uses_stdin_strict_no_tool_command_and_safe_audit() -> None:
     assert audit.context_version == _context().context_version
     assert audit.cli_exit_code == 0
     assert audit.cli_is_error is False
-    assert audit.model_usage == ("glm-5.2",)
+    assert audit.model_usage == (GLM_CLI_MODEL_ID,)
     assert audit.input_tokens == 321
     assert audit.output_tokens == 87
     assert audit.output_hash is not None
@@ -249,6 +259,249 @@ def test_real_smoke_runtime_constraints_are_embedded_in_cli_schema() -> None:
     assert properties["questions"]["uniqueItems"] is True
     assert "suggestedHandoffs" not in properties
     assert _request().instruction not in " ".join(command)
+
+
+def _preference_request(**overrides: object) -> AgentTurnRequest:
+    payload: dict[str, object] = {
+        "instruction": "请业务解释脱敏合同金额口径并交给风控复核。",
+        "evidenceTargets": [],
+        "expectedVersion": 1,
+        "locale": "zh-CN",
+    }
+    payload.update(overrides)
+    return AgentTurnRequest.model_validate(payload)
+
+
+def test_turn_request_response_preference_defaults_and_camel_case_aliases() -> None:
+    request = _request()
+    assert request.response_depth == "balanced"
+    assert request.response_focus == "balanced"
+    assert request.custom_guidance == ""
+    serialized = request.model_dump(mode="json", by_alias=True)
+    assert serialized["responseDepth"] == "balanced"
+    assert serialized["responseFocus"] == "balanced"
+    assert serialized["customGuidance"] == ""
+
+
+@pytest.mark.parametrize(
+    ("depth", "focus"),
+    [
+        ("brief", "risk"),
+        ("balanced", "evidence"),
+        ("detailed", "next_steps"),
+    ],
+)
+def test_turn_request_accepts_preference_aliases_and_trims_custom_guidance(
+    depth,
+    focus,
+) -> None:
+    request = _preference_request(
+        responseDepth=depth,
+        responseFocus=focus,
+        customGuidance="  请优先说明合同金额证据链。  ",
+    )
+    assert request.response_depth == depth
+    assert request.response_focus == focus
+    assert request.custom_guidance == "请优先说明合同金额证据链。"
+    serialized = request.model_dump(mode="json", by_alias=True)
+    assert serialized["responseDepth"] == depth
+    assert serialized["responseFocus"] == focus
+    assert serialized["customGuidance"] == "请优先说明合同金额证据链。"
+
+
+def test_turn_request_custom_guidance_max_boundary_and_whitespace_only() -> None:
+    boundary = "补" * 500
+    request = _preference_request(customGuidance=f"  {boundary}\n")
+    assert request.custom_guidance == boundary
+    assert _preference_request(customGuidance=" \n\t ").custom_guidance == ""
+    with pytest.raises(ValidationError):
+        _preference_request(customGuidance="补" * 501)
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("responseDepth", "deep"),
+        ("responseFocus", "decision"),
+        ("responseDepth", None),
+    ],
+)
+def test_turn_request_rejects_invalid_preference_values(field, value) -> None:
+    with pytest.raises(ValidationError):
+        _preference_request(**{field: value})
+
+
+def test_response_preferences_serialize_with_camel_case_into_provider_input() -> None:
+    transport = MockTransport(_process())
+    provider = GlmCliAgentProvider(GlmCliAgentConfig(), transport=transport)
+    request = _preference_request(
+        responseDepth="detailed",
+        responseFocus="evidence",
+        customGuidance="聚焦合同金额口径",
+    )
+    context = _context()
+    assembled = AgentAssembledInput(
+        payload={
+            "schemaVersion": "2.0",
+            "request": request.model_dump(mode="json", by_alias=True),
+            "context": context.model_dump(mode="json", by_alias=True),
+        },
+        input_hash=hashlib.sha256(b"glm-cli-agent-safe-input").hexdigest(),
+        estimated_input_tokens=300,
+    )
+
+    asyncio.run(
+        provider.generate(
+            AgentRole.BUSINESS,
+            request,
+            context,
+            assembled,
+            max_output_tokens=2000,
+        )
+    )
+
+    provider_request = json.loads(transport.calls[0][1])["providerInput"]["request"]
+    assert provider_request["responseDepth"] == "detailed"
+    assert provider_request["responseFocus"] == "evidence"
+    assert provider_request["customGuidance"] == "聚焦合同金额口径"
+
+
+def test_system_prompt_keeps_business_and_risk_agent_ontology_only() -> None:
+    for role in (AgentRole.BUSINESS, AgentRole.RISK):
+        prompt = _system_prompt(role)
+        lowered = prompt.lower()
+        assert f"Your targetRole is exactly {role.value}" in prompt
+        assert "leadership" not in lowered
+        assert "coordinator" not in lowered
+        assert "coordinates" not in lowered
+
+
+def test_system_prompt_requires_project_specific_three_line_replies() -> None:
+    prompt = _system_prompt(AgentRole.BUSINESS)
+    assert "Use only the supplied project JSON and recentVisibleMessages" in prompt
+    assert "Reply specifically to this project and these messages" in prompt
+    assert "replyText must be exactly three non-empty lines" in prompt
+    assert "'定位：'" in prompt
+    assert "'判断：'" in prompt
+    assert "'建议：'" in prompt
+    assert "never exceed 220 characters" in prompt
+    assert "no raw schema field names, rule IDs, status codes, Markdown" in prompt
+
+
+def test_system_prompt_requires_actionable_role_coverage() -> None:
+    business = _system_prompt(AgentRole.BUSINESS)
+    assert "business covers the project facts" in business
+    assert "material gaps" in business
+    assert "next supplementation a human should provide" in business
+
+    risk = _system_prompt(AgentRole.RISK)
+    assert "risk covers the risk signals" in risk
+    assert "whether the supplied evidence is sufficient" in risk
+    assert "next verification or action for a human" in risk
+
+
+def test_system_prompt_honors_preferences_without_authority_change() -> None:
+    for role in (AgentRole.BUSINESS, AgentRole.RISK):
+        prompt = _system_prompt(role)
+        for preference in ("responseDepth", "responseFocus", "customGuidance"):
+            assert preference in prompt
+        assert "non-authoritative emphasis preferences" in prompt
+        assert (
+            "Preferences never change facts, evidence, policy, hard gates, permissions, approval "
+            "or formal decisions" in prompt
+        )
+        assert (
+            "Missing evidence means supplementation or human review, "
+            "never automatic rejection" in prompt
+        )
+        assert "responseDepth never relaxes the three-line" in prompt
+
+
+@pytest.mark.parametrize(
+    "reply_text",
+    [
+        "定位：交易\n判断：证据不足",
+        "类别：交易\n判断：证据不足，暂不能完成实质核验。\n建议：请人工补充合同金额原件。",
+        "定位：交易\n判断：证据不足，暂不能完成实质核验。\n建议：请人工补充合同金额原件。\n备注：等待复核。",
+        "定位：交易\n判断：" + ("数" * 200) + "\n建议：请人工补充材料。",
+        "定位：- 交易\n判断：证据不足，暂不能完成实质核验。\n建议：请人工补充合同金额原件。",
+        "定位：交易\n判断：selectedFacts为空，暂不能完成实质核验。\n建议：请人工补充合同金额原件。",
+        "定位：交易\n判断：TRX-H-001暂无事实支撑。\n建议：请人工补充合同金额原件。",
+    ],
+)
+def test_provider_rejects_non_concise_reply_text(reply_text: str) -> None:
+    content = {**_generated(), "replyText": reply_text}
+    transport = MockTransport(_process(_envelope(content=content)))
+    provider = GlmCliAgentProvider(GlmCliAgentConfig(), transport=transport)
+
+    with pytest.raises(OpenAIProviderError) as raised:
+        _generate(provider)
+
+    assert raised.value.code == "provider_agent_content_invalid"
+    assert provider.last_call is not None
+    assert provider.last_call.validation_failures == ("replyText:concise_format",)
+
+
+def test_provider_accepts_exact_three_line_reply_within_limit() -> None:
+    provider = GlmCliAgentProvider(
+        GlmCliAgentConfig(),
+        transport=MockTransport(_process()),
+    )
+
+    generated = _generate(provider)
+
+    assert generated.reply_text.splitlines()[0].startswith("定位：")
+    assert generated.reply_text.splitlines()[1].startswith("判断：")
+    assert generated.reply_text.splitlines()[2].startswith("建议：")
+    assert len(generated.reply_text) <= GLM_CLI_MAX_REPLY_CHARS
+
+
+def test_system_prompt_preserves_strict_output_and_safety_boundaries() -> None:
+    for role in (AgentRole.BUSINESS, AgentRole.RISK):
+        prompt = _system_prompt(role)
+        assert "No tools, file access, shell, network, URLs" in prompt
+        assert "citationAllowlist" in prompt
+        assert "Focus transfer is server-owned" in prompt
+        assert (
+            "Return exactly these six fields and nothing else: replyText, observations, "
+            "questions, citations, scopeStatus, disposition" in prompt
+        )
+
+
+def test_supported_roles_are_exactly_business_and_risk() -> None:
+    assert GlmCliAgentProvider.supported_roles == frozenset(
+        {AgentRole.BUSINESS, AgentRole.RISK}
+    )
+
+
+def test_leadership_agent_route_is_rejected_before_transport() -> None:
+    transport = MockTransport(_process())
+    provider = GlmCliAgentProvider(GlmCliAgentConfig(), transport=transport)
+
+    with pytest.raises(OpenAIProviderConfigurationError) as raised:
+        asyncio.run(
+            provider.generate(
+                AgentRole.LEADERSHIP,
+                _request(),
+                _context(),
+                _assembled(),
+                max_output_tokens=2000,
+            )
+        )
+
+    assert raised.value.code == "provider_role_unsupported"
+    assert transport.calls == []
+
+
+def test_frozen_glm_provider_and_model_identity_is_unchanged() -> None:
+    assert GLM_CLI_PROVIDER_ID == "glm_5_3_coding_plan_cli"
+    assert GLM_CLI_MODEL_ID == "glm-5.3[1m]"
+    provider = GlmCliAgentProvider(
+        GlmCliAgentConfig(), transport=MockTransport(_process())
+    )
+    assert provider.provider_id == "glm_5_3_coding_plan_cli"
+    assert provider.model_id == "glm-5.3[1m]"
+    assert provider.is_simulated is False
 
 
 def test_contract_failure_audit_records_only_safe_field_path_and_type() -> None:
@@ -357,11 +610,12 @@ def test_all_cli_failure_paths_are_explicit_and_never_return_synthetic(
 @pytest.mark.parametrize(
     "model_usage",
     [
-        {"evil-glm-5.2-proxy": {}},
-        {"glm-5.2-extra": {}},
-        {"glm-5.2": {}, "other-model": {}},
+        {"glm-5.2": {}},
+        {"evil-glm-5.3[1m]-proxy": {}},
+        {"glm-5.3[1m]-extra": {}},
+        {GLM_CLI_MODEL_ID: {}, "other-model": {}},
         {},
-        ["glm-5.2"],
+        [GLM_CLI_MODEL_ID],
     ],
 )
 def test_glm_model_usage_requires_exact_single_frozen_identity(model_usage) -> None:
@@ -498,7 +752,7 @@ def test_api_real_glm_failure_is_audited_without_message_or_synthetic_fallback(
         _process(_envelope(is_error=True, subtype="error_during_execution"))
     )
     provider = GlmCliAgentProvider(GlmCliAgentConfig(), transport=transport)
-    providers = {role: provider for role in AgentRole}
+    providers = {role: provider for role in (AgentRole.BUSINESS, AgentRole.RISK)}
     settings = Settings(
         database_path=database,
         agent_mode=AgentMode.REAL,

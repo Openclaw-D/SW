@@ -120,13 +120,13 @@ export function DemoEntrance({ onEnter, locale = "en" }: { onEnter: () => void; 
         <img alt={copy(locale, "Abstract iris demo background", "深色彩色虹膜演示入口背景")} src="/demo-eye.png" />
         <span aria-hidden="true" className="demo-entrance-shade" />
         <span className="demo-entrance-content">
-          <small>SIGNAL COUNCIL · 见微</small>
+          <small>signal-council</small>
           <strong>{copy(locale, "See facts. Return to evidence.", "看见事实，回到证据")}</strong>
           <span>{copy(locale, "Enter public demo", "进入公开演示")}</span>
         </span>
       </button>
       <p id="demo-entrance-truth">
-        <b>{copy(locale, "Public demo — no authentication is performed.", "公开演示入口，不执行身份认证。")}</b>
+        <b>{copy(locale, "Authenticated intranet Demo entry.", "已认证的内网 Demo 入口。")}</b>
         <span>{copy(locale, "24 isolated projects share a complete de-identified standard fact template. Scores, evidence, and decisions remain advisory and subject to human gates.", "24 个隔离项目共用完整脱敏标准事实模板；评分、证据和建议仍须经过人工 Gate。")}</span>
       </p>
     </main>
@@ -312,7 +312,7 @@ export function ProjectSelectionEntry({ projects, onChoose, locale = "en" }: { p
 
   return (
     <main className={`selection-entry${dockingView ? " is-docking" : ""}`}>
-      <header className="selection-entry-header"><b className="selection-brand">Signal Council · 见微</b><div><p>{copy(locale, "Choose a project view", "选择项目查看方式")}</p><small>{copy(locale, "24 fixed, de-identified public demo projects", "固定 24 项脱敏公开演示项目")}</small></div></header>
+      <header className="selection-entry-header"><b className="selection-brand">signal-council</b><div><p>{copy(locale, "Choose a project view", "选择项目查看方式")}</p><small>{copy(locale, "24 fixed, de-identified public demo projects", "固定 24 项脱敏公开演示项目")}</small></div></header>
       <section aria-busy={dockingView ? "true" : undefined} className="selection-entry-grid" aria-label={copy(locale, "Project view choices", "项目查看方式")} ref={gridRef}>
         {PROJECT_VIEWS.map((view) => (
           <button className="selection-entry-option" key={view} onClick={() => dockToBrowser(view)} type="button">

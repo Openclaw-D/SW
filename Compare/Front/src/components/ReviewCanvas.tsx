@@ -16,12 +16,32 @@ import { DimensionDetailView, ReviewSectionSummary } from "./DimensionDetailView
 import { ComplianceSubjectGraph } from "./ComplianceSubjectGraph";
 import { Icon, dimensionColorVar } from "./icons";
 import { displayBusinessName, groupRiskItems, sameReviewEvidenceTarget, scoreToGrade, selectedRiskItemId as deriveSelectedRiskItemId, toggledRiskLevel, type RiskDisplayItem } from "../lib/workbenchLogic";
-import { copy, formatCanonicalLabel, formatCanonicalNarrative, formatDimensionName, formatEvidenceLocationStatus, formatEvidenceLocator, formatFactValue, formatMaterialStatus, formatRiskLevel, usePublicLocale } from "../lib/publicLocale";
-import { StatusMark, Tag } from "./ui";
+import { copy, formatCanonicalLabel, formatCanonicalNarrative, formatDimensionName, formatEvidenceLocationStatus, formatEvidenceLocator, formatFactValue, formatMaterialStatus, formatRiskLevel, formatServiceMessage, usePublicLocale } from "../lib/publicLocale";
+import { Button, StatusMark, Tag } from "./ui";
 
 export type ReviewSectionId = "risk" | DimensionId;
 
 export const REVIEW_SECTION_IDS: readonly ReviewSectionId[] = ["risk", ...DIMENSION_IDS];
+
+function FormalBusinessCorrection({ facts, pending, resultMessage, onSubmit }: { facts: FactVersion[]; pending: boolean; resultMessage: string | null; onSubmit: (factId: string, value: string, reason: string) => Promise<void> }) {
+  const locale = usePublicLocale();
+  const [factId, setFactId] = useState(facts[0]?.id ?? "");
+  const selected = facts.find((fact) => fact.id === factId) ?? facts[0];
+  const [value, setValue] = useState(selected ? String(selected.value) : "");
+  const [reason, setReason] = useState(copy(locale, "Manually checked against supplemental material", "依据补充材料人工核对"));
+  return (
+    <details className="approval-correction review-formal-correction">
+      <summary><Icon name="business" /><span>{copy(locale, "Formal business correction", "正式业务修正")}</span><small>{copy(locale, "Human Gate · creates a new fact version", "人工 Gate · 生成新事实版本")}</small></summary>
+      <div className="correction-form">
+        <label>{copy(locale, "Field", "字段")}<select aria-label={copy(locale, "Choose field to correct", "选择修正字段")} disabled={pending} onChange={(event) => { const next = facts.find((fact) => fact.id === event.target.value); setFactId(event.target.value); setValue(next ? String(next.value) : ""); }} value={selected?.id ?? ""}>{facts.map((fact) => <option key={fact.id} value={fact.id}>{formatCanonicalLabel(fact.label, locale)} · {formatFactValue(fact.value, fact.unit, locale)}</option>)}</select></label>
+        <label>{copy(locale, "Proposed value", "建议值")}<input disabled={pending} onChange={(event) => setValue(event.target.value)} value={value} /></label>
+        <label>{copy(locale, "Reason", "原因")}<input disabled={pending} onChange={(event) => setReason(event.target.value)} value={reason} /></label>
+        <Button disabled={pending || !selected || !value.trim() || !reason.trim()} onClick={() => selected && void onSubmit(selected.id, value, reason)} variant="primary">{pending ? copy(locale, "Submitting…", "提交中…") : copy(locale, "Submit correction", "提交修正")}</Button>
+      </div>
+      {resultMessage ? <p className="form-status" role="status">{formatServiceMessage(resultMessage, locale)}</p> : null}
+    </details>
+  );
+}
 
 function evidenceLabel(evidence: EvidenceReference | undefined, locale: ReturnType<typeof usePublicLocale>) {
   if (!evidence) return copy(locale, "Evidence reference missing", "引用缺失");
@@ -200,7 +220,7 @@ function ComplianceSection({ dimension, graph, facts, evidence, selectedTarget, 
   );
 }
 
-export function ReviewCanvas({ data, facts, activeReviewId, selectedTarget, selectedProductionStageId, collapsed, onActiveReviewChange, onEvidenceSelect, onProductionStageSelect, onTimeSeriesRequest, onToggleCollapsed }: { data: WorkbenchProject; facts: FactVersion[]; activeReviewId: ReviewSectionId; selectedTarget: ReviewEvidenceTarget | null; selectedProductionStageId: string; collapsed: boolean; onActiveReviewChange: (id: ReviewSectionId) => void; onEvidenceSelect: (target: ReviewEvidenceTarget) => void; onProductionStageSelect: (stageId: string, imageId: string) => void; onTimeSeriesRequest: (request: DimensionSeriesRequest) => Promise<DimensionSeriesResponse>; onToggleCollapsed: () => void }) {
+export function ReviewCanvas({ data, facts, activeReviewId, selectedTarget, selectedProductionStageId, collapsed, canCorrect, correctionPending, correctionMessage, onActiveReviewChange, onCorrection, onEvidenceSelect, onProductionStageSelect, onTimeSeriesRequest, onToggleCollapsed }: { data: WorkbenchProject; facts: FactVersion[]; activeReviewId: ReviewSectionId; selectedTarget: ReviewEvidenceTarget | null; selectedProductionStageId: string; collapsed: boolean; canCorrect: boolean; correctionPending: boolean; correctionMessage: string | null; onActiveReviewChange: (id: ReviewSectionId) => void; onCorrection: (factId: string, value: string, reason: string) => Promise<void>; onEvidenceSelect: (target: ReviewEvidenceTarget) => void; onProductionStageSelect: (stageId: string, imageId: string) => void; onTimeSeriesRequest: (request: DimensionSeriesRequest) => Promise<DimensionSeriesResponse>; onToggleCollapsed: () => void }) {
   const locale = usePublicLocale();
   const canvasRef = useRef<HTMLElement>(null);
   const [expandedSectionIds, setExpandedSectionIds] = useState<Set<ReviewSectionId>>(() => new Set(REVIEW_SECTION_IDS));
@@ -245,6 +265,7 @@ export function ReviewCanvas({ data, facts, activeReviewId, selectedTarget, sele
       ) : (
         <>
           <header className="review-pane-heading"><button aria-controls="review-pane" aria-expanded aria-label={copy(locale, "Collapse review canvas to the upper-left corner", "收起审查画布至左上角")} className="pane-corner-anchor review-corner-anchor" onClick={onToggleCollapsed} title={copy(locale, "Collapse review canvas to the upper-left corner", "收起审查画布至左上角")} type="button"><span aria-hidden="true" className="pane-corner-glyph">↖</span></button><span className="review-pane-title"><strong>{copy(locale, "Review canvas", "审查画布")}</strong><small>{copy(locale, "Risk first · continuous six-dimension review", "风险置顶 · 六维连续审查")}</small></span></header>
+          {canCorrect && facts.some((fact) => fact.dimensionId === "compliance") ? <FormalBusinessCorrection facts={facts.filter((fact) => fact.dimensionId === "compliance")} onSubmit={onCorrection} pending={correctionPending} resultMessage={correctionMessage} /> : null}
           <RiskSection evidence={data.evidence} expanded={expandedSectionIds.has("risk")} onEvidenceSelect={onEvidenceSelect} onToggleExpanded={() => toggleSection("risk")} selectedTarget={selectedTarget} summary={data.riskSummary} />
           <ComplianceSection dimension={compliance} evidence={data.evidence} expanded={expandedSectionIds.has("compliance")} facts={facts.filter((fact) => fact.dimensionId === "compliance")} graph={data.complianceGraph} onEvidenceSelect={onEvidenceSelect} onToggleExpanded={() => toggleSection("compliance")} selectedTarget={selectedTarget} />
           {data.dimensions.filter((item) => item.id !== "compliance").map((dimension) => {

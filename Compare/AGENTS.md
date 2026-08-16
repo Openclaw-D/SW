@@ -1,4 +1,4 @@
-# Signal Council · 见微 contributor instructions
+# signal-council contributor instructions
 
 ## Scope
 

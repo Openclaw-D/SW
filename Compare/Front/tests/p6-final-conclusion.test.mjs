@@ -33,19 +33,20 @@ test("conclusion HTTP errors remain explicit and never fall back to a local repo
   await assert.rejects(() => gateway.readConclusionReport("project-a"), (error) => error?.code === "transport" && error?.httpStatus === 503 && /结论投影暂不可用/.test(error.message));
 });
 
-test("Agent HTTP turn uses the single-focus route, simulated principal and idempotency without a legacy review fallback", async () => {
+test("Agent HTTP turn uses the session principal and idempotency without a role header", async () => {
   let call;
   const payload = { turnId: "turn", runId: "run", status: "completed", focusRole: "business", currentFocusRole: "business", messages: [], nextExpectedVersion: 2, execution: {}, advisoryOnly: true, schemaVersion: "2.0" };
   const gateway = new HttpWorkbenchGateway({ apiBase: "http://api.test/api/v1", fetchImpl: async (url, init) => {
     call = { url: String(url), init };
     return envelope(payload);
   } });
-  await gateway.executeAgentTurn({ projectId: "project / 01", threadId: "agent-thread-01", principal: "business", instruction: "开放问题", replyToMessageId: null, evidenceTargets: [], expectedVersion: 1, locale: "zh-CN", idempotencyKey: "agent-turn-0001" });
+  await gateway.executeAgentTurn({ projectId: "project / 01", threadId: "agent-thread-01", principal: "business", targetAgentRole: "risk", sourceMessageId: "agent-message-01", instruction: "开放问题", replyToMessageId: null, evidenceTargets: [], expectedVersion: 1, locale: "zh-CN", responseDepth: "detailed", responseFocus: "evidence", customGuidance: "先列证据缺口", idempotencyKey: "agent-turn-0001" });
   assert.equal(call.url, "http://api.test/api/v1/projects/project%20%2F%2001/agents/threads/agent-thread-01/turns");
   assert.equal(call.init.method, "POST");
-  assert.equal(call.init.headers["X-Compare-Role"], "business");
+  assert.equal(call.init.headers["X-Compare-Role"], undefined);
+  assert.equal(call.init.credentials, "include");
   assert.equal(call.init.headers["Idempotency-Key"], "agent-turn-0001");
-  assert.deepEqual(JSON.parse(call.init.body), { instruction: "开放问题", replyToMessageId: null, evidenceTargets: [], expectedVersion: 1, locale: "zh-CN" });
+  assert.deepEqual(JSON.parse(call.init.body), { instruction: "开放问题", targetAgentRole: "risk", sourceMessageId: "agent-message-01", replyToMessageId: null, evidenceTargets: [], expectedVersion: 1, locale: "zh-CN", responseDepth: "detailed", responseFocus: "evidence", customGuidance: "先列证据缺口" });
 });
 
 test("mock conclusion keeps grades, confidence, evidence and human Gate visibly separate", async () => {
@@ -138,7 +139,8 @@ test("Agent dialogue keeps context optional, uses P6 turns and formats compact t
   assert.match(app, /agentSubmissionContext = \(reference: CollaborationContextReference \| null\)/);
   assert.match(app, /replyToMessageId: referencedMessage\?\.id \?\? null/);
   assert.match(app, /gateway\.executeAgentTurn/);
-  assert.match(app, /gateway\.transitionAgentFocus/);
+  assert.match(app, /gateway\.postAgentMessage/);
+  assert.doesNotMatch(app, /prepareAgentFocus/);
   assert.doesNotMatch(app, /gateway\.submitBusinessAnswer|gateway\.submitRiskQuestion|gateway\.submitRiskAnswer/);
   assert.match(collaborationStream, /message\.authorType !== "agent"/);
   assert.match(collaborationStream, /if \(!targets\.length && !questions\.length\) return null/);
@@ -146,7 +148,7 @@ test("Agent dialogue keeps context optional, uses P6 turns and formats compact t
 });
 
 test("collaboration stream excludes ordinary side drafts and keeps only traceable shared items in monotonic order", () => {
-  const execution = { mode: "real", providerId: "glm_5_2_coding_plan_cli", modelId: "glm-5.2", promptVersion: "v3", inputHash: "0".repeat(64), contextVersion: "1".repeat(64), outputHash: "2".repeat(64), advisoryOnly: true, isSimulated: false, dataStatus: "provider_generated_unverified", source: "glm_5_2_coding_plan_cli", disclaimer: "advisory" };
+  const execution = { mode: "real", providerId: "glm_5_3_coding_plan_cli", modelId: "glm-5.3[1m]", promptVersion: "v3", inputHash: "0".repeat(64), contextVersion: "1".repeat(64), outputHash: "2".repeat(64), advisoryOnly: true, isSimulated: false, dataStatus: "provider_generated_unverified", source: "glm_5_3_coding_plan_cli", disclaimer: "advisory" };
   const message = (overrides) => ({ id: "m", projectId: "p", threadId: "t", sequence: 1, role: "business", authorType: "agent", kind: "agent_reply", content: "draft", citations: [], generatedContent: { replyText: "draft", observations: [], questions: [], citations: [], scopeStatus: "in_scope", disposition: "answer" }, execution, replyToMessageId: null, runId: "run", createdAt: "2026-08-13T08:20:00Z", immutable: true, advisoryOnly: true, isSimulated: false, ...overrides });
   const ordinaryHuman = message({ id: "human", authorType: "human", kind: "user_input", generatedContent: null, execution: null, isSimulated: false });
   const ordinaryAgent = message({ id: "draft-agent" });
@@ -155,7 +157,7 @@ test("collaboration stream excludes ordinary side drafts and keeps only traceabl
   const focus = { id: "focus", projectId: "p", threadId: "t", sequence: 4, kind: "focus_transferred", fromFocusRole: "business", toFocusRole: "risk", actorRole: "business", reason: "复核", expectedVersion: 1, resultingVersion: 2, createdAt: "2026-08-13T08:23:00Z", immutable: true };
   const items = buildCollaborationStream([], [ordinaryHuman, ordinaryAgent, citedAgent, questionAgent], [focus]);
   assert.deepEqual(items.map((item) => item.id), ["agent:cited", "agent:question", "focus:focus"]);
-  assert.equal(items[0].sourceLabel.includes("glm_5_2_coding_plan_cli/glm-5.2"), true);
+  assert.equal(items[0].sourceLabel.includes("glm_5_3_coding_plan_cli/glm-5.3[1m]"), true);
   assert.equal(items[1].pending, true);
   assert.equal(items[2].kind, "focus_event");
 });

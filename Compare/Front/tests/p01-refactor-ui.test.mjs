@@ -73,15 +73,15 @@ test("R7 maps Excel locators to stable highlighted cells and internal scroll tar
 });
 
 test("R5 keeps formal corrections separate while Agent dialogue stays advisory-only", async () => {
-  const [dock, review, top] = await Promise.all([
-    readFile(new URL("src/components/CollaborationDock.tsx", root), "utf8"),
+  const [chat, review, top] = await Promise.all([
+    readFile(new URL("src/components/A2ACollaborationPanel.tsx", root), "utf8"),
     readFile(new URL("src/components/ReviewCanvas.tsx", root), "utf8"),
     readFile(new URL("src/components/TopBar.tsx", root), "utf8"),
   ]);
-  for (const text of ["业务修正", "显式 synthetic 开发模式", "协作事实流", "正式制度 Gate", "真实 Provider 输出仍是 advisory-only"]) assert.match(dock, new RegExp(text));
-  assert.doesNotMatch(review, /CorrectionPanel|提交修正/);
+  for (const text of ["FormalBusinessCorrection", "正式业务修正", "Human Gate", "formatServiceMessage"]) assert.match(review, new RegExp(text));
+  assert.doesNotMatch(chat, /FormalBusinessCorrection|提交修正/);
   for (const text of ["global-approval-actions", "暂存", "退回", "提交", "完成", "制度 Gate 未解除"]) assert.match(top, new RegExp(text));
-  assert.doesNotMatch(dock, /approval-actions/);
+  assert.doesNotMatch(chat, /approval-actions/);
 });
 
 test("R8-1 keeps two optional-context Agent dialogues around one traceable shared stream", async () => {
@@ -393,14 +393,13 @@ test("R8-6 keeps onsite manifests local while raw materials refuse processed sce
   assert.doesNotMatch(onsitePreview, /scene_3dgs|panorama|https?:\/\//);
 });
 
-test("directional docks keep fixed restore anchors while material and review stay in one layout", async () => {
-  const [app, topBar, navigation, review, material, dock, styles] = await Promise.all([
+test("review and materials keep fixed restore anchors while group chat is embedded in materials", async () => {
+  const [app, topBar, navigation, review, material, styles] = await Promise.all([
     readFile(new URL("src/App.tsx", root), "utf8"),
     readFile(new URL("src/components/TopBar.tsx", root), "utf8"),
     readFile(new URL("src/components/NavigationRail.tsx", root), "utf8"),
     readFile(new URL("src/components/ReviewCanvas.tsx", root), "utf8"),
     readFile(new URL("src/components/MaterialPane.tsx", root), "utf8"),
-    readFile(new URL("src/components/CollaborationDock.tsx", root), "utf8"),
     readFile(new URL("src/styles/app.css", root), "utf8"),
   ]);
 
@@ -413,12 +412,14 @@ test("directional docks keep fixed restore anchors while material and review sta
   assert.match(navigation, /向右展开六维导航/);
   assert.match(navigation, /aria-controls="navigation-rail"/);
   assert.match(navigation, /aria-expanded=\{!collapsed\}/);
-  assert.match(app, /setLayout\(\{ \.\.\.data\.layout \}\)/);
+  assert.match(app, /setLayout\(\{ \.\.\.data\.layout, \.\.\.DEFAULT_LAYOUT_RATIOS \}\)/);
   assert.match(app, /layout\.middleCollapsed \? "is-middle-collapsed"/);
   assert.match(app, /layout\.materialCollapsed \? "is-material-collapsed"/);
-  assert.match(app, /!layout\.middleCollapsed && !layout\.materialCollapsed \? <div aria-label=\{copy\(locale, "Resize the review and original-material areas", "调整中间与材料区域宽度"\)\}/);
-  assert.match(app, /!layout\.collaborationCollapsed && !\(layout\.middleCollapsed && layout\.materialCollapsed\) \? <div aria-label=\{copy\(locale, "Resize the collaboration workspace", "调整协同工作台高度"\)\}/);
-  assert.doesNotMatch(app, /MaximizedPane|maximizedPane|collaborationMaximized|is-collaboration-maximized|toggleCollaborationMaximized/);
+  assert.match(app, /!layout\.middleCollapsed && !layout\.materialCollapsed && !chatMaximized \? <div aria-label=\{copy\(locale, "Resize the review and original-material areas", "调整审批画布与右侧区域宽度"\)\}/);
+  assert.match(app, /workbench-body has-embedded-chat/);
+  assert.doesNotMatch(app, /Resize the collaboration workspace/);
+  assert.doesNotMatch(app, /<CollaborationDock/);
+  assert.match(app, /chatMaximized/);
 
   assert.match(review, /收起审查画布至左上角/);
   assert.match(review, /从左上角展开审查画布/);
@@ -436,20 +437,14 @@ test("directional docks keep fixed restore anchors while material and review sta
   assert.match(material, /pane-corner-glyph">↙/);
   assert.match(material, /pane-corner-glyph">↗/);
   assert.doesNotMatch(material, /panel-collapse-rail|rail-toggle-surface/);
-  assert.doesNotMatch(material, /全屏|material-(?:rail-)?maximize-trigger|onToggleMaximized|maximized:/);
-  assert.match(dock, /收起审批协同至右下角/);
-  assert.match(dock, /从右下角展开审批协同/);
-  assert.doesNotMatch(dock, /全屏|Maximized|maximized|onToggleMaximized|collaboration-maximize-trigger/);
-  assert.match(dock, /pane-corner-anchor collaboration-corner-anchor/);
-  assert.doesNotMatch(dock, /rail-toggle-surface|collaboration-rail-toggle|collaboration-expanded-toggle|collaboration-rail-maximize-trigger/);
-  assert.match(dock, /is-business-collapsed/);
-  assert.match(dock, /is-policy-collapsed/);
-  assert.match(dock, /is-risk-collapsed/);
-  assert.match(dock, /向中间折叠协作事实流/);
-  assert.match(dock, /aria-expanded=\{!collapsed\}/);
+  assert.doesNotMatch(material, /全屏|material-(?:rail-)?maximize-trigger/);
+  assert.match(material, /onToggleMaximized/);
+  assert.match(material, /material-chat-slot/);
+  assert.match(material, /<A2ACollaborationPanel/);
+  assert.match(material, /chatCollapsed/);
 
   assert.match(app, /<MaterialPane[^>]*collapsed=\{layout\.materialCollapsed\}/);
-  assert.match(app, /<CollaborationDock[^>]*collapsed=\{layout\.collaborationCollapsed\}/);
+  assert.match(app, /groupChat=\{\{/);
 
   assert.equal(mockWorkbenchProject.layout.collaborationHeight, 175);
   for (const key of ["navigationCollapsed", "middleCollapsed", "materialCollapsed", "collaborationCollapsed", "businessCollapsed", "policyCollapsed", "riskCollapsed"]) assert.equal(mockWorkbenchProject.layout[key], false, key);
@@ -457,32 +452,36 @@ test("directional docks keep fixed restore anchors while material and review sta
   assert.match(styles, /\.pane-corner-anchor\s*\{[^}]*position:\s*absolute;[^}]*z-index:\s*36;/s);
   assert.match(styles, /\.review-corner-anchor\s*\{[^}]*left:\s*0;[^}]*top:\s*0;/s);
   assert.match(styles, /\.material-corner-anchor\s*\{[^}]*right:\s*0;[^}]*top:\s*0;/s);
-  assert.match(styles, /\.collaboration-corner-anchor\s*\{[^}]*right:\s*0;[^}]*bottom:\s*0;/s);
   assert.doesNotMatch(styles, /is-review-maximized|is-material-maximized|is-collaboration-maximized|review-canvas\.is-maximized|review-maximize-trigger|material-maximize-trigger|material-rail-maximize-trigger|collaboration-maximize-trigger|panel-maximize-trigger/);
+  assert.match(styles, /\.material-pane\.has-project-chat\.is-chat-maximized/);
   assert.doesNotMatch(styles, /panel-collapse-rail|rail-toggle-surface|review-expanded-toggle|material-collapse-trigger|collaboration-expanded-toggle/);
-  assert.match(styles, /\.role-column-business \.role-collapse-trigger\s*\{[^}]*left:\s*0;/s);
-  assert.match(styles, /\.shared-column \.policy-collapse-trigger\s*\{[^}]*left:\s*50%;/s);
-  assert.match(styles, /\.role-column-risk \.role-collapse-trigger\s*\{[^}]*right:\s*0;/s);
+  assert.match(styles, /\.workbench-body\.has-embedded-chat[\s\S]*grid-template-rows:\s*44px minmax\(0, 1fr\)/);
+  assert.match(styles, /\.material-pane\.has-project-chat[\s\S]*grid-template-rows:\s*minmax\(0, var\(--layout-source-share\)\) var\(--layout-divider-hit\) minmax\(0, var\(--layout-chat-share\)\)/);
+  assert.match(styles, /\.review-stages\s*\{[^}]*width:\s*100%;[^}]*max-width:\s*none;[^}]*margin:\s*0;/s);
+  assert.match(styles, /\.dimension-section\s*\{[^}]*width:\s*100%;[^}]*max-width:\s*none;[^}]*margin:\s*0;/s);
   assert.match(styles, /\.workbench-body\.is-middle-collapsed:not\(\.is-material-collapsed\) \.material-pane\s*\{[^}]*grid-row:\s*1 \/ 3;/s);
   assert.match(styles, /\.workbench-body\.is-middle-collapsed \.review-canvas\s*\{[^}]*position:\s*absolute;[^}]*left:\s*var\(--resolved-navigation-width\);/s);
   assert.match(styles, /\.material-pane\.is-collapsed\s*\{[^}]*position:\s*absolute;[^}]*right:\s*0;[^}]*top:\s*0;/s);
-  assert.match(styles, /\.collaboration-dock\.is-collapsed\s*\{[^}]*position:\s*absolute;[^}]*right:\s*0;[^}]*bottom:\s*0;/s);
+  assert.match(styles, /\.material-pane\.has-project-chat\.is-chat-collapsed[\s\S]*grid-template-rows:[^;]*44px/);
   assert.doesNotMatch(styles, /\.workbench-body\.is-material-collapsed\s*\{[^}]*grid-template-columns:[^}]*44px;/s);
   assert.doesNotMatch(styles, /\.workbench-body\.is-collaboration-collapsed\s*\{[^}]*grid-template-rows:[^}]*44px\s*;/s);
 });
 
-test("horizontal splitter resizes the review viewport and collaboration dock in one animation frame", async () => {
-  const [app, styles] = await Promise.all([
+test("responsive splitters resize both axes in one animation frame", async () => {
+  const [app, material, styles] = await Promise.all([
     readFile(new URL("src/App.tsx", root), "utf8"),
+    readFile(new URL("src/components/MaterialPane.tsx", root), "utf8"),
     readFile(new URL("src/styles/app.css", root), "utf8"),
   ]);
-  assert.match(app, /const property = axis === "material" \? "--layout-material-width" : "--layout-collaboration-height"/);
   assert.match(app, /requestAnimationFrame\(applyResize\)/);
-  assert.match(app, /workbench\.style\.setProperty\(property, `\$\{nextValue\}px`\)/);
-  assert.match(app, /function stop[\s\S]*applyResize\(\);[\s\S]*setMaterialEdge[\s\S]*setCollaborationEdge/);
-  assert.match(app, /removeEventListener\("pointercancel", stop\)/);
-  assert.match(app, /removeEventListener\("blur", stop\)/);
-  assert.match(styles, /grid-template-rows:\s*44px minmax\(0, 1fr\) var\(--layout-divider-hit\) var\(--layout-collaboration-height\)/);
+  assert.match(material, /requestAnimationFrame\(applyResize\)/);
+  assert.match(app, /body\.style\.setProperty\("--layout-review-share", `\$\{100 - nextRatio\}fr`\)/);
+  assert.match(material, /pane\.style\.setProperty\("--layout-chat-share", `\$\{nextRatio\}fr`\)/);
+  for (const source of [app, material]) {
+    assert.match(source, /removeEventListener\("pointercancel", stop\)/);
+    assert.match(source, /removeEventListener\("blur", stop\)/);
+  }
+  assert.match(styles, /grid-template-columns:[^;]*var\(--layout-review-share\)[^;]*var\(--layout-material-share\)/);
+  assert.match(styles, /grid-template-rows:[^;]*var\(--layout-source-share\)[^;]*var\(--layout-chat-share\)/);
   assert.match(styles, /\.review-canvas\s*\{[^}]*grid-row:\s*1 \/ 3;/s);
-  assert.match(styles, /\.collaboration-dock\s*\{[^}]*grid-row:\s*4;/s);
 });

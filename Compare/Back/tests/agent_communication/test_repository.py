@@ -90,6 +90,59 @@ def _execution(output_hash: str = "3" * 64) -> dict:
     }
 
 
+def test_natural_chat_message_persists_without_agent_run(tmp_path: Path) -> None:
+    repository = AgentCommunicationRepository(tmp_path / "natural-chat.db")
+    _project(repository, "project-a")
+    thread = _thread(repository)
+
+    message = repository.append_human_message(
+        "project-a",
+        thread["id"],
+        role="business",
+        content="这是普通群聊，不触发 Agent。",
+        reply_to_message_id=None,
+        idempotency_key="chat-message-0001",
+        request_hash="c" * 64,
+    )
+
+    assert message["authorType"] == "human"
+    assert message["role"] == "business"
+    assert message["runId"] is None
+    assert repository.raw_connection_for_tests().execute(
+        "SELECT COUNT(*) FROM agent_runs"
+    ).fetchone()[0] == 0
+    assert repository.list_messages("project-a", thread["id"]) == [message]
+    repository.close()
+
+
+def test_human_chat_continues_while_agent_run_is_active(tmp_path: Path) -> None:
+    repository = AgentCommunicationRepository(tmp_path / "natural-chat-active-run.db")
+    _project(repository, "project-a")
+    thread = _thread(repository)
+    reserved = _reserve(
+        repository,
+        "project-a",
+        thread,
+        key="active-agent-turn-0001",
+        role="risk",
+    )
+
+    message = repository.append_human_message(
+        "project-a",
+        thread["id"],
+        role="business",
+        content="Agent 回复期间继续补充这条业务说明。",
+        reply_to_message_id=None,
+        idempotency_key="chat-during-run-0001",
+        request_hash="d" * 64,
+    )
+
+    assert message["runId"] is None
+    assert repository.get_run("project-a", reserved["run"]["runId"])["status"] == "running"
+    assert repository.list_messages("project-a", thread["id"])[0]["content"] == message["content"]
+    repository.close()
+
+
 def _finalize(
     repository: AgentCommunicationRepository,
     project_id: str,

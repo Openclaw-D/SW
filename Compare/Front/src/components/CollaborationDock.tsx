@@ -18,6 +18,7 @@ import { copy, formatCanonicalLabel, formatCanonicalNarrative, formatFactValue, 
 import { A2ACollaborationPanel } from "./A2ACollaborationPanel";
 import { Icon } from "./icons";
 import { Button, EmptyState } from "./ui";
+import type { AccountRole } from "../contracts/authentication";
 
 type ChainMode = "ready" | "loading" | "empty" | "error";
 const approvalLabels: Record<ApprovalState["status"], string> = {
@@ -348,6 +349,7 @@ function LegacyCollaborationDock({
   onSubmitBusiness,
   onSubmitLeadership,
   onSubmitRisk,
+  onSubmitMessage,
   onCorrection,
   onImportMaterialPackage,
   onConfirmMaterialImport,
@@ -382,6 +384,7 @@ function LegacyCollaborationDock({
   onSubmitBusiness: (message: string, reference: CollaborationContextReference | null) => Promise<void>;
   onSubmitLeadership: (message: string, reference: CollaborationContextReference | null) => Promise<void>;
   onSubmitRisk: (message: string, reference: CollaborationContextReference | null) => Promise<void>;
+  onSubmitMessage: (message: string, targetAgentRole: "business" | "risk" | null, reference: CollaborationContextReference | null) => Promise<void>;
   onCorrection: (factId: string, value: string, reason: string) => Promise<void>;
   onImportMaterialPackage: (file: File) => Promise<{ receipt: MaterialUploadReceipt; preflight: MaterialImportPreflight }>;
   onConfirmMaterialImport: (preflight: MaterialImportPreflight) => Promise<MaterialImportResult>;
@@ -469,9 +472,10 @@ function LegacyCollaborationDock({
   );
 }
 
-export function CollaborationDock(props: Parameters<typeof LegacyCollaborationDock>[0]) {
+export function CollaborationDock(props: Parameters<typeof LegacyCollaborationDock>[0] & { accountRole: AccountRole }) {
   const locale = usePublicLocale();
   const {
+    accountRole,
     agentError,
     agentFocusEvents,
     agentMessages,
@@ -489,6 +493,7 @@ export function CollaborationDock(props: Parameters<typeof LegacyCollaborationDo
     onSubmitBusiness,
     onSubmitLeadership,
     onSubmitRisk,
+    onSubmitMessage,
     onToggleCollapsed,
     rules,
     selectedTarget,
@@ -496,7 +501,7 @@ export function CollaborationDock(props: Parameters<typeof LegacyCollaborationDo
   return (
     <section className={`collaboration-dock a2a-collaboration-dock ${collapsed ? "is-collapsed" : ""}`} aria-label={copy(locale, "Approval collaboration workspace", "审批协同工作区")} data-semantic-localized="true" id="collaboration-pane">
       <button aria-controls="collaboration-pane" aria-expanded={!collapsed} aria-label={collapsed ? copy(locale, "Expand approval collaboration from the lower-right corner", "从右下角展开审批协同") : copy(locale, "Collapse approval collaboration to the lower-right corner", "收起审批协同至右下角")} className="pane-corner-anchor collaboration-corner-anchor" onClick={onToggleCollapsed} title={collapsed ? copy(locale, "Expand approval collaboration", "展开审批协同") : copy(locale, "Collapse approval collaboration", "收起审批协同")} type="button"><span aria-hidden="true" className="pane-corner-glyph">{collapsed ? "↖" : "↘"}</span></button>
-      {!collapsed ? <A2ACollaborationPanel agentError={agentError} agentFocusEvents={agentFocusEvents} agentMessages={agentMessages} correctionMessage={correctionMessage} correctionPending={correctionPending} dimensions={dimensions} events={events} evidence={evidence} facts={facts} onAgentEvidenceActivate={onAgentEvidenceActivate} onConfirmMaterialImport={onConfirmMaterialImport} onCorrection={onCorrection} onImportMaterialPackage={onImportMaterialPackage} onSubmitBusiness={onSubmitBusiness} onSubmitLeadership={onSubmitLeadership} onSubmitRisk={onSubmitRisk} rules={rules} selectedTarget={selectedTarget} /> : null}
+      {!collapsed ? <A2ACollaborationPanel accountRole={accountRole} agentActivity={null} agentError={agentError} agentMessages={agentMessages} evidence={evidence} onAgentEvidenceActivate={onAgentEvidenceActivate} onConfirmMaterialImport={onConfirmMaterialImport} onImportMaterialPackage={onImportMaterialPackage} onSubmitMessage={onSubmitMessage} selectedTarget={selectedTarget} /> : null}
     </section>
   );
 }

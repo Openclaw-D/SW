@@ -75,10 +75,12 @@ def _agent_provider(raw_value: str) -> str:
 
 @dataclass(frozen=True, slots=True)
 class Settings:
-    app_name: str = "Signal Council API"
+    app_name: str = "signal-council API"
     app_version: str = "1.0.0"
     environment: str = "development"
     api_prefix: str = "/api/v1"
+    session_cookie_secure: bool = False
+    session_hours: int = 8
     database_path: Path = field(default_factory=_default_database_path)
     import_root: Path = field(default_factory=_default_import_root)
     # Optional archive root. It must contain native-material-packs/ and is
@@ -99,9 +101,9 @@ class Settings:
     agent_timeout_seconds: float = 75.0
     agent_glm_cli_executable: str = "claude.cmd"
     agent_glm_cli_timeout_seconds: float = 60.0
-    agent_business_model: str = "glm-5.2"
-    agent_risk_model: str = "glm-5.2"
-    agent_leadership_model: str = "glm-5.2"
+    agent_business_model: str = "glm-5.3[1m]"
+    agent_risk_model: str = "glm-5.3[1m]"
+    agent_leadership_model: str = "glm-5.3[1m]"
     generator_seed: int = 20260810
     # Direct construction is retained for legacy deterministic test fixtures;
     # normal application startup always goes through from_environment(), whose
@@ -122,9 +124,11 @@ class Settings:
             os.getenv("COMPARE_MATERIAL_ROOT")
         )
         return cls(
-            app_name=os.getenv("COMPARE_APP_NAME", "Signal Council API"),
+            app_name=os.getenv("COMPARE_APP_NAME", "signal-council API"),
             environment=os.getenv("COMPARE_ENVIRONMENT", "development"),
             api_prefix=os.getenv("COMPARE_API_PREFIX", "/api/v1"),
+            session_cookie_secure=os.getenv("SIGNAL_COUNCIL_SESSION_COOKIE_SECURE", "false").strip().lower() == "true",
+            session_hours=int(os.getenv("SIGNAL_COUNCIL_SESSION_HOURS", "8")),
             database_path=(
                 _database_path(os.environ["COMPARE_DATABASE_PATH"])
                 if os.getenv("COMPARE_DATABASE_PATH")
@@ -168,15 +172,15 @@ class Settings:
             ),
             agent_business_model=os.getenv(
                 "COMPARE_AGENT_BUSINESS_MODEL",
-                os.getenv("COMPARE_AGENT_MODEL", "glm-5.2"),
+                os.getenv("COMPARE_AGENT_MODEL", "glm-5.3[1m]"),
             ),
             agent_risk_model=os.getenv(
                 "COMPARE_AGENT_RISK_MODEL",
-                os.getenv("COMPARE_AGENT_MODEL", "glm-5.2"),
+                os.getenv("COMPARE_AGENT_MODEL", "glm-5.3[1m]"),
             ),
             agent_leadership_model=os.getenv(
                 "COMPARE_AGENT_LEADERSHIP_MODEL",
-                os.getenv("COMPARE_AGENT_MODEL", "glm-5.2"),
+                os.getenv("COMPARE_AGENT_MODEL", "glm-5.3[1m]"),
             ),
             generator_seed=int(os.getenv("COMPARE_GENERATOR_SEED", "20260810")),
             generator_profile=os.getenv("COMPARE_DEMO_PROFILE", "standard").strip().lower(),

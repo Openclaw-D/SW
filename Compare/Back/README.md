@@ -1,6 +1,6 @@
-# Signal Council · 见微 V1 Back
+# signal-council V1 Back
 
-The Back service is the local FastAPI and SQLite side of the Signal Council · 见微 reference workbench. It provides 24 isolated, deterministic, de-identified demonstration projects and turns the frozen Front contract into checked Pydantic, HTTP, SQLite-state, and error contracts.
+The Back service is the local FastAPI and SQLite side of the signal-council reference workbench. It provides 24 isolated, deterministic, de-identified demonstration projects and turns the frozen Front contract into checked Pydantic, HTTP, SQLite-state, authentication, membership, and error contracts.
 
 It is a financing-lease first-pass material-verification and business-rule workbench—not a general risk platform, statistical model, automatic approval service, OCR/Office platform, or real-customer material store.
 
@@ -31,7 +31,11 @@ The reference template describes 56 materials per project (21 Excel, 14 PDF, and
 
 `COMPARE_AGENT_MODE` defaults to `synthetic`. Synthetic output is an explicit simulation, not a fallback that pretends to be a provider result. A locally configured provider path is optional and must fail closed; it is not proof of provider quality, authentication security, production SLA, deployment readiness, or automatic decision authority.
 
-The `business`, `risk`, and `leadership` roles share a server-authoritative single `focusRole`. Leadership governs collaboration only. `X-Compare-Role` is a simulated local principal, not login, authentication, membership, or production RBAC. See [the collaboration contract](docs/AGENT-CONVERSATION-CONTRACT.md).
+The current `glm_cli` real path is frozen to the exact `glm-5.3[1m]` model and `glm_5_3_coding_plan_cli` provenance. It passes that model ID directly to the CLI rather than relying on a mutable alias, and rejects any different or ambiguous `modelUsage` identity.
+
+The fixed Demo accounts are `business`, `risk`, and `coordinator`; the last maps to server role `leadership` and is presented as the system-settings account. A backend session and project membership derive every production principal. The legacy `X-Compare-Role` header is ignored by production routes and exists only in test dependency overrides. Only `business` and `risk` may post project chat or explicitly route to their two advisory Agents. `coordinator` reads the shared projection and manages system settings and approval actions; it is neither a chat sender nor an Agent target. Routing never changes the sender identity or formal write permissions. See [the authorization matrix](docs/AUTHORIZATION.md) and [the collaboration contract](docs/AGENT-CONVERSATION-CONTRACT.md).
+
+All three Demo accounts initially use `123456` only on an isolated intranet Demo. Passwords are independently salted and stored through standard-library PBKDF2; session tokens are high-entropy opaque values delivered only through an HttpOnly/SameSite cookie, while SQLite stores only their SHA-256 hashes and lifecycle timestamps. Repeated login revokes the prior active session. Public release must rotate the initial passwords and enable the remaining security gates.
 
 ## Local run
 
@@ -53,7 +57,7 @@ For the supported Windows local-reference path, use [../DEPLOYMENT.md](../DEPLOY
 
 | Variable | Default / purpose |
 | --- | --- |
-| `COMPARE_APP_NAME` | `Signal Council API` |
+| `COMPARE_APP_NAME` | `signal-council API` |
 | `COMPARE_ENVIRONMENT` | `development` |
 | `COMPARE_API_PREFIX` | `/api/v1` |
 | `COMPARE_DATABASE_PATH` | Repository-external `%LOCALAPPDATA%\CompareWorkbench\compare.db` by default on Windows |
@@ -65,7 +69,11 @@ For the supported Windows local-reference path, use [../DEPLOYMENT.md](../DEPLOY
 | `COMPARE_MATERIAL_INTELLIGENCE_TIMEOUT_SECONDS` | Per-call timeout; default `5` seconds |
 | `COMPARE_MODEL_GATEWAY_MODE` | `disabled`, `synthetic`, or `real`; default `synthetic`; `real` does not prove an external call occurred |
 | `COMPARE_AGENT_MODE` | `disabled`, `synthetic`, or `real`; default `synthetic` |
-| `COMPARE_AGENT_PROVIDER` / `COMPARE_AGENT_MODEL` | Optional provider configuration; retain credentials outside source control |
+| `COMPARE_AGENT_PROVIDER` / `COMPARE_AGENT_MODEL` | Optional provider configuration; `glm_cli` is frozen to `glm-5.3[1m]`; retain credentials outside source control |
+| `SIGNAL_COUNCIL_SESSION_COOKIE_SECURE` | `false` for isolated HTTP Demo only; public TLS requires `true` |
+| `SIGNAL_COUNCIL_SESSION_HOURS` | Session lifetime; default `8` hours |
+
+The existing `COMPARE_*` environment names and `%LOCALAPPDATA%\CompareWorkbench` runtime path remain as a minimal V1 compatibility layer so an upgrade does not silently orphan a prior local database. New user-visible branding and new session settings use `signal-council` naming.
 
 Do not put credentials, SQLite files, uploads, archives, session data, or real material paths in Git.
 
@@ -101,7 +109,7 @@ Use the repository venv:
 .\.venv\Scripts\python.exe -m pytest -q
 ```
 
-Current fresh-clone reference behavior with no external material root: `419 passed`, `37 skipped`, and one warning. The skips are restricted to six frozen offline/oracle modules that require external native material packs; they are not a production or provider claim.
+Current authentication/ACL reference behavior with no external material root: `424 passed`, `37 skipped`, and one warning. The skips are restricted to frozen offline/oracle modules that require external native material packs; they are not a production or provider claim.
 
 Then run from the repository root:
 

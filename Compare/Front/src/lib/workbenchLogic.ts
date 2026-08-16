@@ -28,8 +28,13 @@ import type {
 
 export const LAYOUT_LIMITS = {
   navigationWidth: [64, 292],
-  materialWidth: [360, 960],
-  collaborationHeight: [140, 520],
+  materialRatio: [10, 90],
+  collaborationRatio: [10, 90],
+} as const;
+
+export const DEFAULT_LAYOUT_RATIOS = {
+  materialRatio: 50,
+  collaborationRatio: 50,
 } as const;
 
 export const PERSISTED_LAYOUT_KEY = "compare-front-layout-v1";
@@ -287,6 +292,11 @@ export function groupRiskItems(summary: GlobalRiskSummary): RiskDisplayGroup[] {
   return RISK_LEVEL_ORDER.map((level) => ({ level, items: items.filter((item) => item.level === level) }));
 }
 
+export type ResponsiveLayoutState = LayoutState & {
+  materialRatio: number;
+  collaborationRatio: number;
+};
+
 export type PersistedLayout = Pick<
   LayoutState,
   | "navigationWidth"
@@ -300,7 +310,7 @@ export type PersistedLayout = Pick<
   | "policyCollapsed"
   | "riskCollapsed"
   | "activeDimensionId"
->;
+> & Pick<ResponsiveLayoutState, "materialRatio" | "collaborationRatio">;
 
 export function clamp(value: number, minimum: number, maximum: number) {
   return Math.min(maximum, Math.max(minimum, value));
@@ -793,22 +803,30 @@ export function aggregateProductionEnergy(
   return { status: "available", points: [...grouped.values()] };
 }
 
-export function sanitizePersistedLayout(value: unknown, fallback: LayoutState): PersistedLayout {
-  const input = value && typeof value === "object" ? value as Partial<LayoutState> : {};
+export function sanitizePersistedLayout(value: unknown, fallback: LayoutState | ResponsiveLayoutState): PersistedLayout {
+  const input = value && typeof value === "object" ? value as Partial<ResponsiveLayoutState> : {};
   const dimension = typeof input.activeDimensionId === "string" && DIMENSION_IDS.includes(input.activeDimensionId as DimensionId)
     ? input.activeDimensionId as DimensionId
     : fallback.activeDimensionId;
-  const numeric = (key: "navigationWidth" | "materialWidth" | "collaborationHeight") => {
+  const navigationWidth = typeof input.navigationWidth === "number" && Number.isFinite(input.navigationWidth)
+    ? clamp(input.navigationWidth, ...LAYOUT_LIMITS.navigationWidth)
+    : fallback.navigationWidth;
+  const ratio = (key: "materialRatio" | "collaborationRatio") => {
     const candidate = input[key];
-    const [minimum, maximum] = LAYOUT_LIMITS[key];
+    const responsiveFallback = fallback as Partial<ResponsiveLayoutState>;
+    const fallbackRatio = typeof responsiveFallback[key] === "number"
+      ? responsiveFallback[key]
+      : DEFAULT_LAYOUT_RATIOS[key];
     return typeof candidate === "number" && Number.isFinite(candidate)
-      ? clamp(candidate, minimum, maximum)
-      : fallback[key];
+      ? clamp(candidate, ...LAYOUT_LIMITS[key])
+      : fallbackRatio;
   };
   return {
-    navigationWidth: numeric("navigationWidth"),
-    materialWidth: numeric("materialWidth"),
-    collaborationHeight: numeric("collaborationHeight"),
+    navigationWidth,
+    materialWidth: fallback.materialWidth,
+    collaborationHeight: fallback.collaborationHeight,
+    materialRatio: ratio("materialRatio"),
+    collaborationRatio: ratio("collaborationRatio"),
     navigationCollapsed: input.navigationCollapsed === true,
     middleCollapsed: input.middleCollapsed === true,
     materialCollapsed: input.materialCollapsed === true,
@@ -820,7 +838,7 @@ export function sanitizePersistedLayout(value: unknown, fallback: LayoutState): 
   };
 }
 
-export function persistedLayoutFrom(state: LayoutState): PersistedLayout {
+export function persistedLayoutFrom(state: ResponsiveLayoutState): PersistedLayout {
   return sanitizePersistedLayout(state, state);
 }
 

@@ -276,3 +276,23 @@ Agent 建议只可作为带 role、provider/model/prompt 与 input/context/outpu
 中栏不是 leadership 普通聊天，也不是新的权威事实链。它只按真实 `createdAt + sequence` 从早到晚投影材料定位、明确待回复问题、用户或角色显式确认的协调结论与服务端焦点事件；左右探索、假设和草稿不得自动进入。共享项必须有明确来源或引用，且永远保持 advisory-only，不生成 FactVersion、PolicyResult、hard gate、approval 或正式 `review_events`。
 
 中栏顶部的领导协调摘要只包含六维 grade 色、短名称、`MM-DD HH:mm` 更新时间和待回复摘要；全局风险不进入六标，状态带不可点击跳转，不与左侧六维导航重复，也不把 score、decision、confidence、evidence 或 Gate 混为一个状态。
+
+## 2026-08-14
+
+### D-060 · 产品名称收束为 signal-council，旧内部键只保留最小兼容
+
+用户可见品牌、当前运行文档、仓库地址与新配置统一使用精确字符串 `signal-council`，远端为 `https://github.com/Openclaw-D/signal-council`。磁盘父目录不改名。既有 `COMPARE_*` 环境变量、持久化 key、MIME/fixture 标识及 `%LOCALAPPDATA%\CompareWorkbench` 路径若直接重命名会破坏 V1 升级，因此仅作为有测试覆盖的兼容层保留，不再作为用户可见产品名扩散。
+
+### D-061 · 固定 Demo 账号由 session 与 membership 形成唯一正式 principal
+
+内网 Demo 固定三个账号：`business / 业务 / business`、`risk / 风控 / risk`、`coordinator / 协管 / leadership`。初始密码均为 `123456`，只适用于隔离内网 Demo，公网发布前必须替换/轮换。密码使用 Python 标准库 PBKDF2-HMAC-SHA256 和独立随机 salt；客户端只接收 HttpOnly/SameSite opaque session Cookie，数据库只保存 token hash、账号引用与必要生命周期字段，不保存 Cookie 明文、IP 或 user-agent。
+
+现有和后续 seed 项目均以幂等 membership 与三个账号关联，不复制项目事实或流程。正式路由 principal 仅从 session 派生；旧 `X-Compare-Role` 不可信 Header 不再进入生产依赖链，仅允许测试通过 FastAPI dependency override 构造主体。business/risk 各自写本角色流程、参与群聊并调用业务或风控 Agent；leadership 可读完整投影、管理系统设置并执行审批，但不参与群聊且不是 Agent target。任何 Agent 仍为 advisory-only，不得写入或绕过正式事实、证据、规则、hard gate 和审批链。
+
+## 2026-08-16
+
+### D-062 · 真实 Agent 冻结到精确 GLM-5.3 身份
+
+Compare 的 `glm_cli` 真实 Agent 使用精确模型 ID `glm-5.3[1m]` 和 provider ID `glm_5_3_coding_plan_cli`。CLI 命令不得通过 `sonnet` 等可漂移别名选模；返回遥测必须只有一个且精确等于 `glm-5.3[1m]`，否则以 `provider_model_identity_unverified` 失败关闭。该决定仅覆盖 Compare A2A provider，不能修改或替代 Codex 主模型、全局认证和其他项目路由。
+
+迁移不改变 `synthetic` 默认模式、session principal、项目 ACL、自然群聊路由、单次 provider call、advisory-only、正式表零写入或人工 Gate。真实隔离 smoke 只证明当前本机 Coding Plan 接口与 provenance 可用，不等于模型内容质量、额度保障、SLA 或生产发布 Gate。

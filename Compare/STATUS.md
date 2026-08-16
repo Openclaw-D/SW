@@ -1,8 +1,24 @@
 # Status
 
-更新时间：2026-08-14
+更新时间：2026-08-16
 
 ## 当前阶段
+
+### GLM-5.3 迁移检查点（2026-08-16）
+
+Compare 的可选真实 Agent 路径已从冻结的 `glm_5_2_coding_plan_cli / glm-5.2` 迁移到精确的 `glm_5_3_coding_plan_cli / glm-5.3[1m]`。CLI 命令直接传模型 ID，不再经 `sonnet` 别名；运行遥测必须只包含精确 `glm-5.3[1m]`，旧 5.2、前后缀代理、多模型或缺失身份均 fail closed。
+
+隔离临时数据库中的真实 A2A 风控 turn 已通过：HTTP `200`、`mode=real`、`isSimulated=false`、`advisoryOnly=true`、`provider_generated_unverified`，输入/输出 `2910 / 657` tokens、记录成本约 `0.030975 USD`、permission denial 0、validation failure 0。与同版本空白基线相比，`fact_versions / evidence_references / policy_results / approval_transitions / review_events` 增量均为 0。Back provider 聚焦测试 `34/34`、Front 全套 `204/204` 通过；仍只有既有 Starlette/httpx 弃用警告。本 Gate 只证明本机当前接口、身份遥测、失败关闭和 advisory 边界，不证明模型内容质量、额度/SLA 或公网生产可用性。
+
+### P6 三账号认证与 ACL Gate（2026-08-14）
+
+signal-council 已实现固定 `business / risk / coordinator` 内网 Demo 登录，coordinator 在服务端映射为 `leadership`、界面显示协管。SQLite 增加 account、account session、project membership；当前全部项目以幂等方式建立三条 membership，不复制项目或流程数据。正式 API principal 只来自后端 session，客户端自报 `X-Compare-Role` 无法换角色。
+
+2026-08-16 当前完整 Gate：Back `509 passed / 1 warning`；Front `217/217`、typecheck 与 vinext build 通过。应用内浏览器以物理 `1920×1080` override 复核现有 risk session，实际 CSS 视口 `1315×739`，入口与项目选择页横向溢出 0、console error/warning 0；页面明确显示 24 项固定一一绑定的脱敏模拟演示数据。权限契约固定为 business/risk 参与群聊并只调用业务或风控 Agent，coordinator 读取共享投影、管理系统设置并执行审批，不参与群聊且不是 Agent target。
+
+一键脚本 `Preflight` 通过；默认 `Start` 正确拒绝复用本轮开始前已占用 8000 的旧 API（其 OpenAPI 无 `/auth/login`），并未终止该未知进程。因 4317 同时存在既有同目录 vinext，`Start / Check / Stop` 完整循环未在默认端口重跑，不能写成已通过。仓库外随机端口真实 HTTP Gate 已独立证明新 API、迁移、session 与 ACL 可运行。
+
+三个账号初始密码 `123456` 只用于隔离内网 Demo；公网 Gate 尚未通过，必须先轮换密码并补 Secure Cookie/TLS、生产身份生命周期、限流/CSRF、进程托管、备份恢复、隐私留存和 Internet 安全审查。
 
 ### P6 轻量现场概览收敛（2026-08-14）
 
@@ -12,11 +28,11 @@
 
 ### Windows 本机一键运行 Gate（2026-08-14）
 
-根 `start-local.ps1` 已收束为单入口 `Start / Preflight / Status / Check / Stop`：不自动安装依赖，不终止未知进程，默认把数据库、日志、PID 状态和导入目录放在仓库外，并检查 Python/Node、固定端口、Back health、项目目录、Front 页面和 4317→8000 CORS。real Agent 模式显式检查 `claude.cmd`、仓库外认证、精确 `glm-5.2` 模型与人工预算声明；任何条件缺失都在启动前失败，不回退 synthetic。
+根 `start-local.ps1` 已收束为单入口 `Start / Preflight / Status / Check / Stop`：不自动安装依赖，不终止未知进程，默认把数据库、日志、PID 状态和导入目录放在仓库外，并检查 Python/Node、固定端口、Back health、项目目录、Front 页面和 4317→8000 CORS。real Agent 模式显式检查 `claude.cmd`、仓库外认证、精确 `glm-5.3[1m]` 模型与人工预算声明；任何条件缺失都在启动前失败，不回退 synthetic。
 
 本轮受控验收通过：默认 `4317/8000` readiness/status/check 通过，24 项可读；外置 Archive + 当前共享 SQLite 已通过受控追加导入形成匹配绑定，24 个项目各有 56 份原件可读，真实原件 Range 为 `206 / 32 bytes`。未配置 Archive 的隔离实例仍保持 health ok、24 项/每项 56 份，并统一投影 `not_configured`，原件 HTTP 返回 `503 material_root_not_configured`。新主机应使用仓库外新库或经过受控导入/迁移的匹配库，详见 `DEPLOYMENT.md`。这仍不是登录、TLS、Windows Service、自动备份或公网生产发布。
 
-**P5 本地脱敏演示 Gate 保持通过；P6 单焦点 Agent、三栏真实对话接线与只读最终结论投影 Gate 已通过。** 当前 Back 全套为 `455 passed`，Front 全套为 `193 passed`，typecheck 与 vinext build 通过。没有登录/认证、信用页联调或真实 Provider 生产发布结论。
+**以下为 P5 与早期 P6 的历史基线：本地脱敏演示、单焦点 Agent、三栏真实对话接线与只读最终结论投影 Gate 当时已通过。** 当时 Back 全套为 `455 passed`，Front 全套为 `193 passed`，尚未实现登录/认证；当前认证与 ACL 状态及本轮真实数字以前文新 Gate 为准。
 
 24 个项目目录各含 56 份脱敏模拟业务原件和一个 ZIP，共 1344 份唯一 SHA-256：504 个 Excel、336 个 PDF、504 张 `2048×1152` PNG。每包另含 `derived/scene-spec.json`、`factory-layout.glb` 与图像 provenance，不冒充原件；最大项目目录 26.96 MiB、最大 ZIP 26.57 MiB，均低于 100 MiB Gate。导入、项目隔离原件读取、HTTP Range、Excel/PDF/image locator、SceneSpec 与 GLB 派生边界已有全新 SQLite 隔离运行证据；`Back/runtime/**` 继续只保留在本机并由 Git 忽略。
 

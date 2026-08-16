@@ -574,8 +574,8 @@ export function formatDimensionName(dimensionId: DimensionId, locale: PublicLoca
 }
 
 export function formatAgentRole(role: AgentRole, locale: PublicLocale) {
-  const english = role === "business" ? "Business" : role === "risk" ? "Risk control" : "Leadership coordination";
-  const chinese = role === "business" ? "业务" : role === "risk" ? "风控" : "协调";
+  const english = role === "business" ? "Business" : role === "risk" ? "Risk control" : "System";
+  const chinese = role === "business" ? "业务" : role === "risk" ? "风控" : "系统";
   return copy(locale, english, chinese);
 }
 
@@ -996,6 +996,6 @@ export function translateEnglishSurface(root: HTMLElement) {
 
 /** Kept for the public-entry regression surface; critical UI does not call it. */
 export function translatePublicText(value: string, locale: PublicLocale) {
-  if (locale === "en" && (value === "Signal Council · 见微" || value === "中")) return value;
+  if (locale === "en" && (value === "signal-council" || value === "中")) return value;
   return formatCanonicalNarrative(value, locale);
 }

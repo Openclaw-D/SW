@@ -13,8 +13,12 @@ export type IconName =
   | "message"
   | "rule"
   | "robot"
+  | "microphone"
+  | "mcp"
+  | "settings"
   | "chevron"
   | "expand"
+  | "collapse"
   | "send";
 
 export const dimensionColorVar: Record<DimensionId, string> = {
@@ -43,8 +47,12 @@ const iconPaths: Record<IconName, React.ReactNode> = {
   message: <path d="M4 5.5h16v11H9l-4.5 3v-3H4z" />,
   rule: <><path d="M6 3.5h12v17H6z" /><path d="M9 8h6M9 12h6M9 16h4" /></>,
   robot: <><rect x="5" y="7" width="14" height="11" rx="3" /><path d="M12 4v3M9 12h.01M15 12h.01M9 15h6" /></>,
+  microphone: <><rect x="9" y="3.5" width="6" height="11" rx="3" /><path d="M6.5 11.5a5.5 5.5 0 0 0 11 0M12 17v3M9 20h6" /></>,
+  mcp: <><circle cx="6" cy="6" r="2" /><circle cx="18" cy="6" r="2" /><circle cx="12" cy="18" r="2" /><path d="m7.7 7.1 3.1 8.8M16.3 7.1l-3.1 8.8M8 6h8" /></>,
+  settings: <><path d="M9.6 3.6h4.8l.5 2.1 1.8 1 2.1-.6 2.4 4.1-1.6 1.5v2.1l1.6 1.5-2.4 4.1-2.1-.6-1.8 1-.5 2.1H9.6l-.5-2.1-1.8-1-2.1.6-2.4-4.1 1.6-1.5v-2.1l-1.6-1.5 2.4-4.1 2.1.6 1.8-1z" /><circle cx="12" cy="12" r="3.1" /></>,
   chevron: <path d="m9 7 5 5-5 5" />,
   expand: <><path d="M9 4H4v5M15 4h5v5M9 20H4v-5M15 20h5v-5" /></>,
+  collapse: <><path d="M4 9h5V4M20 9h-5V4M4 15h5v5M20 15h-5v5" /></>,
   send: <><path d="m4 4 16 8-16 8 3-8z" /><path d="M7 12h13" /></>,
 };
 

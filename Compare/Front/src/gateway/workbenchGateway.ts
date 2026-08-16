@@ -38,6 +38,7 @@ import type {
   AgentTurnResult,
   CreateAgentThreadCommand,
   ExecuteAgentTurnCommand,
+  PostAgentMessageCommand,
   TransitionAgentFocusCommand,
 } from "../contracts/agentCommunication";
 
@@ -125,6 +126,7 @@ export interface WorkbenchGateway {
   readAgentMessages(projectId: string, threadId: string, principal?: AgentRole, options?: GatewayReadOptions): Promise<AgentMessage[]>;
   readAgentFocusEvents(projectId: string, threadId: string, principal?: AgentRole, options?: GatewayReadOptions): Promise<AgentFocusEvent[]>;
   transitionAgentFocus(input: TransitionAgentFocusCommand): Promise<AgentThread>;
+  postAgentMessage(input: PostAgentMessageCommand): Promise<AgentMessage>;
   executeAgentTurn(input: ExecuteAgentTurnCommand): Promise<AgentTurnResult>;
   transitionApproval(projectId: string, input: ApprovalTransitionCommand): Promise<ApprovalState>;
 }

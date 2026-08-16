@@ -205,7 +205,7 @@ class AgentContextAssembler:
                 blocking_rule_ids=approval.blocking_rule_ids,
                 risk_veto=approval.risk_veto,
                 summary=(
-                    "审批状态仅供只读参考；任何 Agent 和领导通信控制均不能覆盖 hard gate。"
+                    "审批状态仅供只读参考；任何 Agent 和系统通信控制均不能覆盖 hard gate。"
                 ),
             ),
             recent_visible_messages=visible,

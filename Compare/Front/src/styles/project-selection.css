@@ -650,3 +650,17 @@
 .public-language-control b { margin-right: 4px; font-weight: 600; }
 .public-language-control button, .topbar-language button { min-width: 24px; border: 0; border-radius: 5px; background: transparent; color: inherit; cursor: pointer; font: inherit; }
 .public-language-control button[aria-pressed="true"], .topbar-language button[aria-pressed="true"] { background: rgb(255 255 255 / 24%); }
+/* Authenticated local-demo shell. */
+.signal-council-login { min-height: 100vh; display: grid; place-items: center; padding: 32px; background: #f3f1ec; color: #191919; }
+.signal-council-login form { width: min(420px, 100%); display: grid; gap: 16px; padding: 32px; background: #fff; border: 1px solid #d8d3ca; border-radius: 16px; box-shadow: 0 20px 60px rgba(30, 26, 20, .1); }
+.signal-council-login form > span { font: 700 13px/1.2 ui-monospace, monospace; letter-spacing: .08em; }
+.signal-council-login h1, .signal-council-login p { margin: 0; }
+.signal-council-login label { display: grid; gap: 7px; font-size: 13px; font-weight: 650; }
+.signal-council-login input { min-height: 42px; padding: 0 12px; border: 1px solid #bbb5aa; border-radius: 8px; font: inherit; }
+.signal-council-login button { min-height: 44px; border: 0; border-radius: 8px; background: #171717; color: #fff; font-weight: 700; }
+.signal-council-login button:disabled { opacity: .5; }
+.signal-council-login small { color: #6d675e; line-height: 1.5; }
+.login-error { padding: 10px 12px; border-radius: 8px; background: #fff0ed; color: #9a2b1f; font-size: 13px; }
+.signal-council-account { position: fixed; z-index: 50; top: 12px; right: 12px; display: flex; align-items: center; gap: 12px; padding: 8px 10px; border: 1px solid #d8d3ca; border-radius: 10px; background: rgba(255,255,255,.94); box-shadow: 0 6px 20px rgba(0,0,0,.08); }
+.signal-council-account span { display: grid; }
+.signal-council-account small { color: #6d675e; }

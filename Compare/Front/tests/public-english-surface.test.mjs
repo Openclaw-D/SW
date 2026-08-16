@@ -23,7 +23,7 @@ test("English public surface gate never invents a generic translation for unmapp
 });
 
 test("English public surface allowlist is limited to the bilingual brand and language choice", () => {
-  assert.equal(translatePublicText("Signal Council · 见微", "en"), "Signal Council · 见微");
+  assert.equal(translatePublicText("signal-council", "en"), "signal-council");
   assert.equal(translatePublicText("中", "en"), "中");
   assert.equal(translatePublicText("项目目录", "zh-CN"), "项目目录");
 });

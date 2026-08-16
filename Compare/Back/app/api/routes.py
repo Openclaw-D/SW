@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Path, Request
+from fastapi import APIRouter, Depends, Path, Request
 from fastapi.responses import FileResponse
 
-from app.api.dependencies import IdempotencyKey, WorkbenchService
+from app.api.dependencies import IdempotencyKey, WorkbenchService, require_business, require_leadership, require_project_membership, require_risk
 from app.api.responses import success
 from app.contracts.envelope import ApiEnvelope, ErrorEnvelope
 from app.contracts.errors import BusinessValidationError
@@ -57,6 +57,7 @@ api_router = APIRouter(
     prefix="/projects",
     tags=["workbench"],
     responses=ERROR_RESPONSES,
+    dependencies=[Depends(require_project_membership)],
 )
 ProjectId = Annotated[str, Path(min_length=1, max_length=160)]
 
@@ -183,6 +184,7 @@ def read_material_original(
     "/{projectId}/materials/uploads",
     response_model=ApiEnvelope[MaterialUploadReceipt],
     operation_id="uploadControlledMaterialPack",
+    dependencies=[Depends(require_business)],
 )
 async def upload_material_pack(
     request: Request,
@@ -208,6 +210,7 @@ async def upload_material_pack(
     "/{projectId}/materials/imports/preflight",
     response_model=ApiEnvelope[MaterialImportPreflight],
     operation_id="preflightControlledMaterialImport",
+    dependencies=[Depends(require_business)],
 )
 def preflight_material_import(
     request: Request,
@@ -223,6 +226,7 @@ def preflight_material_import(
     "/{projectId}/materials/imports",
     response_model=ApiEnvelope[MaterialImportResult],
     operation_id="executeControlledMaterialImport",
+    dependencies=[Depends(require_business)],
 )
 def execute_material_import(
     request: Request,
@@ -239,6 +243,7 @@ def execute_material_import(
     "/{projectId}/materials/{materialId}/intelligence",
     response_model=ApiEnvelope[StoredMaterialIntelligence],
     operation_id="runMaterialIntelligence",
+    dependencies=[Depends(require_business)],
 )
 def run_material_intelligence(
     request: Request,
@@ -285,6 +290,7 @@ def read_material_scene_spec(
     "/{projectId}/candidates/{candidateId}/confirm",
     response_model=ApiEnvelope[CandidateConfirmationResult],
     operation_id="confirmMaterialFactCandidate",
+    dependencies=[Depends(require_business)],
 )
 def confirm_material_candidate(
     request: Request,
@@ -347,6 +353,7 @@ def query_dimension_series(
     "/{projectId}/facts/{factKey}/corrections",
     response_model=ApiEnvelope[BusinessCorrectionResult],
     operation_id="submitBusinessCorrection",
+    dependencies=[Depends(require_business)],
 )
 def submit_business_correction(
     request: Request,
@@ -383,6 +390,7 @@ def submit_business_correction(
     "/{projectId}/review/risk/questions",
     response_model=ApiEnvelope[CommonReviewEvent],
     operation_id="submitRiskQuestion",
+    dependencies=[Depends(require_risk)],
 )
 def submit_risk_question(
     request: Request,
@@ -409,6 +417,7 @@ def submit_risk_question(
     "/{projectId}/review/business/answers",
     response_model=ApiEnvelope[CollaborationSubmissionResult],
     operation_id="submitBusinessAnswer",
+    dependencies=[Depends(require_business)],
 )
 def submit_business_answer(
     request: Request,
@@ -435,6 +444,7 @@ def submit_business_answer(
     "/{projectId}/review/risk/answers",
     response_model=ApiEnvelope[CollaborationSubmissionResult],
     operation_id="submitRiskAnswer",
+    dependencies=[Depends(require_risk)],
 )
 def submit_risk_answer(
     request: Request,
@@ -500,6 +510,7 @@ def read_approval_state(
     "/{projectId}/approval/transitions",
     response_model=ApiEnvelope[ApprovalState],
     operation_id="transitionApprovalState",
+    dependencies=[Depends(require_leadership)],
 )
 def transition_approval_state(
     request: Request,

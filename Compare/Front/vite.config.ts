@@ -8,6 +8,7 @@ const SITE_CREATOR_PLACEHOLDER_DATABASE_ID =
 
 const { d1, r2 } = hostingConfig;
 const isCodexSeatbeltSandbox = process.env.CODEX_SANDBOX === "seatbelt";
+const backOrigin = process.env.SIGNAL_COUNCIL_BACK_ORIGIN ?? "http://127.0.0.1:8000";
 
 const localBindingConfig = {
   main: "./worker/index.ts",
@@ -44,6 +45,7 @@ export default defineConfig(async () => {
       host: "127.0.0.1",
       port: 4317,
       strictPort: true,
+      proxy: { "/api/v1": { target: backOrigin, changeOrigin: true } },
       ...(isCodexSeatbeltSandbox
         ? { watch: { useFsEvents: false, usePolling: true } }
         : {}),

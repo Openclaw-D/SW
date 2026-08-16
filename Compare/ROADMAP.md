@@ -1,5 +1,18 @@
 # Roadmap
 
+## GLM-5.3 迁移检查点（2026-08-16，complete）
+
+Compare 的可选真实 A2A provider 已冻结为 `glm_5_3_coding_plan_cli / glm-5.3[1m]`，CLI 直接传精确模型 ID，旧 `glm-5.2` 遥测必须拒绝。隔离真实风控 turn、精确 provenance、正式表零增量、Back provider `34/34` 与 Front `204/204` 已通过。该检查点不扩展 Agent 权限、不改变 synthetic 默认值，也不声称生产 SLA 或模型质量已验证。
+
+## P6 三账号认证、会话与角色权限（2026-08-14，complete）
+
+signal-council 已完成三个固定内网 Demo 账号、HttpOnly 会话、项目成员关系和后端强制 ACL。所有现有项目各绑定 business、risk、coordinator 三个账号；业务、风控与协管共享项目和共同协调链，但角色专属写操作、私有草稿及 Agent 调用隔离。`X-Compare-Role` 不再参与正式 principal 推导，测试只通过 FastAPI dependency override 构造主体。
+
+- Back：SQLite schema v9、PBKDF2 独立 salt、opaque session token/hash、过期/撤销/重复登录策略、幂等 seed/membership 与完整 endpoint 权限矩阵。
+- Front：登录恢复、退出、过期处理、账号角色显示、三角色流程投影、同源 `/api/v1` Cookie 请求及受限控件只读状态。
+- 发布收束：产品名统一为 `signal-council`；旧 `COMPARE_*` 环境键、磁盘目录和 `%LOCALAPPDATA%\CompareWorkbench` 只作为 V1 无损升级兼容标识保留。
+- 公网仍未放行：Demo 初始密码必须轮换，并补 TLS、Secure Cookie、生产身份生命周期、限流/CSRF、进程托管、备份恢复、隐私留存与安全审查。
+
 ## 最终结论层与负责人上报视图（2026-08-13，complete）
 
 P6 单焦点后端 Gate 通过后，Compare 已增加一个最小、可运行的只读结论闭环。服务端 `GET /projects/{projectId}/conclusion` 从现有工作台、正式共同审查、制度结果、审批状态和最新单焦点会话生成同一份投影；报告实现保留为非默认入口的回退能力，不在 TopBar 扩张为独立大报告。

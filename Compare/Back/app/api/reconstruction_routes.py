@@ -6,7 +6,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Path, Request
 from fastapi.responses import FileResponse
 
-from app.api.dependencies import IdempotencyKey
+from app.api.dependencies import IdempotencyKey, require_business, require_project_membership
 from app.api.responses import success
 from app.contracts.envelope import ApiEnvelope, ErrorEnvelope
 from app.contracts.errors import ConflictError, NotFoundError, ServiceError
@@ -25,7 +25,7 @@ from app.repositories.reconstruction import (
 from app.services.reconstruction import ReconstructionService, ReconstructionStateError
 
 
-router = APIRouter(tags=["image-to-3d-reconstruction"])
+router = APIRouter(tags=["image-to-3d-reconstruction"], dependencies=[Depends(require_project_membership)])
 ProjectId = Annotated[str, Path(min_length=1, max_length=128)]
 JobId = Annotated[str, Path(pattern=r"^recon-job-[0-9a-f]{32}$")]
 AssetId = Annotated[str, Path(pattern=r"^recon-asset-[0-9a-f]{32}$")]
@@ -102,6 +102,7 @@ def read_engine_status(request: Request) -> dict[str, object]:
     response_model=ApiEnvelope[ReconstructionJob],
     operation_id="createImageTo3dReconstructionJob",
     responses=ERROR_RESPONSES,
+    dependencies=[Depends(require_business)],
 )
 def create_job(
     request: Request,
@@ -146,6 +147,7 @@ def read_job(
     response_model=ApiEnvelope[ReconstructionJob],
     operation_id="retryImageTo3dReconstructionJob",
     responses=ERROR_RESPONSES,
+    dependencies=[Depends(require_business)],
 )
 def retry_job(
     request: Request,

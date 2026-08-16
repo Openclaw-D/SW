@@ -1,6 +1,14 @@
 import type { ReviewEvidenceTarget } from "./workbench";
 
 export type AgentRole = "business" | "risk" | "leadership";
+export type ChatAgentRole = Exclude<AgentRole, "leadership">;
+export type AgentResponseDepth = "brief" | "balanced" | "detailed";
+export type AgentResponseFocus = "balanced" | "risk" | "evidence" | "next_steps";
+export interface AgentResponsePreferences {
+  responseDepth: AgentResponseDepth;
+  responseFocus: AgentResponseFocus;
+  customGuidance: string;
+}
 export type AgentThreadStatus = "active" | "closed" | "rejected";
 
 export interface AgentCitation {
@@ -47,7 +55,7 @@ export interface AgentMessage {
   generatedContent: GeneratedAgentContent | null;
   execution: AgentExecutionMetadata | null;
   replyToMessageId: string | null;
-  runId: string;
+  runId: string | null;
   createdAt: string;
   immutable: true;
   advisoryOnly: true;
@@ -96,9 +104,35 @@ export interface AgentTurnResult {
   schemaVersion: "2.0";
 }
 
+/**
+ * Ephemeral UI state for an explicit Agent mention. This is deliberately a
+ * progress summary, not hidden chain-of-thought or an authoritative decision.
+ */
+export interface AgentActivityState {
+  sourceMessageId: string;
+  role: ChatAgentRole;
+  phase: "thinking" | "failed";
+  startedAt: string;
+  detail: string;
+}
+
 export type CollaborationContextReference =
   | { kind: "agent_message"; id: string; label: string; createdAt: string }
-  | { kind: "review_event"; id: string; label: string; createdAt: string };
+  | { kind: "review_event"; id: string; label: string; createdAt: string }
+  | {
+      kind: "material_annotation";
+      id: string;
+      label: string;
+      createdAt: string;
+      materialId: string;
+      materialVersionId: string;
+      locatorMethod: "element" | "ocr_region";
+      matchStatus: "exact" | "confirmed" | "pending";
+      sourceAnchorId: string | null;
+      region: { x: number; y: number; width: number; height: number } | null;
+      snapshotDataUrl: string | null;
+      evidenceTargets: ReviewEvidenceTarget[];
+    };
 
 export interface CreateAgentThreadCommand {
   projectId: string;
@@ -121,10 +155,26 @@ export interface ExecuteAgentTurnCommand {
   projectId: string;
   threadId: string;
   principal: AgentRole;
+  targetAgentRole: ChatAgentRole;
+  sourceMessageId: string;
   instruction: string;
   replyToMessageId: string | null;
   evidenceTargets: ReviewEvidenceTarget[];
   expectedVersion: number;
+  locale: "zh-CN";
+  responseDepth: AgentResponseDepth;
+  responseFocus: AgentResponseFocus;
+  customGuidance: string;
+  idempotencyKey: string;
+}
+
+export interface PostAgentMessageCommand {
+  projectId: string;
+  threadId: string;
+  principal: AgentRole;
+  content: string;
+  replyToMessageId: string | null;
+  evidenceTargets: ReviewEvidenceTarget[];
   locale: "zh-CN";
   idempotencyKey: string;
 }

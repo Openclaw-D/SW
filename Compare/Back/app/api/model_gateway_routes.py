@@ -5,7 +5,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, Path, Request
 
-from app.api.dependencies import IdempotencyKey
+from app.api.dependencies import IdempotencyKey, require_business, require_project_membership
 from app.api.responses import success
 from app.contracts.envelope import ApiEnvelope
 from app.contracts.errors import BusinessValidationError
@@ -18,7 +18,7 @@ from app.contracts.model_gateway import (
 from app.ports.model_gateway import ModelGatewayServicePort
 
 
-router = APIRouter(tags=["model-gateway"])
+router = APIRouter(tags=["model-gateway"], dependencies=[Depends(require_project_membership)])
 ProjectId = Annotated[str, Path(min_length=1, max_length=160)]
 RunId = Annotated[str, Path(pattern=r"^mgr-[0-9a-f]{32}$")]
 
@@ -58,6 +58,7 @@ def list_capabilities(
     "/projects/{projectId}/model-gateway/runs",
     response_model=ApiEnvelope[ModelGatewayOutput],
     operation_id="executeModelGatewayRun",
+    dependencies=[Depends(require_business)],
 )
 async def execute_run(
     request: Request,

@@ -39,7 +39,7 @@ test("three large panes use one fixed square corner anchor each", async () => {
   assert.match(styles, /\.collaboration-dock\.is-collapsed\s*\{[^}]*position:\s*absolute;[^}]*right:\s*0;[^}]*bottom:\s*0;[^}]*background:\s*transparent;/s);
 });
 
-test("all three pane fullscreen controls and legacy full rails remain absent", async () => {
+test("review and material fullscreen remain absent while chat has the approved maximize control", async () => {
   const [app, review, material, collaboration, styles] = await Promise.all([
     readFile(new URL("src/App.tsx", root), "utf8"),
     readFile(new URL("src/components/ReviewCanvas.tsx", root), "utf8"),
@@ -50,7 +50,9 @@ test("all three pane fullscreen controls and legacy full rails remain absent", a
 
   assert.doesNotMatch(app, /collaborationMaximized|is-collaboration-maximized|toggleCollaborationMaximized/);
   assert.doesNotMatch(review, /全屏|Maximized|panel-collapse-rail|rail-toggle-surface/);
-  assert.doesNotMatch(material, /全屏|Maximized|panel-collapse-rail|rail-toggle-surface/);
+  assert.doesNotMatch(material, /全屏|panel-collapse-rail|rail-toggle-surface/);
+  assert.match(material, /chatMaximized/);
   assert.doesNotMatch(collaboration, /全屏|Maximized|maximized|onToggleMaximized|panel-maximize-trigger/);
   assert.doesNotMatch(styles, /panel-collapse-rail|rail-toggle-surface|review-expanded-toggle|material-collapse-trigger|material-rail-toggle|is-collaboration-maximized|collaboration-maximize-trigger|panel-maximize-trigger/);
+  assert.match(styles, /\.material-pane\.has-project-chat\.is-chat-maximized/);
 });

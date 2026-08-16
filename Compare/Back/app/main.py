@@ -12,6 +12,7 @@ from app.api.model_gateway_routes import router as model_gateway_router
 from app.api.agent_routes import router as agent_communication_router
 from app.api.reconstruction_routes import router as reconstruction_router
 from app.api.routes import api_router, router as health_router
+from app.api.auth_routes import router as auth_router
 from app.contracts.errors import ServiceError
 from app.contracts.model_gateway import ModelGatewayRequest
 from app.contracts.ports import WorkbenchServicePort
@@ -29,6 +30,7 @@ from app.core.config import Settings, get_settings
 from app.core.request_id import REQUEST_ID_HEADER, RequestIdMiddleware
 from app.services.material_intelligence import MaterialIntelligenceProviderPort
 from app.services.reconstruction import ReconstructionService
+from app.services.authentication import AuthenticationService
 
 
 def create_app(
@@ -73,12 +75,13 @@ def create_app(
         title=settings.app_name,
         version=settings.app_version,
         description=(
-            "Compare 融资租赁首轮材料核验工作台本地 API。"
+            "signal-council 融资租赁首轮材料核验工作台本地 API。"
             "结果来自确定性业务规则和完整脱敏生成数据，不是统计模型或自动审批。"
         ),
         lifespan=lifespan,
     )
     application.state.settings = settings
+    application.state.authentication_service = AuthenticationService(settings.database_path, session_hours=settings.session_hours)
     application.state.workbench_service = service
     application.state.service_lock = threading.Lock()
     application.state.service_factory = lambda: create_default_service(settings)
@@ -142,13 +145,12 @@ def create_app(
     application.add_middleware(
         CORSMiddleware,
         allow_origins=list(settings.cors_origins),
-        allow_credentials=False,
+        allow_credentials=True,
         allow_methods=["GET", "POST", "PATCH", "OPTIONS"],
         allow_headers=[
             "Accept",
             "Content-Type",
             "Idempotency-Key",
-            "X-Compare-Role",
             "X-File-Name",
             REQUEST_ID_HEADER,
         ],
@@ -158,6 +160,7 @@ def create_app(
     application.add_middleware(RequestIdMiddleware)
     install_error_handlers(application)
     application.include_router(health_router)
+    application.include_router(auth_router, prefix=settings.api_prefix)
     application.include_router(api_router, prefix=settings.api_prefix)
     application.include_router(model_gateway_router, prefix=settings.api_prefix)
     application.include_router(agent_communication_router, prefix=settings.api_prefix)

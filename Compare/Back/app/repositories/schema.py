@@ -3,7 +3,7 @@ from __future__ import annotations
 import sqlite3
 
 
-SCHEMA_VERSION = 8
+SCHEMA_VERSION = 9
 
 SCHEMA_SQL = """
 CREATE TABLE IF NOT EXISTS schema_migrations (
@@ -18,6 +18,37 @@ CREATE TABLE IF NOT EXISTS projects (
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS accounts (
+    id TEXT PRIMARY KEY,
+    username TEXT NOT NULL UNIQUE,
+    display_name TEXT NOT NULL,
+    role TEXT NOT NULL CHECK (role IN ('business', 'risk', 'leadership')),
+    password_salt TEXT NOT NULL,
+    password_hash TEXT NOT NULL,
+    password_iterations INTEGER NOT NULL CHECK (password_iterations >= 100000),
+    created_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS account_sessions (
+    token_hash TEXT PRIMARY KEY,
+    account_id TEXT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+    created_at TEXT NOT NULL,
+    expires_at TEXT NOT NULL,
+    last_active_at TEXT NOT NULL,
+    revoked_at TEXT
+);
+CREATE INDEX IF NOT EXISTS ix_account_sessions_account
+    ON account_sessions(account_id, expires_at);
+
+CREATE TABLE IF NOT EXISTS project_memberships (
+    project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+    account_id TEXT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+    created_at TEXT NOT NULL,
+    PRIMARY KEY(project_id, account_id)
+);
+CREATE INDEX IF NOT EXISTS ix_project_memberships_account
+    ON project_memberships(account_id, project_id);
 
 CREATE TABLE IF NOT EXISTS project_snapshots (
     id TEXT PRIMARY KEY,
@@ -413,7 +444,7 @@ CREATE TABLE IF NOT EXISTS agent_messages (
     generated_content_json TEXT,
     execution_json TEXT,
     reply_to_message_id TEXT,
-    run_id TEXT NOT NULL,
+    run_id TEXT,
     created_at TEXT NOT NULL,
     advisory_only INTEGER NOT NULL DEFAULT 1 CHECK (advisory_only = 1),
     is_simulated INTEGER NOT NULL CHECK (is_simulated IN (0, 1)),
@@ -423,7 +454,8 @@ CREATE TABLE IF NOT EXISTS agent_messages (
          AND is_simulated = 0)
         OR
         (author_type = 'agent' AND kind = 'agent_reply'
-         AND generated_content_json IS NOT NULL AND execution_json IS NOT NULL)
+         AND generated_content_json IS NOT NULL AND execution_json IS NOT NULL
+         AND run_id IS NOT NULL)
     ),
     FOREIGN KEY(project_id, thread_id)
         REFERENCES agent_threads(project_id, id) ON DELETE CASCADE,
@@ -586,6 +618,7 @@ def migrate_agent_schema(connection: sqlite3.Connection) -> None:
         for row in connection.execute("PRAGMA table_info(agent_threads)")
     }
     if "focus_role" in columns:
+        _migrate_agent_messages_for_natural_chat(connection)
         return
 
     false_advisory = connection.execute(
@@ -852,3 +885,86 @@ def migrate_agent_schema(connection: sqlite3.Connection) -> None:
     violations = connection.execute("PRAGMA foreign_key_check").fetchall()
     if violations:
         raise sqlite3.IntegrityError("Agent v8 migration failed foreign key check")
+    _migrate_agent_messages_for_natural_chat(connection)
+
+
+def _migrate_agent_messages_for_natural_chat(
+    connection: sqlite3.Connection,
+) -> None:
+    """Allow audited human chat messages without manufacturing an Agent run."""
+
+    columns = {
+        (row["name"] if isinstance(row, sqlite3.Row) else row[1]): row
+        for row in connection.execute("PRAGMA table_info(agent_messages)")
+    }
+    run_id = columns.get("run_id")
+    if run_id is None:
+        return
+    not_null = run_id["notnull"] if isinstance(run_id, sqlite3.Row) else run_id[3]
+    if not not_null:
+        return
+
+    connection.execute("PRAGMA foreign_keys=OFF")
+    try:
+        connection.executescript(
+            """
+            BEGIN IMMEDIATE;
+            CREATE TABLE agent_messages_natural_chat (
+                id TEXT PRIMARY KEY,
+                project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+                thread_id TEXT NOT NULL,
+                sequence INTEGER NOT NULL CHECK (sequence >= 1),
+                role TEXT NOT NULL CHECK (role IN ('business', 'risk', 'leadership')),
+                author_type TEXT NOT NULL CHECK (author_type IN ('human', 'agent')),
+                kind TEXT NOT NULL CHECK (kind IN ('user_input', 'agent_reply')),
+                content TEXT NOT NULL,
+                citations_json TEXT NOT NULL,
+                generated_content_json TEXT,
+                execution_json TEXT,
+                reply_to_message_id TEXT,
+                run_id TEXT,
+                created_at TEXT NOT NULL,
+                advisory_only INTEGER NOT NULL DEFAULT 1 CHECK (advisory_only = 1),
+                is_simulated INTEGER NOT NULL CHECK (is_simulated IN (0, 1)),
+                CHECK (
+                    (author_type = 'human' AND kind = 'user_input'
+                     AND generated_content_json IS NULL AND execution_json IS NULL
+                     AND is_simulated = 0)
+                    OR
+                    (author_type = 'agent' AND kind = 'agent_reply'
+                     AND generated_content_json IS NOT NULL AND execution_json IS NOT NULL
+                     AND run_id IS NOT NULL)
+                ),
+                FOREIGN KEY(project_id, thread_id)
+                    REFERENCES agent_threads(project_id, id) ON DELETE CASCADE,
+                FOREIGN KEY(project_id, thread_id, reply_to_message_id)
+                    REFERENCES agent_messages_natural_chat(project_id, thread_id, id) ON DELETE RESTRICT,
+                FOREIGN KEY(project_id, thread_id, run_id)
+                    REFERENCES agent_runs(project_id, thread_id, run_id) ON DELETE RESTRICT,
+                UNIQUE(project_id, thread_id, id),
+                UNIQUE(project_id, thread_id, sequence)
+            );
+            INSERT INTO agent_messages_natural_chat
+                (id, project_id, thread_id, sequence, role, author_type, kind,
+                 content, citations_json, generated_content_json, execution_json,
+                 reply_to_message_id, run_id, created_at, advisory_only, is_simulated)
+            SELECT id, project_id, thread_id, sequence, role, author_type, kind,
+                   content, citations_json, generated_content_json, execution_json,
+                   reply_to_message_id, run_id, created_at, advisory_only, is_simulated
+            FROM agent_messages;
+            DROP TABLE agent_messages;
+            ALTER TABLE agent_messages_natural_chat RENAME TO agent_messages;
+            COMMIT;
+            """
+        )
+    except BaseException:
+        if connection.in_transaction:
+            connection.rollback()
+        raise
+    finally:
+        connection.execute("PRAGMA foreign_keys=ON")
+    violations = connection.execute("PRAGMA foreign_key_check").fetchall()
+    if violations:
+        raise sqlite3.IntegrityError(
+            "Agent natural-chat migration failed foreign key check"
+        )

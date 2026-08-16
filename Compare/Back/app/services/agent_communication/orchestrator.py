@@ -12,7 +12,9 @@ from pydantic import ValidationError
 
 from app.contracts.agent_communication import (
     AGENT_COMMUNICATION_DISCLAIMER,
+    AgentCitation,
     AgentDataStatus,
+    AgentChatMessageRequest,
     AgentExecutionMetadata,
     AgentFocusEvent,
     AgentFocusTransitionRequest,
@@ -91,7 +93,7 @@ def _locator_summary(evidence: Any) -> str:
 
 
 class AgentCommunicationService:
-    """One-focus collaboration orchestrator with no authority write capability."""
+    """Project-chat orchestrator with explicit Agent routing and no authority writes."""
 
     def __init__(
         self,
@@ -115,7 +117,7 @@ class AgentCommunicationService:
         self.repository.close()
 
     def _ensure_project(self, project_id: str) -> None:
-        self.workbench.get_workbench(project_id)
+        self.repository.require_project(project_id)
 
     def get_conclusion_report(self, project_id: str) -> ProjectConclusionReport:
         """Build a read-only human-decision brief from existing authoritative sources."""
@@ -419,6 +421,41 @@ class AgentCommunicationService:
             )
         ]
 
+    def post_message(
+        self,
+        project_id: str,
+        thread_id: str,
+        principal: AgentRole,
+        request: AgentChatMessageRequest,
+        *,
+        idempotency_key: str,
+    ) -> AgentMessage:
+        self._ensure_project(project_id)
+        request_hash = _canonical_hash(
+            {
+                "operation": "chat_message",
+                "projectId": project_id,
+                "threadId": thread_id,
+                "principal": principal.value,
+                "request": request.model_dump(mode="json", by_alias=True),
+            }
+        )
+        return AgentMessage.model_validate(
+            self.repository.append_human_message(
+                project_id,
+                thread_id,
+                role=principal.value,
+                content=request.content,
+                reply_to_message_id=request.reply_to_message_id,
+                citations=[
+                    AgentCitation.from_evidence_target(target)
+                    for target in request.evidence_targets
+                ],
+                idempotency_key=idempotency_key,
+                request_hash=request_hash,
+            )
+        )
+
     def transition_focus(
         self,
         project_id: str,
@@ -537,9 +574,11 @@ class AgentCommunicationService:
         )
         if thread.status.value != "active":
             raise ConflictError("agent_thread_not_active", "非 active 会话不能执行 turn。")
-        if thread.focus_role != principal:
+        explicit_routing = request.target_agent_role is not None
+        target_role = request.target_agent_role or thread.focus_role
+        if not explicit_routing and thread.focus_role != principal:
             raise ForbiddenError(
-                "agent_focus_mismatch", "X-Compare-Role 必须等于服务端当前 focusRole。"
+                "agent_focus_mismatch", "当前认证会话角色必须等于服务端 focusRole。"
             )
         if request.expected_version != thread.version:
             from app.contracts.errors import VersionConflictError
@@ -547,6 +586,20 @@ class AgentCommunicationService:
             raise VersionConflictError(
                 expected_version=request.expected_version, actual_version=thread.version
             )
+        source_message = None
+        if request.source_message_id is not None:
+            source_message = self.repository.require_message(
+                project_id, thread_id, request.source_message_id
+            )
+            if (
+                source_message["authorType"] != "human"
+                or source_message["role"] != principal.value
+                or source_message["content"] != request.instruction
+            ):
+                raise ForbiddenError(
+                    "agent_source_message_mismatch",
+                    "sourceMessageId 必须指向当前认证角色刚发送的同文人类消息。",
+                )
         if request.reply_to_message_id is not None:
             self.repository.require_message(
                 project_id, thread_id, request.reply_to_message_id
@@ -556,12 +609,12 @@ class AgentCommunicationService:
         context, assembled = self.context_assembler.assemble(
             project_id=project_id,
             thread_id=thread_id,
-            target_role=thread.focus_role,
+            target_role=target_role,
             request=request,
             visible_messages=visible,
         )
-        validate_agent_provider_context(thread.focus_role, request, context)
-        provider = self.providers.get(thread.focus_role)
+        validate_agent_provider_context(target_role, request, context)
+        provider = self.providers.get(target_role)
         provider_id = None if provider is None else provider.provider_id
         model_id = None if provider is None else provider.model_id
         prompt_version = None if provider is None else provider.prompt_version
@@ -569,7 +622,7 @@ class AgentCommunicationService:
             project_id,
             thread_id,
             turn_id=_new_id("agent-turn"),
-            role=thread.focus_role.value,
+            role=target_role.value,
             mode=self.mode.value,
             idempotency_key=idempotency_key,
             request_fingerprint=request_fingerprint,
@@ -606,7 +659,7 @@ class AgentCommunicationService:
                 error=self._error_payload(error),
             )
             raise error
-        if thread.focus_role not in provider.supported_roles:
+        if target_role not in provider.supported_roles:
             error = ServiceError(
                 code="agent_provider_role_unsupported",
                 message="当前 provider 不支持服务端焦点角色。",
@@ -627,7 +680,7 @@ class AgentCommunicationService:
         try:
             candidate = await asyncio.wait_for(
                 provider.generate(
-                    thread.focus_role,
+                    target_role,
                     request,
                     context,
                     assembled,
@@ -640,7 +693,22 @@ class AgentCommunicationService:
                 if isinstance(candidate, GeneratedAgentContent)
                 else GeneratedAgentContent.model_validate(candidate)
             )
-            validate_generated_agent_content(thread.focus_role, context, generated)
+            validate_generated_agent_content(target_role, context, generated)
+            generated_json = generated.model_dump(mode="json", by_alias=True)
+            output_hash = _canonical_hash(generated_json)
+            execution = AgentExecutionMetadata(
+                mode=self.mode,
+                provider_id=provider.provider_id,
+                model_id=provider.model_id,
+                prompt_version=provider.prompt_version,
+                input_hash=assembled.input_hash,
+                context_version=context.context_version,
+                output_hash=output_hash,
+                is_simulated=provider.is_simulated,
+                data_status=self._data_status(self.mode),
+                source=provider.provider_id,
+                disclaimer=AGENT_COMMUNICATION_DISCLAIMER,
+            )
         except asyncio.CancelledError:
             error = ServiceError(
                 code="agent_run_cancelled",
@@ -653,7 +721,7 @@ class AgentCommunicationService:
                 project_id,
                 run_id,
                 lease_token,
-                thread.focus_role,
+                target_role,
                 provider,
                 assembled.input_hash,
                 context.context_version,
@@ -667,7 +735,7 @@ class AgentCommunicationService:
                 project_id,
                 run_id,
                 lease_token,
-                thread.focus_role,
+                target_role,
                 provider,
                 assembled.input_hash,
                 context.context_version,
@@ -676,33 +744,15 @@ class AgentCommunicationService:
             )
             raise error from exc
 
-        generated_json = generated.model_dump(mode="json", by_alias=True)
-        output_hash = _canonical_hash(generated_json)
-        execution = AgentExecutionMetadata(
-            mode=self.mode,
-            provider_id=provider.provider_id,
-            model_id=provider.model_id,
-            prompt_version=provider.prompt_version,
-            input_hash=assembled.input_hash,
-            context_version=context.context_version,
-            output_hash=output_hash,
-            is_simulated=provider.is_simulated,
-            data_status=self._data_status(self.mode),
-            source=provider.provider_id,
-            disclaimer=AGENT_COMMUNICATION_DISCLAIMER,
-        )
         execution_json = execution.model_dump(mode="json", by_alias=True)
-        human_message_id = _new_id("agent-message")
+        human_message_id = request.source_message_id or _new_id("agent-message")
         agent_message_id = _new_id("agent-message")
-        completed = self.repository.finalize_turn(
-            project_id,
-            run_id,
-            lease_token=lease_token,
-            status=self._run_status(generated),
-            messages=[
+        messages = []
+        if source_message is None:
+            messages.append(
                 {
                     "id": human_message_id,
-                    "role": thread.focus_role.value,
+                    "role": principal.value,
                     "authorType": "human",
                     "kind": "user_input",
                     "content": request.instruction,
@@ -711,27 +761,35 @@ class AgentCommunicationService:
                     "execution": None,
                     "replyToMessageId": request.reply_to_message_id,
                     "isSimulated": False,
-                },
-                {
-                    "id": agent_message_id,
-                    "role": thread.focus_role.value,
-                    "authorType": "agent",
-                    "kind": "agent_reply",
-                    "content": generated.reply_text,
-                    "citations": [
-                        item.model_dump(mode="json", by_alias=True)
-                        for item in generated.citations
-                    ],
-                    "generatedContent": generated_json,
-                    "execution": execution_json,
-                    "replyToMessageId": human_message_id,
-                    "isSimulated": provider.is_simulated,
-                },
-            ],
+                }
+            )
+        messages.append(
+            {
+                "id": agent_message_id,
+                "role": target_role.value,
+                "authorType": "agent",
+                "kind": "agent_reply",
+                "content": generated.reply_text,
+                "citations": [
+                    item.model_dump(mode="json", by_alias=True)
+                    for item in generated.citations
+                ],
+                "generatedContent": generated_json,
+                "execution": execution_json,
+                "replyToMessageId": human_message_id,
+                "isSimulated": provider.is_simulated,
+            }
+        )
+        completed = self.repository.finalize_turn(
+            project_id,
+            run_id,
+            lease_token=lease_token,
+            status=self._run_status(generated),
+            messages=messages,
             step={
                 "stepId": _new_id("agent-step"),
                 "stepIndex": 1,
-                "role": thread.focus_role.value,
+                "role": target_role.value,
                 "status": "completed",
                 "providerId": provider.provider_id,
                 "modelId": provider.model_id,

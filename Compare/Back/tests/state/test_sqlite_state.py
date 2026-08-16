@@ -195,6 +195,38 @@ def test_restart_persists_state_and_seed_is_not_duplicated(tmp_path: Path) -> No
         second.close()
 
 
+def test_profiled_generator_identity_reuses_legacy_seed_without_losing_state(
+    tmp_path: Path,
+) -> None:
+    database = tmp_path / "legacy-profile-seed.db"
+    bundle = make_bundle(recalculable=True)
+    legacy = StaticGenerator(bundle, identity="fixture-v1:20260810:1")
+    first = create_workbench_service(_settings(database), generator=legacy)
+    try:
+        first.submit_business_correction(
+            "project-a",
+            "company.registration",
+            _correction(),
+            idempotency_key="legacy-profile-correction-001",
+        )
+    finally:
+        first.close()
+
+    profiled = StaticGenerator(
+        bundle, identity="fixture-v1:standard:20260810:1"
+    )
+    restarted = create_workbench_service(_settings(database), generator=profiled)
+    try:
+        assert [item.project_id for item in restarted.list_projects()] == ["project-a"]
+        workbench = restarted.get_workbench("project-a")
+        assert len(workbench.corrections) == 1
+        connection = restarted.repository.raw_connection_for_tests()
+        assert connection.execute("SELECT COUNT(*) FROM projects").fetchone()[0] == 1
+        assert connection.execute("SELECT COUNT(*) FROM seed_runs").fetchone()[0] == 1
+    finally:
+        restarted.close()
+
+
 def test_empty_start_does_not_mark_seed_and_later_generator_is_consumed(
     tmp_path: Path,
 ) -> None:

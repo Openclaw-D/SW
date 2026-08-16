@@ -236,7 +236,7 @@ test("根入口属于 Compare，工作台不再硬编码旧演示项目", async 
   assert.doesNotMatch(experience, /sessionStorage|Math\.random|serializeProjectCatalog|parseProjectCatalog/);
   assert.doesNotMatch(selection, /换一批|onRefresh/);
   assert.match(selection, /Enter public demo/);
-  assert.match(selection, /Public demo — no authentication is performed/);
+  assert.match(selection, /Authenticated intranet Demo entry/);
   assert.match(selection, /24 isolated projects share a complete/);
   assert.match(selection, /src="\/demo-eye\.png"/);
   assert.ok(eye.byteLength > 1_000_000);

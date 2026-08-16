@@ -24,7 +24,7 @@ const clean = (value) => assert.doesNotMatch(value, /source value|unknown/i);
 test("Collaboration roles, review events, runtime states, and canonical messages have explicit English semantics", () => {
   assert.equal(formatAgentRole("business", "en"), "Business");
   assert.equal(formatAgentRole("risk", "en"), "Risk control");
-  assert.equal(formatAgentRole("leadership", "en"), "Leadership coordination");
+  assert.equal(formatAgentRole("leadership", "en"), "System");
   assert.equal(formatReviewEventType("business_correction_submitted", "en"), "Business correction submitted");
   assert.equal(formatCollaborationKind("pending_question", "en"), "Awaiting response");
   assert.equal(formatDataStatus("needs_review", "en"), "Human review required");
@@ -72,11 +72,13 @@ test("Corrections, approvals, material facts, and evidence locators preserve can
   assert.equal(formatEvidenceLocatorSummary("第 7 页", "located", "en"), "Page 7");
   assert.equal(formatEvidenceLocatorSummary("待定位", "pending", "en"), "Location pending");
   assert.equal(formatCanonicalNarrative("未映射的真实原文", "en"), "Quoted source text: 未映射的真实原文");
+  const reviewCanvas = readFileSync(new URL("../src/components/ReviewCanvas.tsx", import.meta.url), "utf8");
   const activeCollaboration = readFileSync(new URL("../src/components/A2ACollaborationPanel.tsx", import.meta.url), "utf8");
-  assert.match(activeCollaboration, /A2AFormalCorrection/);
-  assert.match(activeCollaboration, /formatFactValue\(fact\.value, fact\.unit, locale\)/);
-  assert.match(activeCollaboration, /Human Gate · creates a new fact version/);
-  assert.match(activeCollaboration, /formatServiceMessage\(resultMessage, locale\)/);
+  assert.match(reviewCanvas, /FormalBusinessCorrection/);
+  assert.match(reviewCanvas, /formatFactValue\(fact\.value, fact\.unit, locale\)/);
+  assert.match(reviewCanvas, /Human Gate · creates a new fact version/);
+  assert.match(reviewCanvas, /formatServiceMessage\(resultMessage, locale\)/);
+  assert.doesNotMatch(activeCollaboration, /FormalBusinessCorrection/);
 });
 
 test("Critical product components use component formatters while the DOM compatibility layer is decorative-only", () => {

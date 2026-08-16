@@ -299,9 +299,11 @@ test("P2-F5 aggregates absolute kWh/output with explicit unavailable and empty s
 });
 
 test("clamps and persists only the permitted layout subset", () => {
-  const saved = sanitizePersistedLayout({ ...baseLayout, materialWidth: 9999, collaborationHeight: 20, middleCollapsed: true, materialCollapsed: true, policyCollapsed: true, materialFullscreen: true, draft: "secret" }, baseLayout);
-  assert.equal(saved.materialWidth, 960);
-  assert.equal(saved.collaborationHeight, 140);
+  const saved = sanitizePersistedLayout({ ...baseLayout, materialWidth: 9999, collaborationHeight: 20, materialRatio: 999, collaborationRatio: 0, middleCollapsed: true, materialCollapsed: true, policyCollapsed: true, materialFullscreen: true, draft: "secret" }, baseLayout);
+  assert.equal(saved.materialWidth, baseLayout.materialWidth);
+  assert.equal(saved.collaborationHeight, baseLayout.collaborationHeight);
+  assert.equal(saved.materialRatio, 90);
+  assert.equal(saved.collaborationRatio, 10);
   assert.equal(saved.middleCollapsed, true);
   assert.equal(saved.materialCollapsed, true);
   assert.equal(saved.policyCollapsed, true);

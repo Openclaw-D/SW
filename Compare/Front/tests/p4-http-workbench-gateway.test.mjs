@@ -107,6 +107,12 @@ test("HTTP gateway preserves stable API error fields for M2 recovery", async () 
   assert.deepEqual(gateway.getLastResponseMeta(), meta);
 });
 
+test("HTTP gateway turns stale-contract extra fields into an actionable restart message", async () => {
+  const errors = [{ code: "validation_error", category: "validation", message: "请求字段校验失败。", field: "body.evidenceTargets", details: { errors: [{ field: "body.evidenceTargets", type: "extra_forbidden", message: "Extra inputs are not permitted" }] } }];
+  const gateway = new HttpWorkbenchGateway({ apiBase: "http://api.test/api/v1", fetchImpl: async () => new Response(JSON.stringify({ data: null, meta, errors }), { status: 422, headers: { "Content-Type": "application/json" } }) });
+  await assert.rejects(() => gateway.readApprovalState("project-a"), (error) => error?.message.includes("body.evidenceTargets") && error?.message.includes("Front/Back 接口版本可能不一致") && error?.httpStatus === 422);
+});
+
 test("MVP-R2 loads policy rules independently and refreshes every authoritative correction projection", async () => {
   const app = await readFile(new URL("src/App.tsx", root), "utf8");
   assert.match(app, /gateway\.readPolicyResults\(projectId/);

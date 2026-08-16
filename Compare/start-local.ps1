@@ -95,13 +95,11 @@ function Test-BackReady {
     param([switch]$Quiet)
     try {
         $health = Invoke-JsonRequest "$($script:BackUrl)/health"
-        $projects = Invoke-JsonRequest "$($script:BackUrl)/api/v1/projects"
         $cors = Invoke-WebRequest -UseBasicParsing -Uri "$($script:BackUrl)/health" -Headers @{ Origin = $script:FrontUrl } -TimeoutSec 5
         $allowedOrigin = $cors.Headers["Access-Control-Allow-Origin"]
         if ($health.data.status -ne "ok") { throw "health.status is not ok" }
-        if (-not $projects.data -or $projects.data.Count -lt 1) { throw "Project directory is empty" }
         if ($allowedOrigin -ne $script:FrontUrl) { throw "CORS does not allow $($script:FrontUrl)" }
-        if (-not $Quiet) { Write-Result "Back readiness" "PASS" "health ok; projects $($projects.data.Count); CORS ok" }
+        if (-not $Quiet) { Write-Result "Back readiness" "PASS" "health ok; CORS ok; authenticated endpoints were not called" }
         return $true
     } catch {
         if (-not $Quiet) { Write-Result "Back readiness" "FAIL" $_.Exception.Message }
@@ -114,8 +112,8 @@ function Test-FrontReady {
     try {
         $response = Invoke-WebRequest -UseBasicParsing -Uri "$($script:FrontUrl)/" -TimeoutSec 5
         if ($response.StatusCode -ne 200) { throw "HTTP $($response.StatusCode)" }
-        if ($response.Content -notmatch 'Signal Council') { throw "Response is not the Signal Council Front" }
-        if (-not $Quiet) { Write-Result "Front readiness" "PASS" "HTTP 200; Signal Council page identified" }
+        if ($response.Content -notmatch 'signal-council') { throw "Response is not the signal-council Front" }
+        if (-not $Quiet) { Write-Result "Front readiness" "PASS" "HTTP 200; signal-council page identified" }
         return $true
     } catch {
         if (-not $Quiet) { Write-Result "Front readiness" "FAIL" $_.Exception.Message }
@@ -123,27 +121,13 @@ function Test-FrontReady {
     }
 }
 
-function Show-MaterialRuntimeStatus {
-    try {
-        $projects = (Invoke-JsonRequest "$($script:BackUrl)/api/v1/projects").data
-        $materials = (Invoke-JsonRequest "$($script:BackUrl)/api/v1/projects/$($projects[0].projectId)/materials").data
-        $availableCount = @($materials | Where-Object { $_.originalAccess.available }).Count
-        $statusSummary = @($materials | Group-Object { $_.originalAccess.status } | ForEach-Object { "$($_.Name):$($_.Count)" }) -join ", "
-        if ($availableCount -gt 0) {
-            Write-Result "Material runtime" "PASS" "Readable originals in first project: $availableCount; $statusSummary"
-        } elseif ($statusSummary -match 'not_configured') {
-            Write-Result "Material runtime" "WARN" "External materials are not configured; core system remains available and originals are unavailable; $statusSummary"
-        } else {
-            Write-Result "Material runtime" "WARN" "External materials are configured but the current database/archive has no readable binding; $statusSummary"
-        }
-    } catch {
-        Write-Result "Material runtime" "WARN" "Status read failed: $($_.Exception.Message)"
-    }
+function Show-MaterialRuntimeInspectionBoundary {
+    Write-Result "Material runtime" "WARN" "Not queried by this control script because project materials require authentication; inspect them in the signed-in UI"
 }
 
 function Invoke-Preflight {
     $errors = [Collections.Generic.List[string]]::new()
-    Write-Host "Signal Council local-reference preflight (does not install dependencies or start services)"
+    Write-Host "signal-council local-reference preflight (does not install dependencies or start services)"
 
     try {
         $script:ResolvedPython = Resolve-PythonExecutable
@@ -196,22 +180,22 @@ function Invoke-Preflight {
     $env:COMPARE_AGENT_MODE = $effectiveAgentMode
     if ($effectiveAgentMode -eq "real") {
         $provider = if ($env:COMPARE_AGENT_PROVIDER) { $env:COMPARE_AGENT_PROVIDER } else { "glm_cli" }
-        $model = if ($env:COMPARE_AGENT_MODEL) { $env:COMPARE_AGENT_MODEL } else { "glm-5.2" }
+        $model = if ($env:COMPARE_AGENT_MODEL) { $env:COMPARE_AGENT_MODEL } else { "glm-5.3[1m]" }
         if ($provider -ne "glm_cli") {
             $message = "The local launcher preflights glm_cli only; current provider=$provider"
             $errors.Add($message); Write-Result "Agent provider" "FAIL" $message
         } else {
             try {
-                if ($model -ne "glm-5.2") { throw "real glm_cli must be frozen to glm-5.2; current model is $model" }
+                if ($model -ne "glm-5.3[1m]") { throw "real glm_cli must be frozen to glm-5.3[1m]; current model is $model" }
                 foreach ($roleVariable in "COMPARE_AGENT_BUSINESS_MODEL", "COMPARE_AGENT_RISK_MODEL", "COMPARE_AGENT_LEADERSHIP_MODEL") {
                     $roleModel = [Environment]::GetEnvironmentVariable($roleVariable, "Process")
-                    if ($roleModel -and $roleModel -ne "glm-5.2") { throw "$roleVariable must be glm-5.2" }
+                    if ($roleModel -and $roleModel -ne "glm-5.3[1m]") { throw "$roleVariable must be glm-5.3[1m]" }
                 }
                 $cliName = if ($env:COMPARE_AGENT_GLM_CLI_EXECUTABLE) { $env:COMPARE_AGENT_GLM_CLI_EXECUTABLE } else { "claude.cmd" }
                 $cli = Get-Command $cliName -ErrorAction Stop
                 $auth = (& $cli.Source auth status | ConvertFrom-Json)
                 if (-not $auth.loggedIn) { throw "GLM CLI is not authenticated" }
-                Write-Result "GLM CLI" "PASS" "CLI available; authentication ready; model glm-5.2"
+                Write-Result "GLM CLI" "PASS" "CLI available; authentication ready; model glm-5.3[1m]"
             } catch { $errors.Add($_.Exception.Message); Write-Result "GLM CLI" "FAIL" $_.Exception.Message }
             if ($env:COMPARE_AGENT_BUDGET_APPROVED -eq "true") {
                 Write-Result "GLM budget" "PASS" "Budget authorisation was explicitly confirmed by the operator"
@@ -278,13 +262,14 @@ function Start-Compare {
     New-Item -ItemType Directory -Force -Path (Split-Path -Parent $env:COMPARE_DATABASE_PATH) | Out-Null
     New-Item -ItemType Directory -Force -Path $env:COMPARE_IMPORT_ROOT | Out-Null
     $env:COMPARE_CORS_ORIGINS = "$($script:FrontUrl),http://localhost:$FrontPort"
-    $env:VITE_COMPARE_API_BASE = "$($script:BackUrl)/api/v1"
+    $env:SIGNAL_COUNCIL_BACK_ORIGIN = $script:BackUrl
+    Remove-Item Env:VITE_COMPARE_API_BASE -ErrorAction SilentlyContinue
     $env:VITE_COMPARE_GATEWAY = "http"
 
     $backOwned = $false
     $frontOwned = $false
     if (Get-ListeningProcessId -Port $BackPort) {
-        if (-not (Test-BackReady -Quiet)) { throw "Port $BackPort is occupied but is not a reusable Signal Council API; an unknown process will not be terminated." }
+        if (-not (Test-BackReady -Quiet)) { throw "Port $BackPort is occupied but is not a reusable signal-council API; an unknown process will not be terminated." }
         Write-Result "Back start" "WARN" "Reusing an existing healthy service; this script does not own the process"
     } else {
         Start-Process -FilePath $script:ResolvedPython -ArgumentList @("-m", "uvicorn", "app.main:app", "--host", "127.0.0.1", "--port", "$BackPort") -WorkingDirectory $script:BackRoot -WindowStyle Hidden -RedirectStandardOutput (Join-Path $script:LogRoot "back.stdout.log") -RedirectStandardError (Join-Path $script:LogRoot "back.stderr.log") | Out-Null
@@ -292,8 +277,8 @@ function Start-Compare {
     }
 
     if (Get-ListeningProcessId -Port $FrontPort) {
-        if (-not (Test-FrontReady -Quiet)) { throw "Port $FrontPort is occupied but is not a reusable Signal Council Front; an unknown process will not be terminated." }
-        Write-Result "Front start" "WARN" "Reusing an existing Compare page; this script does not own the process"
+        if (-not (Test-FrontReady -Quiet)) { throw "Port $FrontPort is occupied but is not a reusable signal-council Front; an unknown process will not be terminated." }
+        Write-Result "Front start" "WARN" "Reusing an existing signal-council page; this script does not own the process"
     } else {
         Start-Process -FilePath "npm.cmd" -ArgumentList @("run", "dev", "--", "--host", "127.0.0.1", "--port", "$FrontPort", "--strictPort") -WorkingDirectory $script:FrontRoot -WindowStyle Hidden -RedirectStandardOutput (Join-Path $script:LogRoot "front.stdout.log") -RedirectStandardError (Join-Path $script:LogRoot "front.stderr.log") | Out-Null
         $frontOwned = $true
@@ -317,14 +302,15 @@ function Start-Compare {
     Save-InstanceState -BackOwned $backOwned -FrontOwned $frontOwned
     Test-BackReady | Out-Null
     Test-FrontReady | Out-Null
-    Show-MaterialRuntimeStatus
+    Show-MaterialRuntimeInspectionBoundary
 
-    $projects = (Invoke-JsonRequest "$($script:BackUrl)/api/v1/projects").data
-    $selectedProject = if ($ProjectId) { $projects | Where-Object { $_.projectId -eq $ProjectId } | Select-Object -First 1 }
-    if (-not $selectedProject) { $selectedProject = $projects | Select-Object -First 1 }
-    $projectUrl = "$($script:FrontUrl)/?project=$([uri]::EscapeDataString($selectedProject.projectId))&from=group"
+    $projectUrl = if ([string]::IsNullOrWhiteSpace($ProjectId)) {
+        "$($script:FrontUrl)/?select=1"
+    } else {
+        "$($script:FrontUrl)/?project=$([uri]::EscapeDataString($ProjectId.Trim()))&from=group"
+    }
     Write-Host ""
-    Write-Host "Signal Council local reference run is ready." -ForegroundColor Green
+    Write-Host "signal-council local reference run is ready." -ForegroundColor Green
     Write-Host "Front:   $($script:FrontUrl)/"
     Write-Host "Back:    $($script:BackUrl)/health"
     Write-Host "Project: $projectUrl"
@@ -338,7 +324,7 @@ function Show-Status {
     Write-Result "Front port" $(if ($frontPid) { "PASS" } else { "FAIL" }) $(if ($frontPid) { "PID $frontPid" } else { "Not listening" })
     Test-BackReady | Out-Null
     Test-FrontReady | Out-Null
-    Show-MaterialRuntimeStatus
+    Show-MaterialRuntimeInspectionBoundary
     if (Test-Path -LiteralPath $script:StatePath) { Write-Result "State" "PASS" $script:StatePath }
     else { Write-Result "State" "WARN" "No instance state was saved by this script; Stop will not touch an unknown process" }
 }
@@ -399,8 +385,8 @@ switch ($Action) {
     "Check" {
         $backOk = Test-BackReady
         $frontOk = Test-FrontReady
-        Show-MaterialRuntimeStatus
-        if (-not ($backOk -and $frontOk)) { throw "Signal Council readiness check failed." }
+        Show-MaterialRuntimeInspectionBoundary
+        if (-not ($backOk -and $frontOk)) { throw "signal-council readiness check failed." }
     }
     "Stop" { Stop-Compare }
 }

@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from typing import Any, Mapping, Protocol, Sequence, runtime_checkable
 
 from app.contracts.agent_communication import (
+    AgentChatMessageRequest,
     AgentFocusEvent,
     AgentFocusTransitionRequest,
     AgentMessage,
@@ -80,6 +81,16 @@ class AgentCommunicationServicePort(Protocol):
         after_sequence: int = 0,
         limit: int = 200,
     ) -> Sequence[AgentMessage]: ...
+
+    def post_message(
+        self,
+        project_id: str,
+        thread_id: str,
+        principal: AgentRole,
+        request: AgentChatMessageRequest,
+        *,
+        idempotency_key: str,
+    ) -> AgentMessage: ...
 
     def transition_focus(
         self,

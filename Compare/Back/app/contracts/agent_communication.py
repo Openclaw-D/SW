@@ -13,7 +13,7 @@ from app.contracts.workbench import DimensionId, ReviewEvidenceTarget
 
 AGENT_COMMUNICATION_SCHEMA_VERSION = "2.0"
 AGENT_COMMUNICATION_DISCLAIMER = (
-    "单焦点协作 Agent 仅提供项目内、可追踪的辅助内容；不构成已核验事实、评分、"
+    "项目群聊中的协作 Agent 仅提供项目内、可追踪的辅助内容；不构成已核验事实、评分、"
     "制度、hard gate、正式拒绝或审批结论，正式动作仍须经过既有人工 Gate。"
 )
 
@@ -177,18 +177,75 @@ class GeneratedAgentContent(ContractModel):
 
 
 class AgentTurnRequest(ContractModel):
-    """The role is never accepted from the body or route; the server thread owns it."""
+    """Explicit routing is separate from the authenticated human principal.
+
+    The optional pair keeps old single-focus callers readable during the local
+    migration. New group-chat callers always provide both fields.
+    """
 
     instruction: str = Field(min_length=1, max_length=4000)
+    target_agent_role: Literal[AgentRole.BUSINESS, AgentRole.RISK] | None = None
+    source_message_id: str | None = Field(default=None, max_length=128)
     reply_to_message_id: str | None = Field(default=None, max_length=128)
     evidence_targets: list[ReviewEvidenceTarget] = Field(default_factory=list, max_length=50)
     expected_version: int = Field(ge=1)
     locale: Literal["zh-CN"] = "zh-CN"
+    response_depth: Literal["brief", "balanced", "detailed"] = "balanced"
+    response_focus: Literal["balanced", "risk", "evidence", "next_steps"] = "balanced"
+    custom_guidance: str = ""
 
     @field_validator("instruction")
     @classmethod
     def validate_instruction(cls, value: str) -> str:
         return _trimmed(value, "instruction")
+
+    @field_validator("source_message_id", "reply_to_message_id")
+    @classmethod
+    def validate_reply_id(cls, value: str | None) -> str | None:
+        return _optional_trimmed(value, "replyToMessageId")
+
+    @field_validator("custom_guidance")
+    @classmethod
+    def validate_custom_guidance(cls, value: str) -> str:
+        trimmed = value.strip()
+        if len(trimmed) > 500:
+            raise ValueError("customGuidance must not exceed 500 characters")
+        return trimmed
+
+    @model_validator(mode="after")
+    def validate_evidence_targets(self) -> "AgentTurnRequest":
+        if (self.target_agent_role is None) != (self.source_message_id is None):
+            raise ValueError(
+                "targetAgentRole and sourceMessageId must be provided together"
+            )
+        identities = [
+            (
+                item.evidence_ref,
+                item.dimension_id,
+                item.review_target_id,
+                item.fact_version_id,
+            )
+            for item in self.evidence_targets
+        ]
+        if len(set(identities)) != len(identities):
+            raise ValueError("evidenceTargets must not contain duplicates")
+        return self
+
+
+class AgentChatMessageRequest(ContractModel):
+    """A human group-chat message. It never triggers an Agent by itself."""
+
+    content: str = Field(min_length=1, max_length=4000)
+    reply_to_message_id: str | None = Field(default=None, max_length=128)
+    evidence_targets: list[ReviewEvidenceTarget] = Field(
+        default_factory=list, max_length=50
+    )
+    locale: Literal["zh-CN"] = "zh-CN"
+
+    @field_validator("content")
+    @classmethod
+    def validate_content(cls, value: str) -> str:
+        return _trimmed(value, "content")
 
     @field_validator("reply_to_message_id")
     @classmethod
@@ -196,7 +253,7 @@ class AgentTurnRequest(ContractModel):
         return _optional_trimmed(value, "replyToMessageId")
 
     @model_validator(mode="after")
-    def validate_evidence_targets(self) -> "AgentTurnRequest":
+    def validate_evidence_targets(self) -> "AgentChatMessageRequest":
         identities = [
             (
                 item.evidence_ref,
@@ -349,13 +406,13 @@ class AgentMessage(ContractModel):
     generated_content: GeneratedAgentContent | None = None
     execution: AgentExecutionMetadata | None = None
     reply_to_message_id: str | None = Field(default=None, max_length=128)
-    run_id: str = Field(min_length=1, max_length=128)
+    run_id: str | None = Field(default=None, max_length=128)
     created_at: datetime
     immutable: Literal[True] = True
     advisory_only: Literal[True] = True
     is_simulated: bool
 
-    @field_validator("id", "project_id", "thread_id", "content", "run_id")
+    @field_validator("id", "project_id", "thread_id", "content")
     @classmethod
     def validate_text(cls, value: str) -> str:
         return _trimmed(value, "message value")
@@ -375,6 +432,8 @@ class AgentMessage(ContractModel):
             if self.is_simulated:
                 raise ValueError("human input cannot be marked simulated")
         else:
+            if self.run_id is None:
+                raise ValueError("Agent reply requires runId")
             if self.kind != AgentMessageKind.AGENT_REPLY:
                 raise ValueError("Agent message must be agent_reply")
             if self.generated_content is None or self.execution is None:

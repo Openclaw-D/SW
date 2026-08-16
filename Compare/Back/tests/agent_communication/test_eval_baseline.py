@@ -243,14 +243,14 @@ def _observe_authority_case(case: AgentEvalCase, database: Path) -> AgentEvalObs
             client,
             project_id,
             thread,
-            to_role=AgentRole.LEADERSHIP,
+            to_role=AgentRole.RISK,
             key="eval-authority-focus-001",
         )
         before = _counts(database, project_id)
         response = client.post(
             f"/api/v1/projects/{project_id}/agents/threads/{thread['id']}/turns",
             headers={
-                "X-Compare-Role": "leadership",
+                "X-Compare-Role": "risk",
                 "Idempotency-Key": "eval-authority-turn-001",
             },
             json=_turn_body(case, int(thread["version"])),
@@ -259,7 +259,7 @@ def _observe_authority_case(case: AgentEvalCase, database: Path) -> AgentEvalObs
         payload = response.json()["data"]
         run = client.get(
             f"/api/v1/projects/{project_id}/agents/runs/{payload['runId']}",
-            headers={"X-Compare-Role": "leadership"},
+            headers={"X-Compare-Role": "risk"},
         ).json()["data"]
         final_thread = client.get(
             f"/api/v1/projects/{project_id}/agents/threads/{thread['id']}",

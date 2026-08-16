@@ -1,0 +1,2 @@
+# Windows acceptance runs may use repository-local pytest basetemp directories.
+**/.pytest-tmp-*/

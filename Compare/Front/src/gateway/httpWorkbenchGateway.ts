@@ -21,10 +21,10 @@ import type { ProjectCatalogItem } from "../contracts/projectSelection";
 import type { CandidateConfirmationInput, CandidateConfirmationResult, MaterialImportPreflight, MaterialImportResult, MaterialIntelligenceRunInput, MaterialUploadReceipt, StoredMaterialIntelligence, StoredSceneSpec } from "../contracts/materialIntelligence";
 import type { ModelGatewayCapability, ModelGatewayRunRecord } from "../contracts/modelGateway";
 import type { ProjectConclusionReport } from "../contracts/conclusion";
-import type { AgentFocusEvent, AgentMessage, AgentRole, AgentThread, AgentTurnResult, CreateAgentThreadCommand, ExecuteAgentTurnCommand, TransitionAgentFocusCommand } from "../contracts/agentCommunication";
+import type { AgentFocusEvent, AgentMessage, AgentRole, AgentThread, AgentTurnResult, CreateAgentThreadCommand, ExecuteAgentTurnCommand, PostAgentMessageCommand, TransitionAgentFocusCommand } from "../contracts/agentCommunication";
 import { WorkbenchGatewayError, type ApprovalTransitionCommand, type BusinessAnswerCommand, type BusinessCorrectionCommand, type GatewayReadOptions, type GatewayResponseMeta, type MaterialUploadOptions, type ResolvedEvidenceSelection, type RiskAnswerCommand, type RiskQuestionCommand, type WorkbenchGateway } from "./workbenchGateway.ts";
 
-export const DEFAULT_WORKBENCH_API_BASE = "http://127.0.0.1:8000/api/v1";
+export const DEFAULT_WORKBENCH_API_BASE = "/api/v1";
 
 type ApiError = {
   code?: string;
@@ -57,6 +57,17 @@ function isEnvelope(value: unknown): value is ApiEnvelope<unknown> {
   return value !== null && typeof value === "object" && "data" in value && "errors" in value;
 }
 
+function actionableApiMessage(error: ApiError) {
+  const message = error.message ?? "HTTP 请求失败。";
+  const issues = Array.isArray(error.details?.errors) ? error.details.errors : [];
+  const firstIssue = issues.find((item): item is Record<string, unknown> => item !== null && typeof item === "object");
+  const field = error.field ?? (typeof firstIssue?.field === "string" ? firstIssue.field : null);
+  if (error.category === "validation" && firstIssue?.type === "extra_forbidden") {
+    return `${message}${field ? ` 未被接受的字段：${field}。` : ""} Front/Back 接口版本可能不一致，请重启本地 Back 后重试。`;
+  }
+  return field && error.category === "validation" ? `${message} 字段：${field}。` : message;
+}
+
 /**
  * HTTP transport only: it unwraps the frozen API envelope and never creates
  * local mock data when an HTTP request fails.
@@ -68,7 +79,7 @@ export class HttpWorkbenchGateway implements WorkbenchGateway {
 
   constructor(options: HttpWorkbenchGatewayOptions = {}) {
     const previewApiBase = typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get("apiBase");
-    this.apiBase = normalizedApiBase(options.apiBase ?? previewApiBase ?? import.meta.env.VITE_COMPARE_API_BASE ?? DEFAULT_WORKBENCH_API_BASE);
+    this.apiBase = normalizedApiBase(options.apiBase ?? previewApiBase ?? import.meta.env?.VITE_COMPARE_API_BASE ?? DEFAULT_WORKBENCH_API_BASE);
     this.fetchImpl = options.fetchImpl ?? ((input, init) => window.fetch(input, init));
   }
 
@@ -240,15 +251,28 @@ export class HttpWorkbenchGateway implements WorkbenchGateway {
     });
   }
 
+  async postAgentMessage(input: PostAgentMessageCommand) {
+    return this.request<AgentMessage>(`/projects/${encodeURIComponent(input.projectId)}/agents/threads/${encodeURIComponent(input.threadId)}/messages`, {
+      method: "POST",
+      body: { content: input.content, replyToMessageId: input.replyToMessageId, evidenceTargets: input.evidenceTargets, locale: input.locale },
+      headers: this.agentHeaders(input.principal, input.idempotencyKey),
+    });
+  }
+
   async executeAgentTurn(input: ExecuteAgentTurnCommand) {
     return this.request<AgentTurnResult>(`/projects/${encodeURIComponent(input.projectId)}/agents/threads/${encodeURIComponent(input.threadId)}/turns`, {
       method: "POST",
       body: {
         instruction: input.instruction,
+        targetAgentRole: input.targetAgentRole,
+        sourceMessageId: input.sourceMessageId,
         replyToMessageId: input.replyToMessageId,
         evidenceTargets: input.evidenceTargets,
         expectedVersion: input.expectedVersion,
         locale: input.locale,
+        responseDepth: input.responseDepth,
+        responseFocus: input.responseFocus,
+        customGuidance: input.customGuidance,
       },
       headers: this.agentHeaders(input.principal, input.idempotencyKey),
     });
@@ -267,6 +291,7 @@ export class HttpWorkbenchGateway implements WorkbenchGateway {
     try {
       response = await this.fetchImpl(`${this.apiBase}${path}`, {
         method: options.method ?? "GET",
+        credentials: "include",
         headers: { Accept: "application/json", ...(options.body === undefined ? {} : { "Content-Type": "application/json" }), ...options.headers },
         body: options.body === undefined ? undefined : JSON.stringify(options.body),
         signal: options.signal,
@@ -274,7 +299,7 @@ export class HttpWorkbenchGateway implements WorkbenchGateway {
     } catch (reason) {
       if (reason instanceof DOMException && reason.name === "AbortError") throw reason;
       const detail = reason instanceof Error && reason.message ? `（${reason.message}）` : "";
-      throw transportError(`无法连接 Compare HTTP 服务。${detail}`, { httpStatus: 0 });
+      throw transportError(`无法连接 signal-council HTTP 服务。${detail}`, { httpStatus: 0 });
     }
     return this.unwrapResponse<T>(response);
   }
@@ -291,9 +316,10 @@ export class HttpWorkbenchGateway implements WorkbenchGateway {
     this.lastMeta = { requestId: meta.requestId, schemaVersion: meta.schemaVersion, dataStatus: meta.dataStatus, source: meta.source, disclaimer: meta.disclaimer };
     const requestId = meta.requestId;
     if (!response.ok) {
+      if (response.status === 401 && typeof window !== "undefined") window.dispatchEvent(new CustomEvent("signal-council-session-expired"));
       const apiError = payload.errors?.[0];
       if (apiError?.category === "not_found" || apiError?.category === "validation" || apiError?.category === "conflict") {
-        throw new WorkbenchGatewayError(apiError.category, apiError.message ?? "HTTP 请求失败。", { requestId, httpStatus: response.status, apiCode: apiError.code, field: apiError.field, details: apiError.details });
+        throw new WorkbenchGatewayError(apiError.category, actionableApiMessage(apiError), { requestId, httpStatus: response.status, apiCode: apiError.code, field: apiError.field, details: apiError.details });
       }
       throw transportError(apiError?.message ?? "HTTP 服务请求失败。", { requestId, httpStatus: response.status });
     }
@@ -306,6 +332,7 @@ export class HttpWorkbenchGateway implements WorkbenchGateway {
     try {
       response = await this.fetchImpl(`${this.apiBase}${path}`, {
         method: "POST",
+        credentials: "include",
         headers: { Accept: "application/json", ...options.headers },
         body,
         signal: options.signal,
@@ -313,7 +340,7 @@ export class HttpWorkbenchGateway implements WorkbenchGateway {
     } catch (reason) {
       if (reason instanceof DOMException && reason.name === "AbortError") throw reason;
       const detail = reason instanceof Error && reason.message ? `（${reason.message}）` : "";
-      throw transportError(`无法连接 Compare HTTP 服务。${detail}`, { httpStatus: 0 });
+      throw transportError(`无法连接 signal-council HTTP 服务。${detail}`, { httpStatus: 0 });
     }
     return this.unwrapResponse<T>(response);
   }
@@ -337,9 +364,8 @@ export class HttpWorkbenchGateway implements WorkbenchGateway {
     return { "Idempotency-Key": idempotencyKey };
   }
 
-  private agentHeaders(principal: AgentRole, idempotencyKey?: string) {
+  private agentHeaders(_principal: AgentRole, idempotencyKey?: string) {
     return {
-      "X-Compare-Role": principal,
       ...(idempotencyKey ? this.idempotencyHeaders(idempotencyKey) : {}),
     };
   }

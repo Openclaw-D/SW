@@ -5,9 +5,12 @@ import asyncio
 import pytest
 
 from app.contracts.errors import IdempotencyConflictError, ServiceError
+from app.contracts.material_intelligence import MaterialIntelligenceDataStatus
+from app.contracts.model_gateway import ModelGatewayMode
 from app.ports.model_gateway import ProviderRateLimitError, ProviderUnavailableError
 from app.services.model_gateway import create_model_gateway_service
 from app.services.model_gateway.provider_router import SyntheticFakeProvider
+from app.services.model_gateway.run_recorder import RunRecorder
 from tests.model_gateway.fixtures import gateway_request
 
 
@@ -98,6 +101,36 @@ def test_completed_run_replays_after_service_restart(tmp_path) -> None:
         assert record.is_simulated is True
     finally:
         restarted.close()
+
+
+def test_get_run_projects_real_mode_truth_metadata(tmp_path) -> None:
+    recorder = RunRecorder(tmp_path / "gateway-real.db")
+    request = gateway_request().model_copy(update={"mode": ModelGatewayMode.REAL})
+    try:
+        reservation = recorder.reserve(
+            request=request,
+            idempotency_key="gateway-real-get-run-001",
+            request_fingerprint="real-fingerprint-001",
+            provider_id="openai_responses",
+            lease_seconds=30.0,
+        )
+        assert reservation.action == "owner"
+
+        record = recorder.get_run(request.material.project_id, reservation.run_id)
+        assert record.mode is ModelGatewayMode.REAL
+        assert record.advisory_only is True
+        assert record.is_simulated is False
+        assert record.data_status is (
+            MaterialIntelligenceDataStatus.PROVIDER_GENERATED_UNVERIFIED
+        )
+        assert record.provider_id == "openai_responses"
+        assert record.source == "openai_responses"
+        assert "不包含原件正文" in record.disclaimer
+        assert "绝对路径" in record.disclaimer
+        assert "凭据" in record.disclaimer
+        assert "人工核验" in record.disclaimer
+    finally:
+        recorder.close()
 
 
 @pytest.mark.parametrize(

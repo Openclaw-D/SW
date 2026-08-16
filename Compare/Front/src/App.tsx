@@ -7,7 +7,6 @@ import type {
   FactValue,
   FactVersion,
   HardConstraintResult,
-  LayoutState,
   MappedCommonReviewEvent,
   ReviewEvidenceSelectionGroup,
   ReviewEvidenceTarget,
@@ -17,13 +16,14 @@ import { evidenceRefForSourceAnchor, type ExtractedFieldCandidate, type Material
 import { WorkbenchGatewayError, type WorkbenchGateway } from "./gateway/workbenchGateway";
 import type { ModelGatewayRuntimeState } from "./contracts/modelGateway";
 import type { ProjectConclusionReport } from "./contracts/conclusion";
-import type { AgentFocusEvent, AgentMessage, AgentRole, AgentThread, CollaborationContextReference } from "./contracts/agentCommunication";
+import type { AgentActivityState, AgentFocusEvent, AgentMessage, AgentResponsePreferences, AgentRole, AgentThread, ChatAgentRole, CollaborationContextReference } from "./contracts/agentCommunication";
 import { cancelledModelGatewayRuntime, emptyModelGatewayRuntime, failedModelGatewayRuntime, modelGatewayRuntimeFromResult } from "./lib/modelGatewayState";
 import {
   attachReviewEvidenceTargets,
   clamp,
   displayBusinessText,
   deriveScoreSummary,
+  DEFAULT_LAYOUT_RATIOS,
   LAYOUT_LIMITS,
   createEvidenceSelectionGroup,
   persistedLayoutFrom,
@@ -33,8 +33,8 @@ import {
   sanitizePersistedLayout,
   scoreToGrade,
   type EvidenceSelectionResolution,
+  type ResponsiveLayoutState,
 } from "./lib/workbenchLogic";
-import { CollaborationDock } from "./components/CollaborationDock";
 import { MaterialPane } from "./components/MaterialPane";
 import { NavigationRail } from "./components/NavigationRail";
 import { ReviewCanvas, type ReviewSectionId } from "./components/ReviewCanvas";
@@ -44,15 +44,9 @@ import { EmptyState } from "./components/ui";
 import { initialMaterialLoadFailed, materialRecoveryFailed, materialRecoverySucceeded, replayMaterialRecovery, retryOnceAfterVersionConflict } from "./lib/recoveryState";
 import { isOriginalMaterial } from "./lib/materialBusinessFolders";
 import { copy, type PublicLocale } from "./lib/publicLocale";
+import type { AccountRole, AuthenticatedAccount } from "./contracts/authentication";
 
-type ResizeAxis = "material" | "collaboration";
-type MaterialEdge = "review" | "material" | null;
-type CollaborationEdge = "review" | "collaboration" | null;
-
-const DIVIDER_SNAP_THRESHOLD = 24;
-const DEFAULT_COLLABORATION_HEIGHT = 400;
-const LEGACY_DEFAULT_COLLABORATION_HEIGHT = 175;
-const PERSISTED_LAYOUT_VERSION = 2;
+const PERSISTED_LAYOUT_VERSION = 3;
 const PERSISTED_LAYOUT_VERSION_KEY = `${PERSISTED_LAYOUT_KEY}-schema`;
 
 async function retryAgentRead<T>(request: () => Promise<T>, signal?: AbortSignal): Promise<T> {
@@ -136,16 +130,16 @@ function materialVersionNumber(versionId: string) {
   return Number.isInteger(parsed) && parsed > 0 ? parsed : 1;
 }
 
-export function App({ gateway, projectId, projectNo, onBack, showSimulationControls = false, locale = "en", onLocaleChange }: { gateway: WorkbenchGateway; projectId: string; projectNo: string; onBack: () => void; showSimulationControls?: boolean; locale?: PublicLocale; onLocaleChange?: (locale: PublicLocale) => void }) {
+export function App({ gateway, projectId, projectNo, onBack, account, onLogout, onPrincipalRoleChange, principalRoleChangePending = false, showSimulationControls = false, locale = "en", onLocaleChange }: { gateway: WorkbenchGateway; projectId: string; projectNo: string; onBack: () => void; account: AuthenticatedAccount; onLogout: () => void; onPrincipalRoleChange: (role: Extract<AccountRole, "business" | "risk">) => void; principalRoleChangePending?: boolean; showSimulationControls?: boolean; locale?: PublicLocale; onLocaleChange?: (locale: PublicLocale) => void }) {
   const [data, setData] = useState<WorkbenchProject | null>(null);
-  const [layout, setLayout] = useState<LayoutState | null>(null);
-  const [materialEdge, setMaterialEdge] = useState<MaterialEdge>(null);
-  const [collaborationEdge, setCollaborationEdge] = useState<CollaborationEdge>(null);
+  const [layout, setLayout] = useState<ResponsiveLayoutState | null>(null);
+  const [chatMaximized, setChatMaximized] = useState(false);
   const [layoutResetVersion, setLayoutResetVersion] = useState(0);
   const [facts, setFacts] = useState<FactVersion[]>([]);
   const [events, setEvents] = useState<MappedCommonReviewEvent[]>([]);
   const [agentThread, setAgentThread] = useState<AgentThread | null>(null);
   const [agentMessages, setAgentMessages] = useState<AgentMessage[]>([]);
+  const [agentActivity, setAgentActivity] = useState<AgentActivityState | null>(null);
   const [agentFocusEvents, setAgentFocusEvents] = useState<AgentFocusEvent[]>([]);
   const [agentSessionError, setAgentSessionError] = useState<string | null>(null);
   const [policyRules, setPolicyRules] = useState<HardConstraintResult[]>([]);
@@ -197,8 +191,7 @@ export function App({ gateway, projectId, projectNo, onBack, showSimulationContr
     const controller = new AbortController();
     setData(null);
     setLayout(null);
-    setMaterialEdge(null);
-    setCollaborationEdge(null);
+    setChatMaximized(false);
     setError(null);
     setMaterialRecovery(materialRecoverySucceeded());
     setMaterialIntelligence(null);
@@ -214,6 +207,7 @@ export function App({ gateway, projectId, projectNo, onBack, showSimulationContr
     agentThreadCreationRef.current = null;
     setAgentThread(null);
     setAgentMessages([]);
+    setAgentActivity(null);
     setAgentFocusEvents([]);
     setAgentSessionError(null);
     Promise.all([gateway.loadProject(projectId, { signal: controller.signal }), gateway.listMaterials(projectId, { signal: controller.signal }), gateway.readReviewEvents(projectId, { signal: controller.signal }), gateway.readPolicyResults(projectId, { signal: controller.signal }), gateway.readApprovalState(projectId, { signal: controller.signal })]).then(async ([project, materials, reviewEvents, policies, approval]) => {
@@ -234,22 +228,17 @@ export function App({ gateway, projectId, projectNo, onBack, showSimulationContr
       const scoreSummary = deriveScoreSummary(presentedProject.dimensions);
       const scoredProject: WorkbenchProject = {
         ...presentedProject,
-        layout: { ...presentedProject.layout, collaborationHeight: DEFAULT_COLLABORATION_HEIGHT },
+        layout: { ...presentedProject.layout },
         materials: firstMaterial ? materials.map((item) => item.id === firstMaterial.id ? firstMaterial : item) : materials,
         dimensions: scoreSummary.dimensions,
         riskSummary: { ...presentedProject.riskSummary, scoreGrade: scoreSummary.overallGrade },
         determinations: presentedProject.determinations.map((item) => ({ ...item, scoreGrade: scoreToGrade(item.score) })),
       };
       let stored: unknown = null;
-      let storedLayoutVersion = 0;
       try {
         stored = JSON.parse(localStorage.getItem(PERSISTED_LAYOUT_KEY) ?? "null");
-        storedLayoutVersion = Number(localStorage.getItem(PERSISTED_LAYOUT_VERSION_KEY) ?? "0");
       } catch { stored = null; }
       const persisted = { ...sanitizePersistedLayout(stored, scoredProject.layout) };
-      if (storedLayoutVersion < PERSISTED_LAYOUT_VERSION && persisted.collaborationHeight === LEGACY_DEFAULT_COLLABORATION_HEIGHT) {
-        persisted.collaborationHeight = DEFAULT_COLLABORATION_HEIGHT;
-      }
       setData(scoredProject);
       setFacts(latestFactVersionsByFactKey(scoredProject.facts));
       setEvents(presentationCopy(authoritativeEvents(reviewEvents)));
@@ -350,7 +339,7 @@ export function App({ gateway, projectId, projectNo, onBack, showSimulationContr
   if (error) return <div className="full-page-state"><EmptyState detail={error} title="工作台加载失败" /></div>;
   if (!data || !layout) return <div className="full-page-state"><EmptyState detail="正在读取项目数据。" title="加载工作台" /></div>;
 
-  const updateLayout = (change: Partial<LayoutState>) => setLayout((current) => current ? { ...current, ...change } : current);
+  const updateLayout = (change: Partial<ResponsiveLayoutState>) => setLayout((current) => current ? { ...current, ...change } : current);
   const scrollReviewElementIntoView = (target: HTMLElement | null, align: "start" | "center" = "start") => {
     const pane = document.getElementById("review-pane");
     if (!(pane instanceof HTMLElement) || !(target instanceof HTMLElement)) return;
@@ -650,7 +639,7 @@ export function App({ gateway, projectId, projectNo, onBack, showSimulationContr
         const existing = await gateway.readAgentThread(data.project.id, report.collaboration.threadId, "business");
         if (existing.status === "active") return rememberAgentThread(existing);
       }
-      const payload = { projectId: data.project.id, title: "项目单焦点协作会话", principal: "business" as const };
+      const payload = { projectId: data.project.id, title: "项目群聊", principal: "business" as const };
       const operation = `agent-thread:create:${data.project.id}`;
       try {
         const created = await gateway.createAgentThread({ ...payload, idempotencyKey: idempotencyKey(operation, payload, writeKeysRef.current) });
@@ -668,64 +657,66 @@ export function App({ gateway, projectId, projectNo, onBack, showSimulationContr
       agentThreadCreationRef.current = null;
     }
   };
-  const prepareAgentFocus = async (role: AgentRole) => {
-    let thread = await ensureAgentThread();
-    while (thread.focusRole !== role) {
-      const toFocusRole: AgentRole = thread.focusRole === "business" ? role : "business";
-      const payload = { projectId: data.project.id, threadId: thread.id, principal: thread.focusRole, toFocusRole, expectedVersion: thread.version, reason: toFocusRole === "business" ? "用户返回业务主对话。" : "用户请求风控短暂复核。" };
-      const operation = `agent-focus:${thread.id}:${thread.focusRole}:${toFocusRole}`;
-      try {
-        thread = rememberAgentThread(await gateway.transitionAgentFocus({ ...payload, idempotencyKey: idempotencyKey(operation, payload, writeKeysRef.current) }));
-        clearIdempotencyKey(operation, writeKeysRef.current);
-      } catch (reason) {
-        clearIdempotencyKey(operation, writeKeysRef.current);
-        throw reason;
-      }
-    }
-    return thread;
-  };
   const agentSubmissionContext = (reference: CollaborationContextReference | null) => {
     const referencedMessage = reference?.kind === "agent_message" ? agentMessages.find((message) => message.id === reference.id) : undefined;
     const referencedEvent = reference?.kind === "review_event" ? events.find((event) => event.id === reference.id) : undefined;
     const targets = referencedMessage?.citations.map((citation) => ({ ...citation, evidenceRefs: [citation.evidenceRef] }))
       ?? referencedEvent?.evidenceTargets
+      ?? (reference?.kind === "material_annotation" ? reference.matchStatus === "pending" ? [] : reference.evidenceTargets : undefined)
       ?? sharedTargets;
     const uniqueTargets = [...new Map(targets.map((target) => [`${target.evidenceRef}|${target.dimensionId}|${target.reviewTargetId ?? ""}|${target.factVersionId ?? ""}`, target])).values()];
     return { evidenceTargets: uniqueTargets, replyToMessageId: referencedMessage?.id ?? null };
   };
-  const submitAgent = async (role: AgentRole, message: string, reference: CollaborationContextReference | null) => {
+  const submitChatMessage = async (targetAgentRole: ChatAgentRole | null, message: string, reference: CollaborationContextReference | null, responsePreferences: AgentResponsePreferences) => {
     setAgentSessionError(null);
     let thread: AgentThread;
     try {
-      thread = await prepareAgentFocus(role);
+      thread = await ensureAgentThread();
     } catch (reason) {
-      const detail = reason instanceof Error ? reason.message : "Agent 焦点准备失败。";
-      setAgentSessionError(detail);
-      throw reason;
+      const detail = reason instanceof Error ? reason.message : "项目群聊准备失败。";
+      throw new Error(detail);
     }
     const context = agentSubmissionContext(reference);
-    const payload = { projectId: data.project.id, threadId: thread.id, principal: role, instruction: message, ...context, expectedVersion: thread.version, locale: "zh-CN" as const };
-    const operation = `agent-turn:${thread.id}:${role}`;
+    const principal = account.role;
+    const messagePayload = { projectId: data.project.id, threadId: thread.id, principal, content: message, replyToMessageId: context.replyToMessageId, evidenceTargets: context.evidenceTargets, locale: "zh-CN" as const };
+    const messageOperation = `agent-message:${thread.id}:${principal}`;
+    let postedMessage: AgentMessage;
     try {
-      const result = await gateway.executeAgentTurn({ ...payload, idempotencyKey: idempotencyKey(operation, payload, writeKeysRef.current) });
-      clearIdempotencyKey(operation, writeKeysRef.current);
-      rememberAgentThread({ ...thread, version: result.nextExpectedVersion, focusRole: result.currentFocusRole, updatedAt: new Date().toISOString() });
+      postedMessage = await gateway.postAgentMessage({ ...messagePayload, idempotencyKey: idempotencyKey(messageOperation, messagePayload, writeKeysRef.current) });
+      clearIdempotencyKey(messageOperation, writeKeysRef.current);
+      setAgentMessages((items) => [...items.filter((item) => item.id !== postedMessage.id), postedMessage].sort((left, right) => left.sequence - right.sequence || left.id.localeCompare(right.id)));
+    } catch (reason) {
+      clearIdempotencyKey(messageOperation, writeKeysRef.current);
+      const detail = reason instanceof Error ? reason.message : "消息发送失败。";
+      throw new Error(detail);
+    }
+    if (!targetAgentRole) return;
+
+    const payload = { projectId: data.project.id, threadId: thread.id, principal, targetAgentRole, sourceMessageId: postedMessage.id, instruction: message, ...context, ...responsePreferences, expectedVersion: thread.version, locale: "zh-CN" as const };
+    const operation = `agent-turn:${thread.id}:${postedMessage.id}:${targetAgentRole}`;
+    const roleLabel = targetAgentRole === "risk" ? "风控" : "业务";
+    setAgentActivity({ sourceMessageId: postedMessage.id, role: targetAgentRole, phase: "thinking", startedAt: new Date().toISOString(), detail: `${roleLabel} Agent 正在读取项目上下文与引用，并生成辅助建议。` });
+    void (async () => {
+      try {
+        const result = await gateway.executeAgentTurn({ ...payload, idempotencyKey: idempotencyKey(operation, payload, writeKeysRef.current) });
+        clearIdempotencyKey(operation, writeKeysRef.current);
+        rememberAgentThread({ ...thread, version: result.nextExpectedVersion, focusRole: result.currentFocusRole, updatedAt: new Date().toISOString() });
+        setAgentMessages((items) => [...items, ...result.messages].filter((item, index, all) => all.findIndex((candidate) => candidate.id === item.id) === index).sort((left, right) => left.sequence - right.sequence || left.id.localeCompare(right.id)));
+        setAgentActivity((current) => current?.sourceMessageId === postedMessage.id ? null : current);
+      } catch (runReason) {
+        clearIdempotencyKey(operation, writeKeysRef.current);
+        const detail = runReason instanceof Error ? runReason.message : "Agent 未回复。";
+        setAgentActivity((current) => current?.sourceMessageId === postedMessage.id ? { ...current, phase: "failed", detail: `${roleLabel} Agent 未回复：${detail}` } : current);
+        return;
+      }
       try {
         await refreshAgentSession(thread.id);
       } catch (refreshReason) {
-        setAgentMessages((items) => [...items, ...result.messages].sort((left, right) => left.createdAt.localeCompare(right.createdAt) || left.sequence - right.sequence));
-        setAgentSessionError(refreshReason instanceof Error ? `Agent 已回复，但会话刷新失败：${refreshReason.message}` : "Agent 已回复，但会话刷新失败。");
+        setAgentSessionError(refreshReason instanceof Error ? `Agent 回复已生成，但群聊刷新失败：${refreshReason.message}` : "Agent 回复已生成，但群聊刷新失败。");
       }
-    } catch (reason) {
-      clearIdempotencyKey(operation, writeKeysRef.current);
-      const detail = reason instanceof Error ? reason.message : "真实 Agent run failed。";
-      setAgentSessionError(detail);
-      throw reason;
-    }
+    })();
   };
-  const submitBusiness = (message: string, reference: CollaborationContextReference | null) => submitAgent("business", message, reference);
-  const submitLeadership = (message: string, reference: CollaborationContextReference | null) => submitAgent("leadership", message, reference);
-  const submitRisk = (message: string, reference: CollaborationContextReference | null) => submitAgent("risk", message, reference);
+  const submitNaturalChat = (message: string, targetAgentRole: ChatAgentRole | null, reference: CollaborationContextReference | null, preferences: AgentResponsePreferences) => submitChatMessage(targetAgentRole, message, reference, preferences);
   const loadConclusionReport = async () => {
     const projectAtRequest = data.project.id;
     setConclusionStatus("loading");
@@ -804,48 +795,26 @@ export function App({ gateway, projectId, projectNo, onBack, showSimulationContr
     });
   };
 
-  const beginResize = (axis: ResizeAxis, event: ReactPointerEvent<HTMLDivElement>) => {
+  const beginMaterialResize = (event: ReactPointerEvent<HTMLDivElement>) => {
     const divider = event.currentTarget;
-    const workbench = divider.closest<HTMLElement>(".workbench-app");
     const body = divider.closest<HTMLElement>(".workbench-body");
-    if (!workbench || !body) return;
+    if (!body) return;
     const pointerId = event.pointerId;
     divider.setPointerCapture(pointerId);
-    const [minimum, maximum] = axis === "material" ? LAYOUT_LIMITS.materialWidth : LAYOUT_LIMITS.collaborationHeight;
-    const property = axis === "material" ? "--layout-material-width" : "--layout-collaboration-height";
-    let nextValue = axis === "material" ? layout.materialWidth : layout.collaborationHeight;
-    let nextEdge: MaterialEdge | CollaborationEdge = axis === "material" ? materialEdge : collaborationEdge;
+    let nextRatio = layout.materialRatio;
     let frameId: number | null = null;
     const applyResize = () => {
       frameId = null;
-      workbench.style.setProperty(property, `${nextValue}px`);
-      if (axis === "material") body.dataset.materialEdge = nextEdge ?? "none";
-      else body.dataset.collaborationEdge = nextEdge ?? "none";
-      divider.setAttribute("aria-valuenow", nextEdge === "review" ? "0" : nextEdge === (axis === "material" ? "material" : "collaboration") ? "100" : String(Math.round((nextValue / maximum) * 100)));
+      body.style.setProperty("--layout-review-share", `${100 - nextRatio}fr`);
+      body.style.setProperty("--layout-material-share", `${nextRatio}fr`);
+      divider.setAttribute("aria-valuenow", String(Math.round(nextRatio)));
     };
     const move = (pointerEvent: PointerEvent) => {
       if (pointerEvent.pointerId !== pointerId) return;
       const bodyRect = body.getBoundingClientRect();
       const navigationRight = body.querySelector<HTMLElement>(".navigation-rail")?.getBoundingClientRect().right ?? bodyRect.left;
-      if (axis === "material") {
-        if (pointerEvent.clientX >= bodyRect.right - DIVIDER_SNAP_THRESHOLD) {
-          nextEdge = "review";
-        } else if (pointerEvent.clientX <= navigationRight + DIVIDER_SNAP_THRESHOLD) {
-          nextEdge = "material";
-        } else {
-          nextEdge = null;
-          const readableMaximum = Math.min(maximum, Math.max(minimum, bodyRect.right - navigationRight - 420 - 8));
-          nextValue = clamp(bodyRect.right - pointerEvent.clientX, minimum, readableMaximum);
-        }
-      } else if (pointerEvent.clientY >= bodyRect.bottom - DIVIDER_SNAP_THRESHOLD) {
-        nextEdge = "review";
-      } else if (pointerEvent.clientY <= bodyRect.top + DIVIDER_SNAP_THRESHOLD) {
-        nextEdge = "collaboration";
-      } else {
-        nextEdge = null;
-        const readableMaximum = Math.min(maximum, Math.max(minimum, bodyRect.height - 220 - 8));
-        nextValue = clamp(bodyRect.bottom - pointerEvent.clientY, minimum, readableMaximum);
-      }
+      const availableWidth = Math.max(1, bodyRect.right - navigationRight);
+      nextRatio = clamp(((bodyRect.right - pointerEvent.clientX) / availableWidth) * 100, ...LAYOUT_LIMITS.materialRatio);
       if (frameId === null) frameId = window.requestAnimationFrame(applyResize);
     };
     function cleanup() {
@@ -859,13 +828,7 @@ export function App({ gateway, projectId, projectNo, onBack, showSimulationContr
       if (stopEvent instanceof PointerEvent && stopEvent.pointerId !== pointerId) return;
       if (frameId !== null) window.cancelAnimationFrame(frameId);
       applyResize();
-      if (axis === "material") {
-        setMaterialEdge(nextEdge as MaterialEdge);
-        if (!nextEdge) updateLayout({ materialWidth: nextValue });
-      } else {
-        setCollaborationEdge(nextEdge as CollaborationEdge);
-        if (!nextEdge) updateLayout({ collaborationHeight: nextValue });
-      }
+      updateLayout({ materialRatio: nextRatio });
       cleanup();
     }
     window.addEventListener("pointermove", move);
@@ -874,46 +837,32 @@ export function App({ gateway, projectId, projectNo, onBack, showSimulationContr
     window.addEventListener("blur", stop);
   };
 
-  const resizeWithKeyboard = (axis: ResizeAxis, event: ReactKeyboardEvent<HTMLDivElement>) => {
-    if (!["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End"].includes(event.key)) return;
+  const resizeMaterialWithKeyboard = (event: ReactKeyboardEvent<HTMLDivElement>) => {
+    if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
     event.preventDefault();
-    const step = event.shiftKey ? 32 : 12;
-    if (axis === "material") {
-      if (event.key === "Home") { setMaterialEdge("review"); return; }
-      if (event.key === "End") { setMaterialEdge("material"); return; }
-      const direction = event.key === "ArrowLeft" ? 1 : event.key === "ArrowRight" ? -1 : 0;
-      if (!direction) return;
-      setMaterialEdge(null);
-      updateLayout({ materialWidth: clamp((materialEdge ? data.layout.materialWidth : layout.materialWidth) + direction * step, ...LAYOUT_LIMITS.materialWidth) });
-    } else {
-      if (event.key === "Home") { setCollaborationEdge("review"); return; }
-      if (event.key === "End") { setCollaborationEdge("collaboration"); return; }
-      const direction = event.key === "ArrowUp" ? 1 : event.key === "ArrowDown" ? -1 : 0;
-      if (!direction) return;
-      setCollaborationEdge(null);
-      updateLayout({ collaborationHeight: clamp((collaborationEdge ? data.layout.collaborationHeight : layout.collaborationHeight) + direction * step, ...LAYOUT_LIMITS.collaborationHeight) });
-    }
+    if (event.key === "Home") { updateLayout({ materialRatio: LAYOUT_LIMITS.materialRatio[0] }); return; }
+    if (event.key === "End") { updateLayout({ materialRatio: LAYOUT_LIMITS.materialRatio[1] }); return; }
+    const direction = event.key === "ArrowLeft" ? 1 : -1;
+    const step = event.shiftKey ? 5 : 2;
+    updateLayout({ materialRatio: clamp(layout.materialRatio + direction * step, ...LAYOUT_LIMITS.materialRatio) });
   };
 
-  const materialAriaValue = materialEdge === "review" ? 0 : materialEdge === "material" ? 100 : Math.round((layout.materialWidth / LAYOUT_LIMITS.materialWidth[1]) * 100);
-  const collaborationAriaValue = collaborationEdge === "review" ? 0 : collaborationEdge === "collaboration" ? 100 : Math.round((layout.collaborationHeight / LAYOUT_LIMITS.collaborationHeight[1]) * 100);
+  const materialAriaValue = Math.round(layout.materialRatio);
 
   const style = {
     "--layout-navigation-width": `${layout.navigationCollapsed ? 64 : layout.navigationWidth}px`,
-    "--layout-material-width": `${layout.materialWidth}px`,
-    "--layout-collaboration-height": `${layout.collaborationHeight}px`,
+    "--layout-review-share": `${100 - layout.materialRatio}fr`,
+    "--layout-material-share": `${layout.materialRatio}fr`,
   } as CSSProperties;
 
   return (
     <div className="workbench-app" data-semantic-localized="true" style={style}>
-      <TopBar approval={approvalState} approvalMessage={approvalMessage} approvalPending={approvalPending} hardConstraintCount={rules.length} locale={locale} onApprovalTransition={transitionApproval} onBack={onBack} onLocaleChange={onLocaleChange} onOpenConclusionReport={openConclusionReport} onResetLayout={() => { setLayout({ ...data.layout }); setMaterialEdge(null); setCollaborationEdge(null); setLayoutResetVersion((value) => value + 1); setActiveReviewId("risk"); }} policyHitCount={rules.filter((rule) => rule.result !== "pass").length} project={{ ...data.project, collaborationIssueCount: openIssueCount }} projectNo={projectNo} />
-      <div className={`workbench-body ${layout.middleCollapsed ? "is-middle-collapsed" : ""} ${layout.materialCollapsed ? "is-material-collapsed" : ""} ${layout.collaborationCollapsed ? "is-collaboration-collapsed" : ""}`} data-collaboration-edge={collaborationEdge ?? "none"} data-material-edge={materialEdge ?? "none"}>
+      <TopBar account={account} approval={approvalState} approvalMessage={approvalMessage} approvalPending={approvalPending} hardConstraintCount={rules.length} locale={locale} onApprovalTransition={transitionApproval} onBack={onBack} onLocaleChange={onLocaleChange} onLogout={onLogout} onOpenConclusionReport={openConclusionReport} onPrincipalRoleChange={onPrincipalRoleChange} onResetLayout={() => { setLayout({ ...data.layout, ...DEFAULT_LAYOUT_RATIOS }); setChatMaximized(false); setLayoutResetVersion((value) => value + 1); setActiveReviewId("risk"); }} policyHitCount={rules.filter((rule) => rule.result !== "pass").length} principalRoleChangePending={principalRoleChangePending} project={{ ...data.project, collaborationIssueCount: openIssueCount }} projectNo={projectNo} />
+      <div className={`workbench-body has-embedded-chat ${layout.middleCollapsed ? "is-middle-collapsed" : ""} ${layout.materialCollapsed ? "is-material-collapsed" : ""} ${chatMaximized ? "is-chat-maximized" : ""}`}>
         <NavigationRail activeId={layout.activeDimensionId} collapsed={layout.navigationCollapsed} dimensions={data.dimensions} onNavigate={navigateReview} onOverview={() => navigateReview("risk")} onRiskNavigate={() => navigateReview("risk")} onToggleCollapsed={() => updateLayout({ navigationCollapsed: !layout.navigationCollapsed })} riskActive={activeReviewId === "risk"} riskItemCount={riskItemCount(data.riskSummary)} />
-        <ReviewCanvas activeReviewId={activeReviewId} collapsed={layout.middleCollapsed} data={data} facts={facts} onActiveReviewChange={(id) => { setActiveReviewId(id); if (id !== "risk") updateLayout({ activeDimensionId: id }); }} onEvidenceSelect={(target) => void selectEvidenceGroup(target)} onProductionStageSelect={handleProductionStageSelect} onTimeSeriesRequest={(request) => gateway.queryDimensionSeries(request)} onToggleCollapsed={() => { setMaterialEdge(null); updateLayout({ middleCollapsed: !layout.middleCollapsed }); }} selectedProductionStageId={selectedProductionStageId} selectedTarget={selectedReviewTarget} />
-        {!layout.middleCollapsed && !layout.materialCollapsed ? <div aria-label={copy(locale, "Resize the review and original-material areas", "调整中间与材料区域宽度")} aria-orientation="vertical" aria-valuemax={100} aria-valuemin={0} aria-valuenow={materialAriaValue} aria-valuetext={materialEdge === "review" ? copy(locale, "Review area fills the workspace", "审查区域占满") : materialEdge === "material" ? copy(locale, "Original materials fill the workspace", "原始材料占满") : copy(locale, `Original-material width: ${layout.materialWidth} pixels`, `原始材料宽度 ${layout.materialWidth} 像素`)} className="layout-divider divider-vertical" onKeyDown={(event) => resizeWithKeyboard("material", event)} onPointerDown={(event) => beginResize("material", event)} role="separator" tabIndex={0} /> : null}
-        <MaterialPane activeIntelligenceAnchorId={activeIntelligenceAnchorId} collapsed={layout.materialCollapsed} confirmedCandidateIds={confirmedCandidateIds} confirmingCandidateId={confirmingCandidateId} errorMessage={materialRecovery.error} evidence={data.evidence} evidenceSelectionResolution={evidenceSelectionResolution} facts={facts} intelligence={materialIntelligence} intelligenceMessage={intelligenceMessage} intelligenceStatus={intelligenceStatus} locale={locale} materials={data.materials} modelGatewayRuntime={modelGatewayRuntime} onCancelIntelligence={cancelSelectedMaterialIntelligence} onConfirmCandidate={(candidate, reason) => void confirmCandidate(candidate, reason)} onEvidenceActivate={activateSelectedEvidence} onIntelligenceAnchorActivate={activateIntelligenceAnchor} onMaterialSelect={handleMaterialSelect} onRetry={retryMaterialRecovery} onRunIntelligence={() => void runSelectedMaterialIntelligence()} onToggleCollapsed={() => { setMaterialEdge(null); updateLayout({ materialCollapsed: !layout.materialCollapsed }); }} sceneSpec={materialSceneSpec} selectedMaterialId={selectedMaterialId} selectionGroup={evidenceSelectionGroup} />
-        {!layout.collaborationCollapsed && !(layout.middleCollapsed && layout.materialCollapsed) ? <div aria-label={copy(locale, "Resize the collaboration workspace", "调整协同工作台高度")} aria-orientation="horizontal" aria-valuemax={100} aria-valuemin={0} aria-valuenow={collaborationAriaValue} aria-valuetext={collaborationEdge === "review" ? copy(locale, "Review area fills the workspace", "审查区域占满") : collaborationEdge === "collaboration" ? copy(locale, "Approval collaboration fills the workspace", "审批协同占满") : copy(locale, `Approval-collaboration height: ${layout.collaborationHeight} pixels`, `审批协同高度 ${layout.collaborationHeight} 像素`)} className="layout-divider divider-horizontal" onKeyDown={(event) => resizeWithKeyboard("collaboration", event)} onPointerDown={(event) => beginResize("collaboration", event)} role="separator" tabIndex={0} /> : null}
-        <CollaborationDock agentError={agentSessionError} agentFocusEvents={agentFocusEvents} agentMessages={agentMessages} agentThread={agentThread} approval={approvalState} businessCollapsed={layout.businessCollapsed} collapsed={layout.collaborationCollapsed} correctionMessage={correctionMessage} correctionPending={correctionPending} dimensions={data.dimensions} events={events} evidence={data.evidence} facts={currentComplianceFacts} layoutResetVersion={layoutResetVersion} onAgentEvidenceActivate={(target) => { void selectEvidenceGroup(target); }} onConfirmMaterialImport={onConfirmMaterialImport} onCorrection={submitCorrection} onImportMaterialPackage={onImportMaterialPackage} onSubmitBusiness={submitBusiness} onSubmitLeadership={submitLeadership} onSubmitRisk={submitRisk} onToggleBusiness={() => updateLayout({ businessCollapsed: !layout.businessCollapsed })} onToggleCollapsed={() => { setCollaborationEdge(null); updateLayout({ collaborationCollapsed: !layout.collaborationCollapsed }); }} onTogglePolicy={() => updateLayout({ policyCollapsed: !layout.policyCollapsed })} onToggleRisk={() => updateLayout({ riskCollapsed: !layout.riskCollapsed })} policyCollapsed={layout.policyCollapsed} riskCollapsed={layout.riskCollapsed} rules={rules} selectedTarget={selectedReviewTarget} showSimulationControls={showSimulationControls} />
+        <ReviewCanvas activeReviewId={activeReviewId} canCorrect={account.role === "business"} collapsed={layout.middleCollapsed} correctionMessage={correctionMessage} correctionPending={correctionPending} data={data} facts={facts} onActiveReviewChange={(id) => { setActiveReviewId(id); if (id !== "risk") updateLayout({ activeDimensionId: id }); }} onCorrection={submitCorrection} onEvidenceSelect={(target) => void selectEvidenceGroup(target)} onProductionStageSelect={handleProductionStageSelect} onTimeSeriesRequest={(request) => gateway.queryDimensionSeries(request)} onToggleCollapsed={() => updateLayout({ middleCollapsed: !layout.middleCollapsed })} selectedProductionStageId={selectedProductionStageId} selectedTarget={selectedReviewTarget} />
+        {!layout.middleCollapsed && !layout.materialCollapsed && !chatMaximized ? <div aria-label={copy(locale, "Resize the review and original-material areas", "调整审批画布与右侧区域宽度")} aria-orientation="vertical" aria-valuemax={LAYOUT_LIMITS.materialRatio[1]} aria-valuemin={LAYOUT_LIMITS.materialRatio[0]} aria-valuenow={materialAriaValue} aria-valuetext={copy(locale, `Right-side width: ${materialAriaValue}%`, `右侧区域宽度 ${materialAriaValue}%`)} className="layout-divider divider-vertical" onKeyDown={resizeMaterialWithKeyboard} onPointerDown={beginMaterialResize} role="separator" tabIndex={0} /> : null}
+        <MaterialPane activeIntelligenceAnchorId={activeIntelligenceAnchorId} canEditIntelligence={account.role === "business"} chatMaximized={chatMaximized} chatRatio={layout.collaborationRatio} collapsed={layout.materialCollapsed} confirmedCandidateIds={confirmedCandidateIds} confirmingCandidateId={confirmingCandidateId} errorMessage={materialRecovery.error} evidence={data.evidence} evidenceSelectionResolution={evidenceSelectionResolution} facts={facts} groupChat={{ accountRole: account.role, agentActivity, agentError: agentSessionError, agentMessages, onConfirmMaterialImport, onImportMaterialPackage, onSubmitMessage: submitNaturalChat, selectedTarget: selectedReviewTarget }} intelligence={materialIntelligence} intelligenceMessage={intelligenceMessage} intelligenceStatus={intelligenceStatus} locale={locale} materials={data.materials} modelGatewayRuntime={modelGatewayRuntime} onCancelIntelligence={cancelSelectedMaterialIntelligence} onChatMaximizedChange={setChatMaximized} onChatRatioChange={(collaborationRatio) => updateLayout({ collaborationRatio })} onConfirmCandidate={(candidate, reason) => void confirmCandidate(candidate, reason)} onEvidenceActivate={activateSelectedEvidence} onIntelligenceAnchorActivate={activateIntelligenceAnchor} onMaterialSelect={handleMaterialSelect} onRetry={retryMaterialRecovery} onRunIntelligence={() => void runSelectedMaterialIntelligence()} onToggleCollapsed={() => updateLayout({ materialCollapsed: !layout.materialCollapsed })} sceneSpec={materialSceneSpec} selectedMaterialId={selectedMaterialId} selectionGroup={evidenceSelectionGroup} />
       </div>
       {conclusionOpen ? <FinalConclusionReport error={conclusionError} onClose={() => setConclusionOpen(false)} onRefresh={() => void loadConclusionReport()} report={conclusionReport} status={conclusionStatus} /> : null}
     </div>

@@ -255,11 +255,25 @@ class RunRecorder:
             "needs_review": ModelGatewayRunStatus.NEEDS_REVIEW,
             "failed": ModelGatewayRunStatus.FAILED,
         }[row["status"]]
+        mode = ModelGatewayMode(row["mode"])
+        if mode is ModelGatewayMode.REAL:
+            is_simulated = False
+            data_status = MaterialIntelligenceDataStatus.PROVIDER_GENERATED_UNVERIFIED
+            disclaimer = (
+                "脱敏真实 Provider 运行元数据；结果由真实外部模型服务商生成且未经核验。"
+                "不包含原件正文、绝对路径或凭据；使用前必须完成人工核验。"
+            )
+        else:
+            is_simulated = True
+            data_status = MaterialIntelligenceDataStatus.SIMULATED
+            disclaimer = (
+                "脱敏 Model Gateway 运行元数据；不包含原件正文、绝对路径或凭据。"
+            )
         return ModelGatewayRunRecord(
             run_id=row["run_id"],
             request_id=row["request_id"],
             capability_id=row["capability_id"],
-            mode=ModelGatewayMode(row["mode"]),
+            mode=mode,
             status=status,
             material_id=row["material_id"],
             material_version_id=row["material_version_id"],
@@ -273,12 +287,10 @@ class RunRecorder:
             ),
             error=error,
             advisory_only=True,
-            is_simulated=True,
-            data_status=MaterialIntelligenceDataStatus.SIMULATED,
+            is_simulated=is_simulated,
+            data_status=data_status,
             source=row["provider_id"],
-            disclaimer=(
-                "脱敏 Model Gateway 运行元数据；不包含原件正文、绝对路径或凭据。"
-            ),
+            disclaimer=disclaimer,
         )
 
     def _row(self, run_id: str) -> sqlite3.Row:

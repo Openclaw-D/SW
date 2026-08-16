@@ -68,10 +68,10 @@ function fromAgentMessage(message: AgentMessage): CollaborationStreamItem | null
     createdAt: message.createdAt,
     sequence: message.sequence,
     actorRole: message.role,
-    actorLabel: `${message.role === "business" ? "业务" : message.role === "risk" ? "风控" : "领导"} Agent`,
+    actorLabel: `${message.role === "business" ? "业务" : message.role === "risk" ? "风控" : "系统"} Agent`,
     title: questions.length ? "Agent 明确待回复问题" : "带材料引用的 Agent 建议",
     summary: questions.length ? questions.join("；") : message.content,
-    sourceLabel: `Agent run · ${message.runId} · ${provider}/${model}`,
+    sourceLabel: `Agent run · ${message.runId ?? "run-unavailable"} · ${provider}/${model}`,
     dimensionId: targets[0]?.dimensionId ?? null,
     evidenceTargets: targets,
     pending: questions.length > 0,
@@ -81,7 +81,7 @@ function fromAgentMessage(message: AgentMessage): CollaborationStreamItem | null
 }
 
 function fromFocusEvent(event: AgentFocusEvent): CollaborationStreamItem {
-  const roleLabel = (role: AgentRole | null) => role === "business" ? "业务" : role === "risk" ? "风控" : role === "leadership" ? "领导" : "无";
+  const roleLabel = (role: AgentRole | null) => role === "business" ? "业务" : role === "risk" ? "风控" : role === "leadership" ? "系统" : "无";
   return {
     id: `focus:${event.id}`,
     kind: "focus_event",

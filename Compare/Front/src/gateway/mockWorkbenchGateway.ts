@@ -24,7 +24,7 @@ import { generateProjectCatalog } from "../mock/projectCatalog.ts";
 import { aggregateDimensionTimeSeries, averageScore, resolveEvidenceSelectionGroup, scoreToGrade } from "../lib/workbenchLogic.ts";
 import type { ProjectConclusionReport } from "../contracts/conclusion";
 import { buildMockConclusionReport } from "../lib/conclusionReport.ts";
-import type { AgentExecutionMetadata, AgentFocusEvent, AgentMessage, AgentRole, AgentThread, AgentTurnResult, CreateAgentThreadCommand, ExecuteAgentTurnCommand, TransitionAgentFocusCommand } from "../contracts/agentCommunication";
+import type { AgentExecutionMetadata, AgentFocusEvent, AgentMessage, AgentRole, AgentThread, AgentTurnResult, CreateAgentThreadCommand, ExecuteAgentTurnCommand, PostAgentMessageCommand, TransitionAgentFocusCommand } from "../contracts/agentCommunication";
 import { WorkbenchGatewayError, type ApprovalTransitionCommand, type BusinessAnswerCommand, type BusinessCorrectionCommand, type GatewayResponseMeta, type ResolvedEvidenceSelection, type RiskAnswerCommand, type RiskQuestionCommand, type WorkbenchGateway } from "./workbenchGateway.ts";
 
 function clone<T>(value: T): T {
@@ -362,29 +362,58 @@ export class MockWorkbenchGateway implements WorkbenchGateway {
     return clone(next);
   }
 
+  async postAgentMessage(input: PostAgentMessageCommand): Promise<AgentMessage> {
+    const current = this.requireAgentThread(input.projectId, input.threadId);
+    const messages = this.agentMessages.get(current.id) ?? [];
+    if (input.replyToMessageId && !messages.some((message) => message.id === input.replyToMessageId)) {
+      throw new WorkbenchGatewayError("not_found", "引用消息不存在。", { apiCode: "agent_reply_message_not_found" });
+    }
+    const now = new Date().toISOString();
+    const message: AgentMessage = {
+      id: `agent-message-${crypto.randomUUID().replaceAll("-", "")}`,
+      projectId: input.projectId,
+      threadId: current.id,
+      sequence: messages.length + 1,
+      role: input.principal,
+      authorType: "human",
+      kind: "user_input",
+      content: input.content,
+      citations: input.evidenceTargets.map((target) => ({ evidenceRef: target.evidenceRef, dimensionId: target.dimensionId, reviewTargetId: target.reviewTargetId, factVersionId: target.factVersionId })),
+      generatedContent: null,
+      execution: null,
+      replyToMessageId: input.replyToMessageId,
+      runId: null,
+      createdAt: now,
+      immutable: true,
+      advisoryOnly: true,
+      isSimulated: false,
+    };
+    messages.push(message);
+    this.agentMessages.set(current.id, messages);
+    this.agentThreads.set(input.projectId, { ...current, updatedAt: now });
+    return clone(message);
+  }
+
   async executeAgentTurn(input: ExecuteAgentTurnCommand): Promise<AgentTurnResult> {
     const current = this.requireAgentThread(input.projectId, input.threadId);
-    if (current.version !== input.expectedVersion || current.focusRole !== input.principal) throw new WorkbenchGatewayError("conflict", "Agent 焦点或版本已变化。", { apiCode: "version_conflict" });
+    if (current.version !== input.expectedVersion) throw new WorkbenchGatewayError("conflict", "Agent 会话版本已变化。", { apiCode: "version_conflict" });
     const now = new Date().toISOString();
     const messages = this.agentMessages.get(current.id) ?? [];
+    const source = messages.find((message) => message.id === input.sourceMessageId);
+    if (!source || source.authorType !== "human" || source.role !== input.principal || source.content !== input.instruction) {
+      throw new WorkbenchGatewayError("conflict", "Agent 来源消息不匹配。", { apiCode: "agent_source_message_mismatch" });
+    }
     const runId = `agent-run-${crypto.randomUUID().replaceAll("-", "")}`;
     const citations = input.evidenceTargets.map((target) => ({ evidenceRef: target.evidenceRef, dimensionId: target.dimensionId, reviewTargetId: target.reviewTargetId, factVersionId: target.factVersionId }));
     const questions = /[?？]/u.test(input.instruction) ? ["请由项目人员结合引用材料确认该问题。"] : [];
-    const execution: AgentExecutionMetadata = { mode: "synthetic", providerId: "synthetic_single_focus_agent", modelId: "deterministic-v1", promptVersion: "mock-single-focus-v1", inputHash: "0".repeat(64), contextVersion: "1".repeat(64), outputHash: "2".repeat(64), advisoryOnly: true, isSimulated: true, dataStatus: "simulated", source: "synthetic_single_focus_agent", disclaimer: "Mock Agent 仅用于前端开发测试，不构成正式判断。" };
-    const human: AgentMessage = { id: `agent-message-${crypto.randomUUID().replaceAll("-", "")}`, projectId: input.projectId, threadId: current.id, sequence: messages.length + 1, role: input.principal, authorType: "human", kind: "user_input", content: input.instruction, citations: [], generatedContent: null, execution: null, replyToMessageId: input.replyToMessageId, runId, createdAt: now, immutable: true, advisoryOnly: true, isSimulated: false };
+    const execution: AgentExecutionMetadata = { mode: "synthetic", providerId: "synthetic_group_chat_agent", modelId: "deterministic-v1", promptVersion: "mock-group-chat-v1", inputHash: "0".repeat(64), contextVersion: "1".repeat(64), outputHash: "2".repeat(64), advisoryOnly: true, isSimulated: true, dataStatus: "simulated", source: "synthetic_group_chat_agent", disclaimer: "Mock Agent 仅用于前端开发测试，不构成正式判断。" };
     const reply = `辅助答复：${input.instruction}`;
-    const agent: AgentMessage = { id: `agent-message-${crypto.randomUUID().replaceAll("-", "")}`, projectId: input.projectId, threadId: current.id, sequence: messages.length + 2, role: input.principal, authorType: "agent", kind: "agent_reply", content: reply, citations, generatedContent: { replyText: reply, observations: [], questions, citations, scopeStatus: questions.length ? "needs_clarification" : "in_scope", disposition: questions.length ? "request_information" : "answer" }, execution, replyToMessageId: human.id, runId, createdAt: now, immutable: true, advisoryOnly: true, isSimulated: true };
-    messages.push(human, agent);
+    const agent: AgentMessage = { id: `agent-message-${crypto.randomUUID().replaceAll("-", "")}`, projectId: input.projectId, threadId: current.id, sequence: messages.length + 1, role: input.targetAgentRole, authorType: "agent", kind: "agent_reply", content: reply, citations, generatedContent: { replyText: reply, observations: [], questions, citations, scopeStatus: questions.length ? "needs_clarification" : "in_scope", disposition: questions.length ? "request_information" : "answer" }, execution, replyToMessageId: source.id, runId, createdAt: now, immutable: true, advisoryOnly: true, isSimulated: true };
+    messages.push(agent);
     this.agentMessages.set(current.id, messages);
-    const nextFocusRole: AgentRole = input.principal === "business" ? "business" : "business";
-    const next: AgentThread = { ...current, focusRole: nextFocusRole, version: current.version + 1, updatedAt: now };
-    if (input.principal !== "business") {
-      const focusEvents = this.agentFocusEvents.get(current.id) ?? [];
-      focusEvents.push({ id: `agent-focus-${crypto.randomUUID().replaceAll("-", "")}`, projectId: current.projectId, threadId: current.id, sequence: focusEvents.length + 1, kind: "focus_returned", fromFocusRole: input.principal, toFocusRole: "business", actorRole: input.principal, reason: "临时焦点完成后返回业务。", expectedVersion: current.version, resultingVersion: next.version, createdAt: now, immutable: true });
-      this.agentFocusEvents.set(current.id, focusEvents);
-    }
+    const next: AgentThread = { ...current, version: current.version + 1, updatedAt: now };
     this.agentThreads.set(input.projectId, next);
-    return clone({ turnId: `agent-turn-${crypto.randomUUID().replaceAll("-", "")}`, runId, status: questions.length ? "needs_review" : "completed", focusRole: input.principal, currentFocusRole: "business", messages: [agent], nextExpectedVersion: next.version, execution, advisoryOnly: true, schemaVersion: "2.0" } satisfies AgentTurnResult);
+    return clone({ turnId: `agent-turn-${crypto.randomUUID().replaceAll("-", "")}`, runId, status: questions.length ? "needs_review" : "completed", focusRole: input.targetAgentRole, currentFocusRole: next.focusRole, messages: [agent], nextExpectedVersion: next.version, execution, advisoryOnly: true, schemaVersion: "2.0" } satisfies AgentTurnResult);
   }
 
   private requireAgentThread(projectId: string, threadId: string) {

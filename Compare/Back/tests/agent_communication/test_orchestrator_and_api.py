@@ -14,6 +14,7 @@ from app.contracts.agent_communication import (
     GeneratedAgentContent,
 )
 from app.core.config import Settings
+from app.core.bootstrap import create_default_service
 from app.main import create_app
 from app.services.agent_communication.repository import AgentCommunicationRepository
 
@@ -104,11 +105,119 @@ def test_openapi_exposes_only_single_focus_surface_and_error_contracts(agent_api
         headers={
             "Origin": "http://127.0.0.1:4317",
             "Access-Control-Request-Method": "POST",
-            "Access-Control-Request-Headers": "x-compare-role,idempotency-key,content-type",
+            "Access-Control-Request-Headers": "idempotency-key,content-type",
         },
     )
     assert preflight.status_code == 200
-    assert "x-compare-role" in preflight.headers["access-control-allow-headers"].lower()
+    assert "x-compare-role" not in preflight.headers.get("access-control-allow-headers", "").lower()
+
+
+def test_group_chat_persists_plain_message_and_routes_only_explicit_mention(agent_api) -> None:
+    client, catalog, database = agent_api
+    project_id = catalog[1]["projectId"]
+    thread = _create_thread(client, project_id, key="group-chat-thread-0001")
+
+    plain = client.post(
+        f"/api/v1/projects/{project_id}/agents/threads/{thread['id']}/messages",
+        headers=_headers("business", "group-chat-message-0001"),
+        json={"content": "先同步材料进度，不需要 Agent 回复。", "replyToMessageId": None, "locale": "zh-CN"},
+    )
+    assert plain.status_code == 200, plain.text
+    assert plain.json()["data"]["runId"] is None
+    assert plain.json()["data"]["citations"] == []
+    with sqlite3.connect(database) as connection:
+        assert connection.execute(
+            "SELECT COUNT(*) FROM agent_runs WHERE project_id = ? AND thread_id = ?",
+            (project_id, thread["id"]),
+        ).fetchone()[0] == 0
+
+    mentioned = client.post(
+        f"/api/v1/projects/{project_id}/agents/threads/{thread['id']}/messages",
+        headers=_headers("business", "group-chat-message-0002"),
+        json={"content": "请复核这项材料缺口。", "replyToMessageId": None, "locale": "zh-CN"},
+    )
+    assert mentioned.status_code == 200, mentioned.text
+    source = mentioned.json()["data"]
+    turn = client.post(
+        f"/api/v1/projects/{project_id}/agents/threads/{thread['id']}/turns",
+        headers=_headers("business", "group-chat-turn-0001"),
+        json={
+            "instruction": source["content"],
+            "targetAgentRole": "risk",
+            "sourceMessageId": source["id"],
+            "replyToMessageId": None,
+            "evidenceTargets": [],
+            "expectedVersion": thread["version"],
+            "locale": "zh-CN",
+        },
+    )
+    assert turn.status_code == 200, turn.text
+    result = turn.json()["data"]
+    assert result["focusRole"] == "risk"
+    assert result["currentFocusRole"] == "business"
+    assert result["messages"][0]["role"] == "risk"
+    assert result["messages"][0]["replyToMessageId"] == source["id"]
+
+    history = client.get(
+        f"/api/v1/projects/{project_id}/agents/threads/{thread['id']}/messages",
+        headers=_headers("business"),
+    ).json()["data"]
+    assert [(item["authorType"], item["role"]) for item in history] == [
+        ("human", "business"),
+        ("human", "business"),
+        ("agent", "risk"),
+    ]
+
+
+def test_chat_message_persists_exact_evidence_targets(agent_api) -> None:
+    client, catalog, _ = agent_api
+    project_id = catalog[1]["projectId"]
+    thread = _create_thread(client, project_id, key="evidence-chat-thread-0001")
+    target = {
+        "evidenceRef": "invoice-001",
+        "dimensionId": "transaction",
+        "reviewTargetId": "review-target-001",
+        "factVersionId": "fact-version-001",
+    }
+
+    response = client.post(
+        f"/api/v1/projects/{project_id}/agents/threads/{thread['id']}/messages",
+        headers=_headers("business", "evidence-chat-message-0001"),
+        json={
+            "content": "以下证据即本轮讨论对象。",
+            "replyToMessageId": None,
+            "evidenceTargets": [target],
+            "locale": "zh-CN",
+        },
+    )
+    assert response.status_code == 200, response.text
+    expected_citation = {
+        "evidenceRef": "invoice-001",
+        "dimensionId": "transaction",
+        "reviewTargetId": "review-target-001",
+        "factVersionId": "fact-version-001",
+    }
+    assert response.json()["data"]["citations"] == [expected_citation]
+
+    history = client.get(
+        f"/api/v1/projects/{project_id}/agents/threads/{thread['id']}/messages",
+        headers=_headers("business"),
+    )
+    assert history.status_code == 200, history.text
+    assert history.json()["data"][0]["citations"] == [expected_citation]
+
+    duplicate = client.post(
+        f"/api/v1/projects/{project_id}/agents/threads/{thread['id']}/messages",
+        headers=_headers("business", "evidence-chat-message-0002"),
+        json={
+            "content": "重复选择证据应被拒绝。",
+            "replyToMessageId": None,
+            "evidenceTargets": [target, target],
+            "locale": "zh-CN",
+        },
+    )
+    assert duplicate.status_code == 422, duplicate.text
+    assert "evidenceTargets must not contain duplicates" in duplicate.text
 
 
 def test_default_business_focus_single_turn_risk_takeover_and_auto_return(agent_api) -> None:
@@ -449,6 +558,147 @@ def test_real_provider_authority_claim_fails_without_authority_or_message_write(
         assert after == before
         assert connection.execute("SELECT COUNT(*) FROM agent_messages").fetchone()[0] == 0
         run = connection.execute("SELECT status, advisory_only FROM agent_runs").fetchone()
+        assert run == ("failed", 1)
+        connection.close()
+
+
+class CountingWorkbench:
+    """Delegate all Workbench calls while counting full get_workbench hydration."""
+
+    def __init__(self, inner) -> None:
+        self._inner = inner
+        self.get_workbench_calls = 0
+
+    def get_workbench(self, project_id: str):
+        self.get_workbench_calls += 1
+        return self._inner.get_workbench(project_id)
+
+    def __getattr__(self, name: str):
+        return getattr(self._inner, name)
+
+
+def test_lightweight_agent_reads_do_not_hydrate_workbench(tmp_path: Path) -> None:
+    database = tmp_path / "lightweight-agent.db"
+    settings = Settings(database_path=database, agent_mode=AgentMode.SYNTHETIC)
+    spy = CountingWorkbench(create_default_service(settings))
+    with TestClient(
+        create_app(settings, service=spy), raise_server_exceptions=False
+    ) as client:
+        project_id = client.get("/api/v1/projects").json()["data"][0]["projectId"]
+        thread = _create_thread(client, project_id, key="lightweight-thread-1")
+        spy.get_workbench_calls = 0
+        read = client.get(
+            f"/api/v1/projects/{project_id}/agents/threads/{thread['id']}",
+            headers=_headers("business"),
+        )
+        assert read.status_code == 200
+        client.get(
+            f"/api/v1/projects/{project_id}/agents/threads/{thread['id']}/messages",
+            headers=_headers("business"),
+        )
+        client.get(
+            f"/api/v1/projects/{project_id}/agents/threads/{thread['id']}/focus-events",
+            headers=_headers("business"),
+        )
+        assert spy.get_workbench_calls == 0
+        missing = client.get(
+            f"/api/v1/projects/project-does-not-exist/agents/threads/{thread['id']}",
+            headers=_headers("business"),
+        )
+        assert missing.status_code == 404
+        assert missing.json()["errors"][0]["code"] == "project_not_found"
+        assert spy.get_workbench_calls == 0
+
+
+def test_normal_execute_turn_hydrates_workbench_exactly_once(
+    tmp_path: Path,
+) -> None:
+    database = tmp_path / "single-hydration-agent.db"
+    settings = Settings(database_path=database, agent_mode=AgentMode.SYNTHETIC)
+    spy = CountingWorkbench(create_default_service(settings))
+    with TestClient(
+        create_app(settings, service=spy), raise_server_exceptions=False
+    ) as client:
+        project_id = client.get("/api/v1/projects").json()["data"][0]["projectId"]
+        thread = _create_thread(client, project_id, key="hydration-thread-1")
+        spy.get_workbench_calls = 0
+        response = client.post(
+            f"/api/v1/projects/{project_id}/agents/threads/{thread['id']}/turns",
+            headers=_headers("business", "hydration-turn-01"),
+            json=_turn_body(thread["version"]),
+        )
+        assert response.status_code == 200, response.text
+        assert spy.get_workbench_calls == 1
+
+
+class SimulatedMismatchProvider:
+    """Explicitly injected simulated provider; REAL mode makes metadata invalid."""
+
+    provider_id = "explicit_simulated_provider"
+    model_id = "explicit-simulated-v1"
+    prompt_version = "explicit-simulated-prompt-v1"
+    is_simulated = True
+    supported_roles = frozenset(AgentRole)
+
+    def __init__(self) -> None:
+        self.calls = 0
+
+    async def generate(self, role, request, context, assembled_input, *, max_output_tokens):
+        del role, request, context, assembled_input, max_output_tokens
+        self.calls += 1
+        return GeneratedAgentContent(
+            reply_text="REAL 模式下注入的模拟 provider 输出，仅供人工复核。",
+            observations=[],
+            questions=[],
+            citations=[],
+            scope_status=AgentScopeStatus.IN_SCOPE,
+            disposition=AgentDisposition.ANSWER,
+        )
+
+
+def test_real_mode_with_simulated_provider_fails_and_persists_failed_run(
+    tmp_path: Path,
+) -> None:
+    database = tmp_path / "metadata-mismatch.db"
+    provider = SimulatedMismatchProvider()
+    settings = Settings(database_path=database, agent_mode=AgentMode.REAL)
+    with TestClient(
+        create_app(
+            settings, agent_providers={role: provider for role in AgentRole}
+        ),
+        raise_server_exceptions=False,
+    ) as client:
+        project_id = client.get("/api/v1/projects").json()["data"][0]["projectId"]
+        thread = _create_thread(client, project_id, key="mismatch-thread-1")
+        connection = sqlite3.connect(database)
+        authority_tables = (
+            "fact_versions",
+            "policy_results",
+            "approval_states",
+            "approval_transitions",
+            "review_events",
+        )
+        before = {
+            table: connection.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
+            for table in authority_tables
+        }
+        response = client.post(
+            f"/api/v1/projects/{project_id}/agents/threads/{thread['id']}/turns",
+            headers=_headers("business", "mismatch-turn-01"),
+            json=_turn_body(1),
+        )
+        assert response.status_code == 503
+        assert response.json()["errors"][0]["code"] == "agent_provider_output_invalid"
+        assert provider.calls == 1
+        after = {
+            table: connection.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
+            for table in authority_tables
+        }
+        assert after == before
+        assert connection.execute("SELECT COUNT(*) FROM agent_messages").fetchone()[0] == 0
+        run = connection.execute(
+            "SELECT status, advisory_only FROM agent_runs"
+        ).fetchone()
         assert run == ("failed", 1)
         connection.close()
 

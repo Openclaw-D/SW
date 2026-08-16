@@ -5,9 +5,10 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, Path, Query, Request
 
-from app.api.dependencies import AgentPrincipal, IdempotencyKey
+from app.api.dependencies import AgentPrincipal, ChatPrincipal, IdempotencyKey, require_business, require_project_membership
 from app.api.responses import success
 from app.contracts.agent_communication import (
+    AgentChatMessageRequest,
     AgentFocusEvent,
     AgentFocusTransitionRequest,
     AgentMessage,
@@ -23,7 +24,7 @@ from app.contracts.conclusion import ProjectConclusionReport
 from app.ports.agent_communication import AgentCommunicationServicePort
 
 
-router = APIRouter(tags=["agent-collaboration"])
+router = APIRouter(tags=["agent-collaboration"], dependencies=[Depends(require_project_membership)])
 ProjectId = Annotated[str, Path(min_length=1, max_length=160)]
 ThreadId = Annotated[str, Path(pattern=r"^agent-thread-[0-9a-f]{32}$")]
 RunId = Annotated[str, Path(pattern=r"^agent-run-[0-9a-f]{32}$")]
@@ -82,6 +83,7 @@ def read_conclusion_report(
     response_model=ApiEnvelope[AgentThread],
     operation_id="createAgentCollaborationThread",
     responses=ERROR_RESPONSES,
+    dependencies=[Depends(require_business)],
 )
 def create_thread(
     request: Request,
@@ -139,6 +141,33 @@ def list_messages(
             principal,
             after_sequence=afterSequence,
             limit=limit,
+        ),
+    )
+
+
+@router.post(
+    "/projects/{projectId}/agents/threads/{threadId}/messages",
+    response_model=ApiEnvelope[AgentMessage],
+    operation_id="postAgentCollaborationMessage",
+    responses=ERROR_RESPONSES,
+)
+def post_message(
+    request: Request,
+    projectId: ProjectId,
+    threadId: ThreadId,
+    payload: AgentChatMessageRequest,
+    principal: ChatPrincipal,
+    service: AgentService,
+    idempotency_key: IdempotencyKey,
+) -> dict[str, object]:
+    return success(
+        request,
+        service.post_message(
+            projectId,
+            threadId,
+            principal,
+            payload,
+            idempotency_key=idempotency_key,
         ),
     )
 
@@ -208,7 +237,7 @@ async def execute_turn(
     projectId: ProjectId,
     threadId: ThreadId,
     payload: AgentTurnRequest,
-    principal: AgentPrincipal,
+    principal: ChatPrincipal,
     service: AgentService,
     idempotency_key: IdempotencyKey,
 ) -> dict[str, object]:

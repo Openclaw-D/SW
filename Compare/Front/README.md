@@ -1,11 +1,12 @@
-# Signal Council · 见微 V1 Front
+# signal-council V1 Front
 
-The Front application is the browser side of the local Signal Council · 见微 reference workbench. It presents the 24 isolated, deterministic, de-identified demonstration projects through the Back HTTP contract. It is not a production deployment or a source of real customer, model, or risk facts.
+The Front application is the browser side of the local signal-council reference workbench. It presents the 24 isolated, deterministic, de-identified demonstration projects through the authenticated Back HTTP contract. It is not a production deployment or a source of real customer, model, or risk facts.
 
 ## Behaviour and boundaries
 
 - The project selection, six-dimension review surface, materials, evidence, shared review flow, policy results, and approval projection all use one selected `projectId`.
-- The Front defaults to `HttpWorkbenchGateway`. `VITE_COMPARE_GATEWAY=mock` is an explicit local compatibility override, never a silent fallback after HTTP failure.
+- The Front defaults to `HttpWorkbenchGateway` and same-origin relative `/api/v1`, with `credentials: include`; it never sends a client-selected role header. `VITE_COMPARE_GATEWAY=mock` is an explicit local compatibility override, never a silent fallback after HTTP failure.
+- Startup restores `/auth/me`; login and logout use the HttpOnly session cookie. Every project member sees the same project projection, while only `business` and `risk` participate in the chronological group chat and may choose the `@业务` or `@风控` advisory Agent target. The `coordinator` account has a read-only collaboration view plus system-settings and approval controls; it is not a chat sender or Agent target. Routing never grants another role's formal permissions.
 - A project-scoped original URL is used only when Back reports `originalAccess.available=true`. If the optional external archive is absent, invalid, unimported, or fails integrity checks, the UI shows an honest unavailable state.
 - `SceneSpec`, GLB, OCR, locators, and model output are Back-derived artifacts. They are not source materials, verified images, Office parsing, or real reconstruction output.
 - AI messages and candidates are advisory-only. Formal corrections, risk determinations, policy outcomes, and approvals remain Back-authoritative and require human action.
@@ -20,7 +21,9 @@ npm.cmd ci
 npm.cmd run dev
 ```
 
-The standard API base is `http://127.0.0.1:8000/api/v1`. For the combined local reference run, follow [../DEPLOYMENT.md](../DEPLOYMENT.md) and start with synthetic agent mode.
+The standard browser API base is same-origin `/api/v1`; the development proxy forwards it to `http://127.0.0.1:8000`. For the combined local reference run, follow [../DEPLOYMENT.md](../DEPLOYMENT.md) and start with synthetic agent mode.
+
+The launcher can set internal `SIGNAL_COUNCIL_BACK_ORIGIN` when using alternate local ports. This changes only the development proxy target and does not expose a client-editable role or cross-origin API URL.
 
 ## Verification
 
@@ -32,7 +35,7 @@ npm.cmd run typecheck
 npm.cmd run build
 ```
 
-The current V1 Front gate is `201/201` tests, typecheck, and build passed. The bilingual UI also passed its 1920×1080 acceptance gate. These results verify the local reference UI only; they do not establish production deployment, real-provider behavior, real customer material handling, model quality, or statistical validation.
+The current V1 Front gate is `204/204` tests, typecheck, and build passed. The UI also requires a fresh three-account 1920×1080 acceptance gate before release. These results verify the local reference UI only; they do not establish production deployment, real-provider behavior, real customer material handling, model quality, or statistical validation.
 
 ## Integration
 

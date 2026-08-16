@@ -13,6 +13,7 @@ from typing import Any, Iterator, Literal
 
 from app.contracts.agent_communication import (
     AGENT_COMMUNICATION_DISCLAIMER,
+    AgentCitation,
     AgentMessage,
     AgentRole,
 )
@@ -112,6 +113,10 @@ class AgentCommunicationRepository:
 
     def raw_connection_for_tests(self) -> sqlite3.Connection:
         return self._connection
+
+    def require_project(self, project_id: str) -> None:
+        with self._read_transaction() as connection:
+            AgentCommunicationRepository._require_project(connection, project_id)
 
     def create_thread(
         self,
@@ -285,6 +290,87 @@ class AgentCommunicationRepository:
                     "replyToMessageId 不存在或不属于当前 project/thread。",
                 )
             return self._message_from_row(row)
+
+    def append_human_message(
+        self,
+        project_id: str,
+        thread_id: str,
+        *,
+        role: str,
+        content: str,
+        reply_to_message_id: str | None,
+        citations: Sequence[AgentCitation] = (),
+        idempotency_key: str,
+        request_hash: str,
+    ) -> dict[str, Any]:
+        """Persist natural dialogue without creating or reserving an Agent run."""
+
+        self._validate_role(role)
+        with self._write_transaction() as connection:
+            thread = self._thread_from_row(
+                self._thread_row(connection, project_id, thread_id)
+            )
+            if thread["status"] != "active":
+                raise ConflictError(
+                    "agent_thread_not_active", "非 active 会话不能发送消息。"
+                )
+            replay = self._idempotency_replay(
+                connection,
+                project_id,
+                idempotency_key,
+                "chat_message",
+                request_hash,
+            )
+            if replay is not None:
+                return replay
+            if reply_to_message_id is not None:
+                referenced = connection.execute(
+                    """SELECT 1 FROM agent_messages
+                       WHERE project_id = ? AND thread_id = ? AND id = ?""",
+                    (project_id, thread_id, reply_to_message_id),
+                ).fetchone()
+                if referenced is None:
+                    raise NotFoundError(
+                        "agent_reply_message_not_found",
+                        "replyToMessageId 不存在或不属于当前 project/thread。",
+                    )
+            sequence = int(
+                connection.execute(
+                    """SELECT COALESCE(MAX(sequence), 0) FROM agent_messages
+                       WHERE project_id = ? AND thread_id = ?""",
+                    (project_id, thread_id),
+                ).fetchone()[0]
+            ) + 1
+            message = self._insert_message(
+                connection,
+                project_id=project_id,
+                thread_id=thread_id,
+                run_id=None,
+                sequence=sequence,
+                payload={
+                    "role": role,
+                    "authorType": "human",
+                    "kind": "user_input",
+                    "content": content,
+                    "replyToMessageId": reply_to_message_id,
+                    "citations": citations,
+                    "isSimulated": False,
+                },
+            )
+            connection.execute(
+                """UPDATE agent_threads SET updated_at = ?
+                   WHERE project_id = ? AND id = ? AND status = 'active'""",
+                (message["createdAt"], project_id, thread_id),
+            )
+            self._store_idempotency(
+                connection,
+                project_id,
+                idempotency_key,
+                "chat_message",
+                request_hash,
+                message,
+            )
+            return message
 
     def list_focus_events(
         self,
@@ -519,10 +605,6 @@ class AgentCommunicationRepository:
             )
             if thread["status"] != "active":
                 raise ConflictError("agent_thread_not_active", "非 active 会话不能创建 turn。")
-            if thread["focusRole"] != role:
-                raise ForbiddenError(
-                    "agent_focus_mismatch", "请求 principal 不是服务端当前焦点角色。"
-                )
             foreign_idempotency = connection.execute(
                 """SELECT operation, request_hash FROM agent_idempotency_records
                    WHERE project_id = ? AND key = ?""",
@@ -667,8 +749,8 @@ class AgentCommunicationRepository:
                 self._thread_row(connection, project_id, run_row["thread_id"])
             )
             self._check_version(run_row["expected_thread_version"], thread["version"])
-            if thread["status"] != "active" or thread["focusRole"] != run_row["role"]:
-                raise ConflictError("agent_focus_race", "会话状态或焦点已变化。")
+            if thread["status"] != "active":
+                raise ConflictError("agent_thread_not_active", "会话状态已变化。")
             self._insert_run_step(connection, project_id, run_row, step)
             sequence = int(
                 connection.execute(
@@ -693,7 +775,8 @@ class AgentCommunicationRepository:
             next_version = thread["version"] + 1
             next_focus = (
                 "business"
-                if run_row["role"] in {"risk", "leadership"}
+                if thread["focusRole"] == run_row["role"]
+                and run_row["role"] in {"risk", "leadership"}
                 else thread["focusRole"]
             )
             finished_at = utc_now()
@@ -708,18 +791,18 @@ class AgentCommunicationRepository:
                     project_id,
                     run_row["thread_id"],
                     run_row["expected_thread_version"],
-                    run_row["role"],
+                    thread["focusRole"],
                 ),
             )
             if cursor.rowcount != 1:
-                raise ConflictError("agent_focus_race", "会话焦点在 finalize 前已变化。")
-            if next_focus != run_row["role"]:
+                raise ConflictError("agent_thread_race", "会话版本在 finalize 前已变化。")
+            if next_focus != thread["focusRole"]:
                 self._append_focus_event(
                     connection,
                     project_id=project_id,
                     thread_id=run_row["thread_id"],
                     kind="focus_returned",
-                    from_role=run_row["role"],
+                    from_role=thread["focusRole"],
                     to_role="business",
                     actor_role=run_row["role"],
                     reason="临时焦点 turn 完成，服务端自动返回业务主工作区。",
@@ -844,7 +927,7 @@ class AgentCommunicationRepository:
         *,
         project_id: str,
         thread_id: str,
-        run_id: str,
+        run_id: str | None,
         sequence: int,
         payload: Mapping[str, Any],
     ) -> dict[str, Any]:

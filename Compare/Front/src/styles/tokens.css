@@ -93,7 +93,6 @@
   --layout-material-width: clamp(430px, 35vw, 640px);
   --layout-collaboration-height: 286px;
   --layout-main-min-width: 560px;
-  --layout-page-max-width: 980px;
   --layout-pane-padding-x: 28px;
   --layout-pane-padding-y: 20px;
   --layout-divider-hit: 8px;
