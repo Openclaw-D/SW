@@ -10,6 +10,7 @@ import pytest
 from app.contracts.agent_communication import AgentMode
 from app.core.config import Settings
 from app.main import create_app
+from app.repositories.schema import SCHEMA_VERSION
 from app.services.authentication import AuthenticationService, PASSWORD_ITERATIONS, SESSION_COOKIE_NAME
 
 
@@ -38,7 +39,7 @@ def test_seed_kdf_memberships_and_migration_are_idempotent(tmp_path: Path) -> No
         assert all(row[3] == PASSWORD_ITERATIONS and row[1] != row[2] and row[2] != "123456" for row in accounts)
         assert len({row[1] for row in accounts}) == 3
         assert db.execute("SELECT COUNT(*) FROM project_memberships").fetchone()[0] == 72
-        assert db.execute("SELECT COUNT(*) FROM schema_migrations WHERE version=9").fetchone()[0] == 1
+        assert db.execute("SELECT COUNT(*) FROM schema_migrations WHERE version=?", (SCHEMA_VERSION,)).fetchone()[0] == 1
 
 
 def test_memberships_reconcile_when_projects_are_seeded_after_authentication(tmp_path: Path) -> None:

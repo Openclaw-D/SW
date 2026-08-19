@@ -1,4 +1,4 @@
-# signal-council V1 Front
+# signal-council V0.2 Front
 
 The Front application is the browser side of the local signal-council reference workbench. It opens exactly one deterministic, de-identified demonstration project through the authenticated Back HTTP contract. It is not a production deployment or a source of real customer, training, model, or risk facts.
 

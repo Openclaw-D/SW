@@ -1,4 +1,4 @@
-# signal-council V1 Back
+# signal-council V0.2 Back
 
 The Back service is the local FastAPI and SQLite side of the signal-council reference workbench. Its default runtime provides exactly one deterministic, de-identified demonstration project and turns the frozen Front contract into checked Pydantic, HTTP, SQLite-state, authentication, membership, and error contracts.
 

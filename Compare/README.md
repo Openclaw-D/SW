@@ -1,4 +1,4 @@
-# signal-council — V1
+# signal-council — V0.2
 
 signal-council is a local reference workbench for financing-lease material verification and business-rule evaluation. Its repository is [Openclaw-D/signal-council](https://github.com/Openclaw-D/signal-council). It is not a production service, an automated approval system, a statistically validated risk model, or a repository of real customer material.
 
@@ -16,7 +16,7 @@ Original material → controlled advisory candidate → human confirmation or bu
 
 Human gates are authoritative. AI output is advisory-only: it cannot write authoritative facts, evidence, scores, confidence, policy results, hard-gate results, or approvals.
 
-## What V1 does
+## What V0.2 does
 
 - Presents six equally weighted dimensions—compliance, transaction, production, revenue, debt, and cashflow—each scored from 0 to 100. A higher score is better. The global risk summary is not a seventh dimension.
 - Keeps `scoreGrade`, `decisionGrade`, confidence, evidence, and hard-gate decisions separate.
@@ -28,7 +28,7 @@ Human gates are authoritative. AI output is advisory-only: it cannot write autho
 
 ## Limits that are deliberate
 
-- V1 is local reference software, not an Internet-facing deployment.
+- V0.2 is local reference software, not an Internet-facing deployment.
 - The public default is synthetic and deterministic. A locally configured provider path is not evidence of production readiness, provider quality, authentication security, SLA, or statistical validation.
 - There is no real-customer dataset, multitenancy, public OCR/Office service, or verified image-to-3D reconstruction engine. Authentication and project-role authorization are implemented for the fixed intranet Demo accounts, not as a public identity platform.
 - `SceneSpec` and any GLB attachment are derived, declarative artifacts; they are not surveys, CAD, scans, 3D Gaussian Splatting, or verified reconstructions of a real asset or site.

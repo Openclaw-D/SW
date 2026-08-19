@@ -1,6 +1,6 @@
-# signal-council V1: Windows Local Reference Run
+# signal-council V0.2: Windows Local Reference Run
 
-This guide describes a local reference run on an isolated Windows host. It is not an Internet deployment or a production-release guide. V1 has fixed Demo-account login, backend session principals, project membership, and role ACL; it does not have self-service identity, multitenancy, production privacy, backup, rate limiting, TLS, or an external-network security gate. Do not expose it directly to the Internet.
+This guide describes a local reference run on an isolated Windows host. It is not an Internet deployment or a production-release guide. V0.2 has fixed Demo-account login, backend session principals, project membership, and role ACL; it does not have self-service identity, multitenancy, production privacy, backup, rate limiting, TLS, or an external-network security gate. Do not expose it directly to the Internet.
 
 ## Topology and scope
 
