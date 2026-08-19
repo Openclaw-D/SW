@@ -83,6 +83,33 @@ class AuthenticationService:
             # failed seed remains retryable.
             self._seed_complete = True
 
+    def reconcile_project_memberships(self) -> None:
+        """Idempotently grant the local demo accounts access to seeded projects.
+
+        Workbench project seeding is lazy, so the first authentication seed can
+        legitimately run before any project exists. Reconcile after Workbench
+        initialization to cover projects added later without rerunning schema
+        initialization on every request. Only projects with no memberships at
+        all are healed; partial per-project ACLs remain backend-enforced.
+        """
+        with self._lock, self._connect() as db:
+            unmembered = db.execute(
+                """SELECT 1 FROM projects p
+                   WHERE NOT EXISTS (
+                       SELECT 1 FROM project_memberships m WHERE m.project_id = p.id
+                   ) LIMIT 1"""
+            ).fetchone()
+            if unmembered is None:
+                return
+            db.execute(
+                """INSERT OR IGNORE INTO project_memberships(project_id, account_id, created_at)
+                   SELECT p.id, a.id, ? FROM projects p CROSS JOIN accounts a
+                   WHERE NOT EXISTS (
+                       SELECT 1 FROM project_memberships m WHERE m.project_id = p.id
+                   )""",
+                (_timestamp(),),
+            )
+
     @staticmethod
     def _account(row: sqlite3.Row) -> AuthenticatedAccount:
         return AuthenticatedAccount(account_id=row["id"], username=row["username"], display_name=row["display_name"], role=row["role"])

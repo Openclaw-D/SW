@@ -37,6 +37,13 @@ export const DEFAULT_LAYOUT_RATIOS = {
   collaborationRatio: 50,
 } as const;
 
+export const PRESENTATION_LAYOUT_RATIOS = {
+  materialRatio: 30,
+  collaborationRatio: 50,
+} as const;
+
+export const LAYOUT_SNAP_THRESHOLD = 2.5;
+
 export const PERSISTED_LAYOUT_KEY = "compare-front-layout-v1";
 export const DEFAULT_TIME_SERIES_RANGE = { startDate: "2025-08-01", endDate: "2026-08-01" } as const;
 export const DEFAULT_TIME_SERIES_TIMEZONE = "Asia/Shanghai";
@@ -344,6 +351,11 @@ export function averageScore(scores: readonly number[]) {
 
 export function scoreRadius(score: number) {
   return round1(clamp(18 + normalizeScore(score) * 0.82, 18, 100));
+}
+
+export function snapLayoutRatio(value: number, snapPoint: number, limits: readonly [number, number]) {
+  if (Math.abs(value - snapPoint) <= LAYOUT_SNAP_THRESHOLD) return snapPoint;
+  return clamp(value, limits[0], limits[1]);
 }
 
 export const GRADE_COLOR_VARS: Record<ScoreGrade, string> = {

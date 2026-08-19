@@ -1,5 +1,7 @@
 import type { DecisionGrade, DimensionDefinition, RiskLevel } from "./workbench";
 
+export const PUBLIC_DEMO_PROJECT_COUNT = 1;
+
 export const PROJECT_VIEWS = ["list", "group", "cards"] as const;
 export type ProjectView = (typeof PROJECT_VIEWS)[number];
 

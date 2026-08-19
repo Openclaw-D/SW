@@ -11,7 +11,7 @@ import { materialDimensionIndex } from "../lib/materialIndex";
 import { businessFolderFor, isOriginalMaterial, materialPreviewUrl, materialRelativePath } from "../lib/materialBusinessFolders";
 import type { OriginalMaterial } from "../lib/materialBusinessFolders";
 import type { EvidenceSelectionResolution } from "../lib/workbenchLogic";
-import { clamp, excelRangeContains, excelRangeScrollTarget, LAYOUT_LIMITS, materialHitCounts, materialTabPresentation } from "../lib/workbenchLogic";
+import { clamp, excelRangeContains, excelRangeScrollTarget, LAYOUT_LIMITS, materialHitCounts, materialTabPresentation, PRESENTATION_LAYOUT_RATIOS, snapLayoutRatio } from "../lib/workbenchLogic";
 import { Icon } from "./icons";
 import { Button, EmptyState } from "./ui";
 import { MaterialSceneSpecPreview } from "./MaterialSceneSpecPreview";
@@ -501,6 +501,7 @@ export function MaterialPane({
   chatMaximized,
   onChatRatioChange,
   onChatMaximizedChange,
+  presentationMode = false,
 }: {
   materials: Material[];
   facts: FactVersion[];
@@ -533,6 +534,7 @@ export function MaterialPane({
   chatMaximized: boolean;
   onChatRatioChange: (ratio: number) => void;
   onChatMaximizedChange: (maximized: boolean) => void;
+  presentationMode?: boolean;
 }) {
   const [dimensionFilter, setDimensionFilter] = useState<MaterialDimensionFilter>("all");
   const [kindFilter, setKindFilter] = useState<MaterialKindFilter>("all");
@@ -543,6 +545,8 @@ export function MaterialPane({
   const [annotationRequestKey, setAnnotationRequestKey] = useState(0);
   const [annotationRequestNotice, setAnnotationRequestNotice] = useState<string | null>(null);
   const [annotationWorkspaceMode, setAnnotationWorkspaceMode] = useState(false);
+  const [showPresentationDirectory, setShowPresentationDirectory] = useState(false);
+  const lastExpandedChatRatioRef = useRef<number>(PRESENTATION_LAYOUT_RATIOS.collaborationRatio);
   const originalMaterials = materials.filter(isOriginalMaterial);
   const dimensionsByMaterial = materialDimensionIndex(facts, evidence);
   const resolving = !!selectionGroup && !evidenceSelectionResolution;
@@ -677,7 +681,8 @@ export function MaterialPane({
     const move = (pointerEvent: PointerEvent) => {
       if (pointerEvent.pointerId !== pointerId) return;
       const rect = pane.getBoundingClientRect();
-      nextRatio = clamp(((rect.bottom - pointerEvent.clientY) / Math.max(1, rect.height)) * 100, ...LAYOUT_LIMITS.collaborationRatio);
+      const rawRatio = ((rect.bottom - pointerEvent.clientY) / Math.max(1, rect.height)) * 100;
+      nextRatio = snapLayoutRatio(rawRatio, PRESENTATION_LAYOUT_RATIOS.collaborationRatio, LAYOUT_LIMITS.collaborationRatio);
       if (frameId === null) frameId = window.requestAnimationFrame(applyResize);
     };
     const cleanup = () => {
@@ -691,7 +696,20 @@ export function MaterialPane({
       if (stopEvent instanceof PointerEvent && stopEvent.pointerId !== pointerId) return;
       if (frameId !== null) window.cancelAnimationFrame(frameId);
       applyResize();
-      onChatRatioChange(nextRatio);
+      if (presentationMode && nextRatio <= 12) {
+        if (chatRatio > 12 && chatRatio < 88) lastExpandedChatRatioRef.current = chatRatio;
+        onChatRatioChange(LAYOUT_LIMITS.collaborationRatio[0]);
+        setSourceCollapsed(false);
+        setChatCollapsed(true);
+      } else if (presentationMode && nextRatio >= 88) {
+        if (chatRatio > 12 && chatRatio < 88) lastExpandedChatRatioRef.current = chatRatio;
+        onChatRatioChange(LAYOUT_LIMITS.collaborationRatio[1]);
+        setChatCollapsed(false);
+        setSourceCollapsed(true);
+      } else {
+        lastExpandedChatRatioRef.current = nextRatio;
+        onChatRatioChange(nextRatio);
+      }
       cleanup();
     }
     window.addEventListener("pointermove", move);
@@ -707,7 +725,12 @@ export function MaterialPane({
     if (event.key === "Home") { onChatRatioChange(LAYOUT_LIMITS.collaborationRatio[0]); return; }
     if (event.key === "End") { onChatRatioChange(LAYOUT_LIMITS.collaborationRatio[1]); return; }
     const direction = event.key === "ArrowUp" ? 1 : -1;
-    onChatRatioChange(clamp(chatRatio + direction * (event.shiftKey ? 5 : 2), ...LAYOUT_LIMITS.collaborationRatio));
+    onChatRatioChange(snapLayoutRatio(chatRatio + direction * (event.shiftKey ? 5 : 2), PRESENTATION_LAYOUT_RATIOS.collaborationRatio, LAYOUT_LIMITS.collaborationRatio));
+  };
+  const restoreMaterialChatSplit = () => {
+    setSourceCollapsed(false);
+    setChatCollapsed(false);
+    onChatRatioChange(lastExpandedChatRatioRef.current);
   };
   const showPreview = () => {
     if (errorMessage) return <div><EmptyState detail={formatServiceMessage(errorMessage, locale)} title={copy(locale, "Material read failed", "材料读取失败")} />{onRetry ? <Button onClick={onRetry}>{copy(locale, "Retry", "重试")}</Button> : null}</div>;
@@ -724,15 +747,15 @@ export function MaterialPane({
   };
 
   return (
-    <aside className={`material-pane has-project-chat ${collapsed ? "is-collapsed" : ""} ${sourceCollapsed ? "is-source-collapsed" : ""} ${chatCollapsed ? "is-chat-collapsed" : ""} ${chatMaximized ? "is-chat-maximized" : ""} ${annotationWorkspaceMode ? "is-annotation-workspace" : ""}`} aria-label={copy(locale, "Original materials and project group chat", "原始材料与项目群聊区域")} data-semantic-localized id="material-pane" style={{ "--layout-source-share": `${100 - chatRatio}fr`, "--layout-chat-share": `${chatRatio}fr` } as CSSProperties}>
+    <aside className={`material-pane has-project-chat ${presentationMode ? "is-context-preview" : ""} ${showPresentationDirectory ? "is-directory-open" : ""} ${collapsed ? "is-collapsed" : ""} ${sourceCollapsed ? "is-source-collapsed" : ""} ${chatCollapsed ? "is-chat-collapsed" : ""} ${chatMaximized ? "is-chat-maximized" : ""} ${annotationWorkspaceMode ? "is-annotation-workspace" : ""}`} aria-label={copy(locale, presentationMode ? "Comparison materials and project group chat" : "Original materials and project group chat", presentationMode ? "对比材料与项目群聊区域" : "原始材料与项目群聊区域")} data-semantic-localized id="material-pane" style={{ "--layout-source-share": `${100 - chatRatio}fr`, "--layout-chat-share": `${chatRatio}fr` } as CSSProperties}>
       {collapsed ? (
-        <button aria-controls="material-pane" aria-expanded={false} aria-label={copy(locale, "Expand original materials from the upper-right corner", "从右上角展开原始材料")} className="pane-corner-anchor material-corner-anchor" onClick={onToggleCollapsed} title={copy(locale, "Expand original materials from the upper-right corner", "从右上角展开原始材料")} type="button"><span aria-hidden="true" className="pane-corner-glyph">↙</span></button>
+        <button aria-controls="material-pane" aria-expanded={false} aria-label={presentationMode ? "从右上角展开对比材料" : copy(locale, "Expand original materials from the upper-right corner", "从右上角展开原始材料")} className="pane-corner-anchor material-corner-anchor" onClick={onToggleCollapsed} title={presentationMode ? "从右上角展开对比材料" : copy(locale, "Expand original materials from the upper-right corner", "从右上角展开原始材料")} type="button"><span aria-hidden="true" className="pane-corner-glyph">↙</span></button>
       ) : (
         <>
           <section className="material-source-workspace">
           <header className="pane-heading">
-            <div><h2>{copy(locale, "Original materials", "原始材料")}</h2></div>
-            <div className="pane-actions"><Button aria-controls="material-pane" aria-expanded aria-label={copy(locale, "Collapse original materials to the upper-right corner", "收起原始材料至右上角")} className="pane-corner-anchor material-corner-anchor" onClick={onToggleCollapsed} title={copy(locale, "Collapse original materials to the upper-right corner", "收起原始材料至右上角")}><span aria-hidden="true" className="pane-corner-glyph">↗</span></Button></div>
+            <div><h2>{copy(locale, presentationMode ? "Comparison materials" : "Original materials", presentationMode ? "对比材料" : "原始材料")}</h2></div>
+            {presentationMode ? <div className="pane-actions">{sourceCollapsed ? <button className="material-directory-trigger" onClick={restoreMaterialChatSplit} type="button">恢复分栏</button> : <button aria-expanded={showPresentationDirectory} className="material-directory-trigger" onClick={() => setShowPresentationDirectory((current) => !current)} type="button">{showPresentationDirectory ? "关闭原件" : "查看原件"}</button>}<Button aria-controls="material-pane" aria-expanded aria-label="收起对比材料至右上角" className="pane-corner-anchor material-corner-anchor" onClick={onToggleCollapsed} title="收起对比材料至右上角"><span aria-hidden="true" className="pane-corner-glyph">↗</span></Button></div> : <div className="pane-actions"><Button aria-controls="material-pane" aria-expanded aria-label={copy(locale, "Collapse original materials to the upper-right corner", "收起原始材料至右上角")} className="pane-corner-anchor material-corner-anchor" onClick={onToggleCollapsed} title={copy(locale, "Collapse original materials to the upper-right corner", "收起原始材料至右上角")}><span aria-hidden="true" className="pane-corner-glyph">↗</span></Button></div>}
           </header>
           <div className="material-tabs" aria-label={copy(locale, "Material list", "材料列表")}>
             <div className="material-index-controls">
@@ -760,11 +783,10 @@ export function MaterialPane({
               {visibleMaterials.length === 0 ? <p className="material-index-empty">{copy(locale, "No original materials match the current filters.", "当前筛选没有原始材料。")}</p> : null}
             </div>
           </div>
-          <div className="material-preview" ref={previewScrollRef}>{showPreview()}<MaterialIntelligencePanel activeAnchorId={activeIntelligenceAnchorId} canEdit={canEditIntelligence} confirmedCandidateIds={confirmedCandidateIds} confirmingCandidateId={confirmingCandidateId} intelligence={intelligence} message={intelligenceMessage} onAnchorActivate={onIntelligenceAnchorActivate} onCancel={onCancelIntelligence} onConfirm={onConfirmCandidate} onRun={onRunIntelligence} runtime={modelGatewayRuntime} scene={selected?.kind === "image" ? null : sceneSpec} status={intelligenceStatus} /></div>
+          <div className="material-preview" ref={previewScrollRef}>{showPreview()}{presentationMode ? null : <MaterialIntelligencePanel activeAnchorId={activeIntelligenceAnchorId} canEdit={canEditIntelligence} confirmedCandidateIds={confirmedCandidateIds} confirmingCandidateId={confirmingCandidateId} intelligence={intelligence} message={intelligenceMessage} onAnchorActivate={onIntelligenceAnchorActivate} onCancel={onCancelIntelligence} onConfirm={onConfirmCandidate} onRun={onRunIntelligence} runtime={modelGatewayRuntime} scene={selected?.kind === "image" ? null : sceneSpec} status={intelligenceStatus} />}</div>
           <footer className={`material-note resolution-${resolving ? "pending" : selectedOriginalUnavailable || selectedAssetUnavailable || selectedRawAssetUnsupported ? "unverifiable" : evidenceSelectionResolution?.status ?? "idle"}`}><Icon name="link" /><span>{visualAnnotation ? <><b>{copy(locale, "Visual annotation", "视觉注释")}</b> · {visualAnnotation.evidenceTargets.length ? copy(locale, "OCR anchor candidate found; human confirmation required", "已找到 OCR 锚点候选，需人工确认") : copy(locale, "No OCR anchor match; keep pending", "未匹配到 OCR 锚点，保持待确认")}</> : annotationRequestNotice ? <><b>{copy(locale, "Annotation", "注释")}</b> · {annotationRequestNotice}</> : resolving ? <><b>{copy(locale, "Resolving in background", "后台解析")}</b> · {copy(locale, "previous highlights cleared", "旧高亮已清除")}</> : selectedOriginalUnavailable ? <><b>{selectedOriginalUnavailable.title}</b> · {selectedOriginalUnavailable.detail}</> : selectedAssetUnavailable ? <><b>{copy(locale, "Location incomplete", "定位未完成")}</b> · {copy(locale, "site source image pending", "现场原图待接入")}</> : selectedRawAssetUnsupported ? <><b>{copy(locale, "Location incomplete", "定位未完成")}</b> · {copy(locale, "original asset pending", "原始资产待接入")}</> : evidenceSelectionResolution ? evidenceSelectionResolution.status === "located" ? <b>{displayHitCount} {copy(locale, "regions", "个区域")}</b> : <><b>{copy(locale, "Location incomplete", "定位未完成")}</b> · {formatServiceMessage(evidenceSelectionResolution.message.replace(/[。；]+$/u, ""), locale)}</> : <b>{copy(locale, "Original material", "原始材料")}</b>}</span>{visualAnnotation ? <div className="material-annotation-actions">{visualAnnotation.matchStatus === "pending" && visualAnnotation.evidenceTargets.length ? <Button onClick={() => setVisualAnnotation({ ...visualAnnotation, matchStatus: "confirmed" })}>{copy(locale, "Confirm OCR match", "确认 OCR 匹配")}</Button> : null}<Button onClick={() => { setVisualAnnotation(null); setAnnotationRequestNotice(null); setAnnotationWorkspaceMode(false); }}>{copy(locale, "Clear", "清除")}</Button></div> : null}</footer>
           </section>
-          <div aria-label={copy(locale, "Resize original materials and project group chat", "调整原始材料与项目群聊高度")} aria-orientation="horizontal" aria-valuemax={LAYOUT_LIMITS.collaborationRatio[1]} aria-valuemin={LAYOUT_LIMITS.collaborationRatio[0]} aria-valuenow={Math.round(chatRatio)} aria-valuetext={copy(locale, `Project chat height: ${Math.round(chatRatio)}%`, `项目群聊高度 ${Math.round(chatRatio)}%`)} className="material-split-divider" onKeyDown={resizeChatWithKeyboard} onPointerDown={beginChatResize} role="separator" tabIndex={0}>
-          </div>
+          <div aria-label={copy(locale, "Resize original materials and project group chat", "调整原始材料与项目群聊高度")} aria-orientation="horizontal" aria-valuemax={LAYOUT_LIMITS.collaborationRatio[1]} aria-valuemin={LAYOUT_LIMITS.collaborationRatio[0]} aria-valuenow={Math.round(chatRatio)} aria-valuetext={copy(locale, `Project chat height: ${Math.round(chatRatio)}%`, `项目群聊高度 ${Math.round(chatRatio)}%`)} className="material-split-divider" onKeyDown={resizeChatWithKeyboard} onPointerDown={beginChatResize} role="separator" tabIndex={0}>{chatCollapsed ? <button className="material-split-restore" onClick={(event) => { event.stopPropagation(); restoreMaterialChatSplit(); }} onPointerDown={(event) => event.stopPropagation()} type="button">恢复群聊</button> : null}</div>
           <div className="material-chat-slot"><A2ACollaborationPanel accountRole={groupChat.accountRole} agentActivity={groupChat.agentActivity} agentError={groupChat.agentError} agentMessages={groupChat.agentMessages} annotationReference={annotationReference} collapsed={chatCollapsed} evidence={evidence} maximized={chatMaximized} onAgentEvidenceActivate={(target) => onEvidenceActivate(target)} onConfirmMaterialImport={groupChat.onConfirmMaterialImport} onImportMaterialPackage={groupChat.onImportMaterialPackage} onRequestAnnotation={requestVisualAnnotation} onSubmitMessage={groupChat.onSubmitMessage} onToggleMaximized={() => { setChatCollapsed(false); onChatMaximizedChange(!chatMaximized); }} selectedTarget={groupChat.selectedTarget} /></div>
         </>
       )}

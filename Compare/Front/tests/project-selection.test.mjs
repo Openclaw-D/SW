@@ -53,12 +53,12 @@ test("目录 fixture 生成器对日期稳定，并允许显式 seed 构造独�
   );
 });
 
-test("默认 Mock Gateway 返回固定 24 项，不随实例或当前时间重新生成", async () => {
+test("默认 Mock Gateway 只返回一套固定演示项目，不随实例或当前时间重新生成", async () => {
   const first = await new MockWorkbenchGateway().listProjects();
   const second = await new MockWorkbenchGateway().listProjects();
 
   assert.deepEqual(first, second);
-  assert.equal(first.length, 24);
+  assert.equal(first.length, 1);
   assert.ok(first.every((project) => /^2026PAZL0812\d{3}$/.test(project.projectId)));
 });
 
@@ -180,7 +180,7 @@ test("非基础项目会确定性替换统一模板中的全部项目身份，�
   assert.equal(workbench.project.id, selected.projectId);
   assert.equal(borrower?.name, selected.companyName);
   assert.match(workbench.project.name, /统一脱敏核验模板/);
-  assert.match(workbench.project.disclaimer, /不代表 24 套真实客户材料/);
+  assert.match(workbench.project.disclaimer, /不代表真实客户材料/);
   assert.ok(workbench.complianceGraph.nodes.some((node) => node.name === `${selected.companyShortName}控股有限公司`));
   assert.equal(workbench.complianceGraph.nodes.every((node) => !node.name.includes("（演示）")), true);
   assert.ok(workbench.materials.some((material) => JSON.stringify(material).includes(selected.companyName)));
@@ -228,16 +228,18 @@ test("根入口属于 Compare，工作台不再硬编码旧演示项目", async 
   ]);
 
   assert.match(page, /<ProjectExperience \/>/);
-  assert.match(experience, /<DemoEntrance locale=\{locale\} onEnter=/);
-  assert.match(experience, /<ProjectSelectionEntry/);
-  assert.match(experience, /<ProjectSelectionBrowser/);
+  assert.match(experience, /<ProjectSelectionEntry locale=\{locale\} onChoose=/);
+  assert.match(experience, /<ProjectSelectionBrowser initialView=\{route\.view\}/);
   assert.match(experience, /screen: "demo"/);
-  assert.match(experience, /nextProjects\.length !== 24/);
+  assert.match(experience, /screen: "directory"/);
+  assert.match(experience, /const PUBLIC_DIRECTORY_PROJECTS = generateProjectCatalog/);
+  assert.match(experience, /onOpenProject=\{\(\) => navigate\(\{ screen: "project", projectId: canonicalProjectId \}\)\}/);
+  assert.match(experience, /nextProjects\.length !== 1/);
   assert.doesNotMatch(experience, /sessionStorage|Math\.random|serializeProjectCatalog|parseProjectCatalog/);
   assert.doesNotMatch(selection, /换一批|onRefresh/);
-  assert.match(selection, /Enter public demo/);
-  assert.match(selection, /Authenticated intranet Demo entry/);
-  assert.match(selection, /24 isolated projects share a complete/);
+  assert.match(selection, /Multiple display cards share one fixed/);
+  assert.match(selection, /多张展示卡共用一套固定脱敏演示工作台/);
+  assert.match(selection, /进入任意卡片均打开同一套固定的材料、事实、评分、证据与状态/);
   assert.match(selection, /src="\/demo-eye\.png"/);
   assert.ok(eye.byteLength > 1_000_000);
   assert.match(css, /filter:\s*brightness\(\.36\) saturate\(\.68\)/);

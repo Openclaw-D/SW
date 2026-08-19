@@ -47,10 +47,13 @@ IdempotencyKey = Annotated[str, Depends(require_idempotency_key)]
 
 
 def get_authentication_service(request: Request) -> AuthenticationService:
-    # Project seed must finish before the idempotent membership cross-join.
+    # Project generation must finish before auth seeds and reconciles memberships.
     get_workbench_service(request)
     service: AuthenticationService = request.app.state.authentication_service
     service.seed()
+    # seed() cross-joins memberships only once; projects generated later are
+    # healed here without re-executing SCHEMA_SQL on authenticated requests.
+    service.reconcile_project_memberships()
     return service
 
 AuthenticationServiceDependency = Annotated[AuthenticationService, Depends(get_authentication_service)]

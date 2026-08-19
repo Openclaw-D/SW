@@ -25,12 +25,14 @@ import {
   deriveScoreSummary,
   DEFAULT_LAYOUT_RATIOS,
   LAYOUT_LIMITS,
+  PRESENTATION_LAYOUT_RATIOS,
   createEvidenceSelectionGroup,
   persistedLayoutFrom,
   PERSISTED_LAYOUT_KEY,
   riskItemCount,
   resolveEvidenceSelectionGroup,
   sanitizePersistedLayout,
+  snapLayoutRatio,
   scoreToGrade,
   type EvidenceSelectionResolution,
   type ResponsiveLayoutState,
@@ -45,9 +47,14 @@ import { initialMaterialLoadFailed, materialRecoveryFailed, materialRecoverySucc
 import { isOriginalMaterial } from "./lib/materialBusinessFolders";
 import { copy, type PublicLocale } from "./lib/publicLocale";
 import type { AccountRole, AuthenticatedAccount } from "./contracts/authentication";
+import type { PreReviewDemoState } from "./contracts/preReviewDemo";
+import { createPreReviewDemoState, rerunPreReviewDemo, submitPreReviewDemo } from "./mock/preReviewDemo";
+import { PreReviewActionBar, PreReviewSummaryBar } from "./components/PreReviewSummaryBar";
+import "./styles/pre-review.css";
 
 const PERSISTED_LAYOUT_VERSION = 3;
 const PERSISTED_LAYOUT_VERSION_KEY = `${PERSISTED_LAYOUT_KEY}-schema`;
+const PERSISTED_PRESENTATION_LAYOUT_KEY = "compare-front-presentation-layout-v2";
 
 async function retryAgentRead<T>(request: () => Promise<T>, signal?: AbortSignal): Promise<T> {
   try {
@@ -130,7 +137,9 @@ function materialVersionNumber(versionId: string) {
   return Number.isInteger(parsed) && parsed > 0 ? parsed : 1;
 }
 
-export function App({ gateway, projectId, projectNo, onBack, account, onLogout, onPrincipalRoleChange, principalRoleChangePending = false, showSimulationControls = false, locale = "en", onLocaleChange }: { gateway: WorkbenchGateway; projectId: string; projectNo: string; onBack: () => void; account: AuthenticatedAccount; onLogout: () => void; onPrincipalRoleChange: (role: Extract<AccountRole, "business" | "risk">) => void; principalRoleChangePending?: boolean; showSimulationControls?: boolean; locale?: PublicLocale; onLocaleChange?: (locale: PublicLocale) => void }) {
+export function App({ gateway, projectId, projectNo, onBack, account, onLogout, onPrincipalRoleChange, principalRoleChangePending = false, showSimulationControls = false, locale = "en", onLocaleChange, presentationMode = false }: { gateway: WorkbenchGateway; projectId: string; projectNo: string; onBack: () => void; account: AuthenticatedAccount; onLogout: () => void; onPrincipalRoleChange: (role: Extract<AccountRole, "business" | "risk">) => void; principalRoleChangePending?: boolean; showSimulationControls?: boolean; locale?: PublicLocale; onLocaleChange?: (locale: PublicLocale) => void; presentationMode?: boolean }) {
+  // 正式工作台只在服务端预审状态接通后展示判断条；展示包才允许使用显式 mock。
+  const preReviewEnabled = showSimulationControls;
   const [data, setData] = useState<WorkbenchProject | null>(null);
   const [layout, setLayout] = useState<ResponsiveLayoutState | null>(null);
   const [chatMaximized, setChatMaximized] = useState(false);
@@ -171,6 +180,9 @@ export function App({ gateway, projectId, projectNo, onBack, account, onLogout, 
   const [confirmingCandidateId, setConfirmingCandidateId] = useState<string | null>(null);
   const [confirmedCandidateIds, setConfirmedCandidateIds] = useState<Set<string>>(() => new Set());
   const [activeIntelligenceAnchorId, setActiveIntelligenceAnchorId] = useState<string | null>(null);
+  const [preReviewState, setPreReviewState] = useState<PreReviewDemoState | null>(null);
+  const [preReviewPending, setPreReviewPending] = useState(false);
+  const [preReviewShowDiff, setPreReviewShowDiff] = useState(false);
   const materialRequestRef = useRef(0);
   const selectionAbortRef = useRef<AbortController | null>(null);
   const materialAbortRef = useRef<AbortController | null>(null);
@@ -180,6 +192,7 @@ export function App({ gateway, projectId, projectNo, onBack, account, onLogout, 
   const activeProjectRef = useRef(projectId);
   const intelligenceRequestRef = useRef(0);
   const intelligenceRunAbortRef = useRef<AbortController | null>(null);
+  const lastExpandedMaterialRatioRef = useRef<number>(PRESENTATION_LAYOUT_RATIOS.materialRatio);
 
   useEffect(() => {
     let active = true;
@@ -203,6 +216,8 @@ export function App({ gateway, projectId, projectNo, onBack, account, onLogout, 
     setIntelligenceMessage(null);
     setConfirmedCandidateIds(new Set());
     setActiveIntelligenceAnchorId(null);
+    setPreReviewState(preReviewEnabled ? createPreReviewDemoState(projectId) : null);
+    setPreReviewShowDiff(false);
     agentThreadRef.current = null;
     agentThreadCreationRef.current = null;
     setAgentThread(null);
@@ -236,9 +251,12 @@ export function App({ gateway, projectId, projectNo, onBack, account, onLogout, 
       };
       let stored: unknown = null;
       try {
-        stored = JSON.parse(localStorage.getItem(PERSISTED_LAYOUT_KEY) ?? "null");
+      stored = JSON.parse(localStorage.getItem(presentationMode ? PERSISTED_PRESENTATION_LAYOUT_KEY : PERSISTED_LAYOUT_KEY) ?? "null");
       } catch { stored = null; }
-      const persisted = { ...sanitizePersistedLayout(stored, scoredProject.layout) };
+      const layoutFallback = presentationMode
+        ? { ...scoredProject.layout, ...PRESENTATION_LAYOUT_RATIOS }
+        : scoredProject.layout;
+      const persisted = { ...sanitizePersistedLayout(stored, layoutFallback) };
       setData(scoredProject);
       setFacts(latestFactVersionsByFactKey(scoredProject.facts));
       setEvents(presentationCopy(authoritativeEvents(reviewEvents)));
@@ -260,7 +278,7 @@ export function App({ gateway, projectId, projectNo, onBack, account, onLogout, 
       if (active) setError(reason instanceof Error ? reason.message : "无法加载项目");
     });
     return () => { active = false; controller.abort(); };
-  }, [gateway, projectId]);
+  }, [gateway, projectId, preReviewEnabled, presentationMode]);
 
   useEffect(() => {
     let active = true;
@@ -330,9 +348,10 @@ export function App({ gateway, projectId, projectNo, onBack, account, onLogout, 
 
   useEffect(() => {
     if (!layout) return;
-    localStorage.setItem(PERSISTED_LAYOUT_KEY, JSON.stringify(persistedLayoutFrom(layout)));
+    const storageKey = presentationMode ? PERSISTED_PRESENTATION_LAYOUT_KEY : PERSISTED_LAYOUT_KEY;
+    localStorage.setItem(storageKey, JSON.stringify(persistedLayoutFrom(layout)));
     localStorage.setItem(PERSISTED_LAYOUT_VERSION_KEY, String(PERSISTED_LAYOUT_VERSION));
-  }, [layout]);
+  }, [layout, presentationMode]);
 
   const rules = policyRules;
 
@@ -340,6 +359,14 @@ export function App({ gateway, projectId, projectNo, onBack, account, onLogout, 
   if (!data || !layout) return <div className="full-page-state"><EmptyState detail="正在读取项目数据。" title="加载工作台" /></div>;
 
   const updateLayout = (change: Partial<ResponsiveLayoutState>) => setLayout((current) => current ? { ...current, ...change } : current);
+  const toggleMaterialPane = () => {
+    if (layout?.materialCollapsed) {
+      updateLayout({ materialCollapsed: false, materialRatio: lastExpandedMaterialRatioRef.current });
+      return;
+    }
+    if (layout && layout.materialRatio > 12) lastExpandedMaterialRatioRef.current = layout.materialRatio;
+    updateLayout({ materialCollapsed: true });
+  };
   const scrollReviewElementIntoView = (target: HTMLElement | null, align: "start" | "center" = "start") => {
     const pane = document.getElementById("review-pane");
     if (!(pane instanceof HTMLElement) || !(target instanceof HTMLElement)) return;
@@ -354,13 +381,46 @@ export function App({ gateway, projectId, projectNo, onBack, account, onLogout, 
   const scrollReviewPaneTo = (elementId: string, align: "start" | "center" = "start") => {
     scrollReviewElementIntoView(document.getElementById(elementId), align);
   };
+  const focusRiskReview = (showDiff = false) => {
+    setChatMaximized(false);
+    updateLayout({ middleCollapsed: false });
+    setActiveReviewId("risk");
+    setPreReviewShowDiff(showDiff);
+    setTimeout(() => {
+      const riskSection = document.getElementById("review-risk");
+      if (riskSection) { riskSection.tabIndex = -1; riskSection.focus(); }
+      scrollReviewElementIntoView(riskSection);
+    }, 0);
+  };
+  const runPreReview = () => {
+    setPreReviewPending(true);
+    setPreReviewState((current) => current ? rerunPreReviewDemo(current) : createPreReviewDemoState(data.project.id));
+    setPreReviewPending(false);
+  };
+  const submitPreReview = () => setPreReviewState((current) => current ? submitPreReviewDemo(current) : current);
+  const setPreReviewDisposition = (disposition: "退回" | "复核" | "否决") => {
+    setPreReviewState((current) => current ? { ...current, disposition } : current);
+  };
+  const presentationTargetForDimension = (id: ReviewSectionId): ReviewEvidenceTarget | null => {
+    if (id === "risk") return null;
+    const evidenceById = new Map(data.evidence.map((reference) => [reference.id, reference]));
+    const fact = facts.find((candidate) => candidate.dimensionId === id && candidate.evidenceRefs.some((referenceId) => evidenceById.get(referenceId)?.locator));
+    if (!fact) return null;
+    const evidenceRefs = fact.evidenceRefs.filter((referenceId) => evidenceById.get(referenceId)?.locator);
+    const evidenceRef = evidenceRefs[0];
+    return evidenceRef ? { evidenceRef, evidenceRefs, dimensionId: id, reviewTargetId: fact.id, factVersionId: fact.id } : null;
+  };
   const navigateReview = (id: ReviewSectionId) => {
     setActiveReviewId(id);
     if (id !== "risk") {
       updateLayout({ activeDimensionId: id });
-      setSelectedReviewTarget(null);
-      setEvidenceSelectionGroup(null);
-      setEvidenceSelectionResolution(null);
+      const presentationTarget = presentationMode ? presentationTargetForDimension(id) : null;
+      if (presentationTarget) void selectEvidenceGroup(presentationTarget);
+      else {
+        setSelectedReviewTarget(null);
+        setEvidenceSelectionGroup(null);
+        setEvidenceSelectionResolution(null);
+      }
       if (id !== "production") setSelectedReferenceImageId(null);
     } else {
       setSelectedReviewTarget(null);
@@ -814,7 +874,8 @@ export function App({ gateway, projectId, projectNo, onBack, account, onLogout, 
       const bodyRect = body.getBoundingClientRect();
       const navigationRight = body.querySelector<HTMLElement>(".navigation-rail")?.getBoundingClientRect().right ?? bodyRect.left;
       const availableWidth = Math.max(1, bodyRect.right - navigationRight);
-      nextRatio = clamp(((bodyRect.right - pointerEvent.clientX) / availableWidth) * 100, ...LAYOUT_LIMITS.materialRatio);
+      const rawRatio = ((bodyRect.right - pointerEvent.clientX) / availableWidth) * 100;
+      nextRatio = snapLayoutRatio(rawRatio, PRESENTATION_LAYOUT_RATIOS.materialRatio, LAYOUT_LIMITS.materialRatio);
       if (frameId === null) frameId = window.requestAnimationFrame(applyResize);
     };
     function cleanup() {
@@ -828,7 +889,13 @@ export function App({ gateway, projectId, projectNo, onBack, account, onLogout, 
       if (stopEvent instanceof PointerEvent && stopEvent.pointerId !== pointerId) return;
       if (frameId !== null) window.cancelAnimationFrame(frameId);
       applyResize();
-      updateLayout({ materialRatio: nextRatio });
+      if (presentationMode && nextRatio <= 12) {
+        if ((layout?.materialRatio ?? 0) > 12) lastExpandedMaterialRatioRef.current = layout?.materialRatio ?? PRESENTATION_LAYOUT_RATIOS.materialRatio;
+        updateLayout({ materialRatio: LAYOUT_LIMITS.materialRatio[0], materialCollapsed: true });
+      } else {
+        lastExpandedMaterialRatioRef.current = nextRatio;
+        updateLayout({ materialRatio: nextRatio, materialCollapsed: false });
+      }
       cleanup();
     }
     window.addEventListener("pointermove", move);
@@ -840,29 +907,33 @@ export function App({ gateway, projectId, projectNo, onBack, account, onLogout, 
   const resizeMaterialWithKeyboard = (event: ReactKeyboardEvent<HTMLDivElement>) => {
     if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
     event.preventDefault();
-    if (event.key === "Home") { updateLayout({ materialRatio: LAYOUT_LIMITS.materialRatio[0] }); return; }
+    if (event.key === "Home") {
+      if (layout.materialRatio > 12) lastExpandedMaterialRatioRef.current = layout.materialRatio;
+      updateLayout({ materialRatio: LAYOUT_LIMITS.materialRatio[0], materialCollapsed: presentationMode });
+      return;
+    }
     if (event.key === "End") { updateLayout({ materialRatio: LAYOUT_LIMITS.materialRatio[1] }); return; }
     const direction = event.key === "ArrowLeft" ? 1 : -1;
     const step = event.shiftKey ? 5 : 2;
-    updateLayout({ materialRatio: clamp(layout.materialRatio + direction * step, ...LAYOUT_LIMITS.materialRatio) });
+    updateLayout({ materialRatio: snapLayoutRatio(layout.materialRatio + direction * step, PRESENTATION_LAYOUT_RATIOS.materialRatio, LAYOUT_LIMITS.materialRatio) });
   };
 
   const materialAriaValue = Math.round(layout.materialRatio);
 
   const style = {
-    "--layout-navigation-width": `${layout.navigationCollapsed ? 64 : layout.navigationWidth}px`,
+    "--layout-navigation-width": presentationMode ? "0px" : `${layout.navigationCollapsed ? 64 : layout.navigationWidth}px`,
     "--layout-review-share": `${100 - layout.materialRatio}fr`,
     "--layout-material-share": `${layout.materialRatio}fr`,
   } as CSSProperties;
 
   return (
-    <div className="workbench-app" data-semantic-localized="true" style={style}>
-      <TopBar account={account} approval={approvalState} approvalMessage={approvalMessage} approvalPending={approvalPending} hardConstraintCount={rules.length} locale={locale} onApprovalTransition={transitionApproval} onBack={onBack} onLocaleChange={onLocaleChange} onLogout={onLogout} onOpenConclusionReport={openConclusionReport} onPrincipalRoleChange={onPrincipalRoleChange} onResetLayout={() => { setLayout({ ...data.layout, ...DEFAULT_LAYOUT_RATIOS }); setChatMaximized(false); setLayoutResetVersion((value) => value + 1); setActiveReviewId("risk"); }} policyHitCount={rules.filter((rule) => rule.result !== "pass").length} principalRoleChangePending={principalRoleChangePending} project={{ ...data.project, collaborationIssueCount: openIssueCount }} projectNo={projectNo} />
-      <div className={`workbench-body has-embedded-chat ${layout.middleCollapsed ? "is-middle-collapsed" : ""} ${layout.materialCollapsed ? "is-material-collapsed" : ""} ${chatMaximized ? "is-chat-maximized" : ""}`}>
-        <NavigationRail activeId={layout.activeDimensionId} collapsed={layout.navigationCollapsed} dimensions={data.dimensions} onNavigate={navigateReview} onOverview={() => navigateReview("risk")} onRiskNavigate={() => navigateReview("risk")} onToggleCollapsed={() => updateLayout({ navigationCollapsed: !layout.navigationCollapsed })} riskActive={activeReviewId === "risk"} riskItemCount={riskItemCount(data.riskSummary)} />
-        <ReviewCanvas activeReviewId={activeReviewId} canCorrect={account.role === "business"} collapsed={layout.middleCollapsed} correctionMessage={correctionMessage} correctionPending={correctionPending} data={data} facts={facts} onActiveReviewChange={(id) => { setActiveReviewId(id); if (id !== "risk") updateLayout({ activeDimensionId: id }); }} onCorrection={submitCorrection} onEvidenceSelect={(target) => void selectEvidenceGroup(target)} onProductionStageSelect={handleProductionStageSelect} onTimeSeriesRequest={(request) => gateway.queryDimensionSeries(request)} onToggleCollapsed={() => updateLayout({ middleCollapsed: !layout.middleCollapsed })} selectedProductionStageId={selectedProductionStageId} selectedTarget={selectedReviewTarget} />
+    <div className={`workbench-app ${presentationMode ? "is-presentation-workbench" : ""}`} data-semantic-localized="true" style={style}>
+      <TopBar account={account} actionContent={preReviewEnabled && preReviewState ? <PreReviewActionBar onDisposition={setPreReviewDisposition} onSubmit={submitPreReview} pending={preReviewPending} state={preReviewState} /> : null} approval={approvalState} approvalMessage={approvalMessage} approvalPending={approvalPending} centerContent={preReviewEnabled && preReviewState ? <PreReviewSummaryBar onOpenDiff={() => focusRiskReview(true)} onRun={runPreReview} pending={preReviewPending} state={preReviewState} /> : null} hardConstraintCount={rules.length} leadingContent={presentationMode ? <div className="topbar-dial"><NavigationRail activeId={layout.activeDimensionId} collapsed={false} dimensions={data.dimensions} onNavigate={navigateReview} onOverview={() => navigateReview("risk")} onRiskNavigate={() => navigateReview("risk")} onToggleCollapsed={() => undefined} presentationMode riskActive={activeReviewId === "risk"} riskItemCount={riskItemCount(data.riskSummary)} /></div> : null} locale={locale} onApprovalTransition={transitionApproval} onBack={onBack} onLocaleChange={onLocaleChange} onLogout={onLogout} onOpenConclusionReport={openConclusionReport} onPrincipalRoleChange={onPrincipalRoleChange} onResetLayout={() => { setLayout({ ...data.layout, ...(presentationMode ? PRESENTATION_LAYOUT_RATIOS : DEFAULT_LAYOUT_RATIOS), materialCollapsed: false }); lastExpandedMaterialRatioRef.current = PRESENTATION_LAYOUT_RATIOS.materialRatio; setChatMaximized(false); setLayoutResetVersion((value) => value + 1); setActiveReviewId("risk"); }} policyHitCount={rules.filter((rule) => rule.result !== "pass").length} principalRoleChangePending={principalRoleChangePending} project={{ ...data.project, collaborationIssueCount: openIssueCount }} projectNo={projectNo} presentationMode={presentationMode} />
+      <div className={`workbench-body has-embedded-chat ${presentationMode ? "is-presentation-layout" : ""} ${layout.middleCollapsed ? "is-middle-collapsed" : ""} ${layout.materialCollapsed ? "is-material-collapsed" : ""} ${chatMaximized ? "is-chat-maximized" : ""}`}>
+        {presentationMode ? null : <NavigationRail activeId={layout.activeDimensionId} collapsed={layout.navigationCollapsed} dimensions={data.dimensions} onNavigate={navigateReview} onOverview={() => navigateReview("risk")} onRiskNavigate={() => navigateReview("risk")} onToggleCollapsed={() => updateLayout({ navigationCollapsed: !layout.navigationCollapsed })} presentationMode={presentationMode} riskActive={activeReviewId === "risk"} riskItemCount={riskItemCount(data.riskSummary)} />}
+            <ReviewCanvas activeReviewId={activeReviewId} canCorrect={account.role === "business"} collapsed={layout.middleCollapsed} correctionMessage={correctionMessage} correctionPending={correctionPending} data={data} facts={facts} onActiveReviewChange={(id) => { setActiveReviewId(id); if (id !== "risk") updateLayout({ activeDimensionId: id }); }} onCorrection={submitCorrection} onEvidenceSelect={(target) => void selectEvidenceGroup(target)} onProductionStageSelect={handleProductionStageSelect} onTimeSeriesRequest={(request) => gateway.queryDimensionSeries(request)} onToggleCollapsed={() => updateLayout({ middleCollapsed: !layout.middleCollapsed })} presentationMode={presentationMode} riskChangeSummary={preReviewShowDiff && preReviewState?.diff ? `${preReviewState.diff.fromVersion} → ${preReviewState.diff.toVersion} · ${preReviewState.diff.summary}` : null} selectedProductionStageId={selectedProductionStageId} selectedTarget={selectedReviewTarget} />
         {!layout.middleCollapsed && !layout.materialCollapsed && !chatMaximized ? <div aria-label={copy(locale, "Resize the review and original-material areas", "调整审批画布与右侧区域宽度")} aria-orientation="vertical" aria-valuemax={LAYOUT_LIMITS.materialRatio[1]} aria-valuemin={LAYOUT_LIMITS.materialRatio[0]} aria-valuenow={materialAriaValue} aria-valuetext={copy(locale, `Right-side width: ${materialAriaValue}%`, `右侧区域宽度 ${materialAriaValue}%`)} className="layout-divider divider-vertical" onKeyDown={resizeMaterialWithKeyboard} onPointerDown={beginMaterialResize} role="separator" tabIndex={0} /> : null}
-        <MaterialPane activeIntelligenceAnchorId={activeIntelligenceAnchorId} canEditIntelligence={account.role === "business"} chatMaximized={chatMaximized} chatRatio={layout.collaborationRatio} collapsed={layout.materialCollapsed} confirmedCandidateIds={confirmedCandidateIds} confirmingCandidateId={confirmingCandidateId} errorMessage={materialRecovery.error} evidence={data.evidence} evidenceSelectionResolution={evidenceSelectionResolution} facts={facts} groupChat={{ accountRole: account.role, agentActivity, agentError: agentSessionError, agentMessages, onConfirmMaterialImport, onImportMaterialPackage, onSubmitMessage: submitNaturalChat, selectedTarget: selectedReviewTarget }} intelligence={materialIntelligence} intelligenceMessage={intelligenceMessage} intelligenceStatus={intelligenceStatus} locale={locale} materials={data.materials} modelGatewayRuntime={modelGatewayRuntime} onCancelIntelligence={cancelSelectedMaterialIntelligence} onChatMaximizedChange={setChatMaximized} onChatRatioChange={(collaborationRatio) => updateLayout({ collaborationRatio })} onConfirmCandidate={(candidate, reason) => void confirmCandidate(candidate, reason)} onEvidenceActivate={activateSelectedEvidence} onIntelligenceAnchorActivate={activateIntelligenceAnchor} onMaterialSelect={handleMaterialSelect} onRetry={retryMaterialRecovery} onRunIntelligence={() => void runSelectedMaterialIntelligence()} onToggleCollapsed={() => updateLayout({ materialCollapsed: !layout.materialCollapsed })} sceneSpec={materialSceneSpec} selectedMaterialId={selectedMaterialId} selectionGroup={evidenceSelectionGroup} />
+        <MaterialPane activeIntelligenceAnchorId={activeIntelligenceAnchorId} canEditIntelligence={account.role === "business"} chatMaximized={chatMaximized} chatRatio={layout.collaborationRatio} collapsed={layout.materialCollapsed} confirmedCandidateIds={confirmedCandidateIds} confirmingCandidateId={confirmingCandidateId} errorMessage={materialRecovery.error} evidence={data.evidence} evidenceSelectionResolution={evidenceSelectionResolution} facts={facts} groupChat={{ accountRole: account.role, agentActivity, agentError: agentSessionError, agentMessages, onConfirmMaterialImport, onImportMaterialPackage, onSubmitMessage: submitNaturalChat, selectedTarget: selectedReviewTarget }} intelligence={materialIntelligence} intelligenceMessage={intelligenceMessage} intelligenceStatus={intelligenceStatus} locale={locale} materials={data.materials} modelGatewayRuntime={modelGatewayRuntime} onCancelIntelligence={cancelSelectedMaterialIntelligence} onChatMaximizedChange={setChatMaximized} onChatRatioChange={(collaborationRatio) => updateLayout({ collaborationRatio })} onConfirmCandidate={(candidate, reason) => void confirmCandidate(candidate, reason)} onEvidenceActivate={activateSelectedEvidence} onIntelligenceAnchorActivate={activateIntelligenceAnchor} onMaterialSelect={handleMaterialSelect} onRetry={retryMaterialRecovery} onRunIntelligence={() => void runSelectedMaterialIntelligence()} onToggleCollapsed={toggleMaterialPane} presentationMode={presentationMode} sceneSpec={materialSceneSpec} selectedMaterialId={selectedMaterialId} selectionGroup={evidenceSelectionGroup} />
       </div>
       {conclusionOpen ? <FinalConclusionReport error={conclusionError} onClose={() => setConclusionOpen(false)} onRefresh={() => void loadConclusionReport()} report={conclusionReport} status={conclusionStatus} /> : null}
     </div>

@@ -12,8 +12,8 @@ test("three large panes use one fixed square corner anchor each", async () => {
     readFile(new URL("src/styles/app.css", root), "utf8"),
   ]);
 
-  assert.equal((review.match(/pane-corner-anchor/g) ?? []).length, 2);
-  assert.equal((material.match(/pane-corner-anchor/g) ?? []).length, 2);
+  assert.equal((review.match(/pane-corner-anchor/g) ?? []).length, 3);
+  assert.equal((material.match(/pane-corner-anchor/g) ?? []).length, 3);
   assert.equal((collaboration.match(/pane-corner-anchor/g) ?? []).length, 1);
   assert.match(review, /aria-expanded=\{false\}/);
   assert.match(review, /从左上角展开审查画布[\s\S]*pane-corner-glyph">↘/);

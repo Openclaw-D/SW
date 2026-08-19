@@ -1,0 +1,28 @@
+.showcase-entry { min-height: 100%; color: #17212d; background: #f7f9fc; font-family: Inter, "PingFang SC", "Microsoft YaHei", sans-serif; }
+.showcase-login { place-items: center; padding: 32px; display: grid; background: radial-gradient(circle at 16% 12%, #dce8ff 0, transparent 34%), radial-gradient(circle at 86% 78%, #dff6e7 0, transparent 31%), #f7f9fc; }
+.showcase-login__panel { width: min(100%, 420px); background: #fff; border: 1px solid #dce1e8; border-radius: 20px; padding: 42px; box-shadow: 0 22px 70px rgb(42 62 88 / 12%); }
+.showcase-mark { width: 52px; height: 52px; border-radius: 50%; color: #185dde; background: conic-gradient(from 0deg, #e3edff 0 16%, #a9c8ff 16% 32%, #e3edff 32% 48%, #a9c8ff 48% 64%, #e3edff 64% 80%, #a9c8ff 80% 100%); border: 1px solid #b9cff4; place-items: center; display: inline-grid; }
+.showcase-mark > span { width: 25px; height: 25px; border-radius: 50%; background: #fff; border: 1px solid #9ebbe8; place-items: center; display: grid; font-size: 13px; font-weight: 800; }
+.showcase-kicker { margin: 22px 0 8px; color: #2563d9; font-size: 13px; font-weight: 700; }
+.showcase-login h1, .showcase-pool-heading h1 { margin: 0; color: #101828; font-size: 28px; letter-spacing: -.6px; }
+.showcase-description, .showcase-pool-heading p { color: #667085; line-height: 1.65; font-size: 14px; }
+.showcase-login form { gap: 16px; margin-top: 26px; display: grid; }
+.showcase-login label { gap: 7px; color: #344054; font-size: 13px; font-weight: 700; display: grid; }
+.showcase-login input { box-sizing: border-box; width: 100%; height: 42px; padding: 0 12px; color: #182230; background: #fff; border: 1px solid #cfd7e3; border-radius: 8px; font: inherit; }
+.showcase-login input:focus { outline: 2px solid #b9d2ff; border-color: #3674e8; }
+.showcase-login button, .showcase-project-card button { cursor: pointer; height: 44px; color: #fff; background: #175cd3; border: 0; border-radius: 8px; font: inherit; font-weight: 750; }
+.showcase-login button:hover, .showcase-project-card button:hover { background: #0e4ebc; }
+.showcase-form-error { margin: 0; color: #b42318; font-size: 13px; }
+.showcase-login__hint { margin: 18px 0 0; color: #667085; font-size: 12px; }
+.showcase-project-pool { min-height: 100%; }
+.showcase-pool-header { height: 70px; padding: 0 7vw; background: #fff; border-bottom: 1px solid #dfe4ec; align-items: center; justify-content: space-between; display: flex; }
+.showcase-pool-header > div { align-items: center; gap: 10px; display: flex; font-size: 19px; }
+.showcase-mark--small { width: 36px; height: 36px; }.showcase-mark--small > span { width: 19px; height: 19px; font-size: 10px; }
+.showcase-pool-header > span { color: #667085; font-size: 14px; }
+.showcase-pool-content { width: min(1080px, calc(100% - 48px)); margin: 0 auto; padding: 62px 0; }
+.showcase-pool-heading { align-items: flex-end; justify-content: space-between; gap: 24px; margin-bottom: 28px; display: flex; }.showcase-pool-heading .showcase-kicker { margin: 0 0 7px; }.showcase-pool-heading p:last-child { margin: 8px 0 0; }
+.showcase-project-count { flex: none; color: #475467; background: #eef2f6; border-radius: 999px; padding: 7px 11px; font-size: 13px; }
+.showcase-project-card { background: #fff; border: 1px solid #dce1e8; border-radius: 12px; grid-template-columns: 94px minmax(0, 1fr) auto 116px; align-items: center; gap: 22px; padding: 24px; display: grid; box-shadow: 0 8px 24px rgb(37 52 72 / 5%); }
+.showcase-project-card__tag { color: #a15c00; text-align: center; background: #fff3d6; border: 1px solid #f3d59a; border-radius: 6px; padding: 7px 8px; font-size: 13px; font-weight: 700; }.showcase-project-card h2 { margin: 0 0 8px; font-size: 18px; }.showcase-project-card p { margin: 0; color: #667085; font-size: 13px; }
+.showcase-project-card dl { gap: 18px; margin: 0; display: flex; }.showcase-project-card dl div { min-width: 46px; }.showcase-project-card dt { color: #98a2b3; font-size: 12px; }.showcase-project-card dd { margin: 4px 0 0; color: #344054; font-size: 14px; font-weight: 750; }
+@media (max-width: 760px) { .showcase-login__panel { padding: 30px 24px; }.showcase-pool-header { padding: 0 24px; }.showcase-pool-content { width: min(100% - 32px, 1080px); padding-top: 42px; }.showcase-pool-heading, .showcase-project-card { align-items: stretch; display: grid; }.showcase-project-card { grid-template-columns: 1fr; gap: 15px; }.showcase-project-card dl { justify-content: space-between; }.showcase-project-card button { width: 100%; } }

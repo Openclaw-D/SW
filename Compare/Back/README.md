@@ -1,6 +1,6 @@
 # signal-council V1 Back
 
-The Back service is the local FastAPI and SQLite side of the signal-council reference workbench. It provides 24 isolated, deterministic, de-identified demonstration projects and turns the frozen Front contract into checked Pydantic, HTTP, SQLite-state, authentication, membership, and error contracts.
+The Back service is the local FastAPI and SQLite side of the signal-council reference workbench. Its default runtime provides exactly one deterministic, de-identified demonstration project and turns the frozen Front contract into checked Pydantic, HTTP, SQLite-state, authentication, membership, and error contracts.
 
 It is a financing-lease first-pass material-verification and business-rule workbench—not a general risk platform, statistical model, automatic approval service, OCR/Office platform, or real-customer material store.
 
@@ -25,7 +25,7 @@ Front HTTP adapter
 
 The default public profile remains useful without an original-material archive. `COMPARE_MATERIAL_ROOT` is optional and must be an absolute external directory containing `native-material-packs/`. When it is absent, invalid, unimported, or fails SHA-256 validation, the service reports an honest unavailable state and never falls back to repository assets or import paths.
 
-The reference template describes 56 materials per project (21 Excel, 14 PDF, and 21 PNG), or 1,344 material records across 24 projects. They are de-identified deterministic demonstration records, not customer originals, public-company facts, or statistical-validation samples. Generated material packs, SQLite databases, uploads, and logs are runtime state and must remain untracked.
+The public runtime project describes 56 materials (21 Excel, 14 PDF, and 21 PNG). They are de-identified deterministic demonstration records, not customer originals, public-company facts, training data, or statistical-validation samples. The separate 24-case generator and external evaluation packs remain available only for explicit offline engineering checks. Generated material packs, SQLite databases, uploads, and logs are runtime state and must remain untracked.
 
 ## Agent and model boundary
 
@@ -60,7 +60,7 @@ For the supported Windows local-reference path, use [../DEPLOYMENT.md](../DEPLOY
 | `COMPARE_APP_NAME` | `signal-council API` |
 | `COMPARE_ENVIRONMENT` | `development` |
 | `COMPARE_API_PREFIX` | `/api/v1` |
-| `COMPARE_DATABASE_PATH` | Repository-external `%LOCALAPPDATA%\CompareWorkbench\compare.db` by default on Windows |
+| `COMPARE_DATABASE_PATH` | Repository-external `%LOCALAPPDATA%\CompareWorkbench\signal-council-demo.db` by default on Windows |
 | `COMPARE_GENERATOR_SEED` | `20260810`; identical seed gives the same reference baseline |
 | `COMPARE_CORS_ORIGINS` | Comma-separated permitted Front origins |
 | `COMPARE_IMPORT_ROOT` | Authorised external import root; APIs accept safe `manifestRef` values and do not disclose raw paths |
@@ -109,7 +109,7 @@ Use the repository venv:
 .\.venv\Scripts\python.exe -m pytest -q
 ```
 
-Current authentication/ACL reference behavior with no external material root: `424 passed`, `37 skipped`, and one warning. The skips are restricted to frozen offline/oracle modules that require external native material packs; they are not a production or provider claim.
+Current configured local gate: `510 passed` and one existing dependency-deprecation warning. A fresh clone without the optional external evaluation packs skips only the asset-dependent offline/oracle modules; the one-project application runtime remains available and is not a production or provider claim.
 
 Then run from the repository root:
 

@@ -296,3 +296,9 @@ Agent 建议只可作为带 role、provider/model/prompt 与 input/context/outpu
 Compare 的 `glm_cli` 真实 Agent 使用精确模型 ID `glm-5.3[1m]` 和 provider ID `glm_5_3_coding_plan_cli`。CLI 命令不得通过 `sonnet` 等可漂移别名选模；返回遥测必须只有一个且精确等于 `glm-5.3[1m]`，否则以 `provider_model_identity_unverified` 失败关闭。该决定仅覆盖 Compare A2A provider，不能修改或替代 Codex 主模型、全局认证和其他项目路由。
 
 迁移不改变 `synthetic` 默认模式、session principal、项目 ACL、自然群聊路由、单次 provider call、advisory-only、正式表零写入或人工 Gate。真实隔离 smoke 只证明当前本机 Coding Plan 接口与 provenance 可用，不等于模型内容质量、额度保障、SLA 或生产发布 Gate。
+
+### D-063 · 默认网站与运行库只保留一套脱敏演示项目
+
+默认 `Settings.from_environment()`、本机启动脚本、HTTP 项目目录和 Front 入口固定为一个确定性脱敏演示项目，入口直接进入该项目，不再公开 24 项项目选择器。三个 Demo 账号只为这一项目建立 membership。24 项生成能力和 hidden truth/Oracle 仅保留为显式离线回归与评测资产，不进入默认运行库、不出现在网站，也不构成模型训练或微调。
+
+为避免破坏旧本机数据，默认运行库从仓库外 `compare.db` 切换到 `signal-council-demo.db`；旧库不删除、不迁移、不静默裁剪。外置材料仍只读取匹配这一演示项目的授权包，任何原件、Archive、数据库、上传、日志和凭证继续禁止进入 Git。

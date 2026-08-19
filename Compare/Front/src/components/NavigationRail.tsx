@@ -28,6 +28,7 @@ export function NavigationRail({
   onRiskNavigate,
   onOverview,
   onToggleCollapsed,
+  presentationMode = false,
 }: {
   dimensions: DimensionDefinition[];
   activeId: DimensionId;
@@ -38,6 +39,7 @@ export function NavigationRail({
   onRiskNavigate: () => void;
   onOverview: () => void;
   onToggleCollapsed: () => void;
+  presentationMode?: boolean;
 }) {
   const locale = usePublicLocale();
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
@@ -50,8 +52,8 @@ export function NavigationRail({
   }));
 
   return (
-    <aside className={`navigation-rail ${collapsed ? "is-collapsed" : ""}`} aria-label={copy(locale, "Six-dimension navigation", "六维导航")} data-semantic-localized id="navigation-rail">
-      <div className="navigation-toolbar">
+    <aside className={`navigation-rail ${collapsed ? "is-collapsed" : ""} ${presentationMode ? "is-presentation-map" : ""}`} aria-label={copy(locale, "Six-dimension navigation", "六维导航")} data-semantic-localized id="navigation-rail">
+      {!presentationMode ? <div className="navigation-toolbar">
         <Button
           aria-controls="navigation-rail"
           aria-expanded={!collapsed}
@@ -61,7 +63,7 @@ export function NavigationRail({
         >
           <Icon name="chevron" />
         </Button>
-      </div>
+      </div> : null}
 
       {!collapsed ? (
         <section className="mini-navigation-card" aria-label={copy(locale, "Six-dimension quick navigation", "六维快捷导航")}>
@@ -160,8 +162,8 @@ export function NavigationRail({
         </section>
       ) : null}
 
-      <nav className="dimension-list" aria-label={copy(locale, "Risk and six-dimension sections", "风险与六维栏目")}>
-        <button
+      <nav className={presentationMode ? "showcase-dimension-tags" : "dimension-list"} aria-label={copy(locale, presentationMode ? "Six-dimension sections" : "Risk and six-dimension sections", presentationMode ? "六维栏目" : "风险与六维栏目")}>
+        {!presentationMode ? <button
           aria-current={riskActive ? "page" : undefined}
           aria-label={copy(locale, `${riskNavigationIndex} Risk; ${riskItemCount} items; overall score grade ${overallVisual.grade}`, `${riskNavigationIndex} 风险，共 ${riskItemCount} 项，六维综合评分等级 ${overallVisual.grade}`)}
           className={`risk-nav-entry ${listState(riskActive)}`}
@@ -176,7 +178,7 @@ export function NavigationRail({
         >
           <Icon name="risk" />
           {!collapsed ? <><b className="risk-index">{riskNavigationIndex}</b><span>{copy(locale, "Risk", "风险")}</span><b className="risk-grade">{overallVisual.grade}</b></> : null}
-        </button>
+        </button> : null}
         {navigationItems.map(({ dimension, visual }) => (
           <button
             aria-current={!riskActive && dimension.id === activeId ? "page" : undefined}
@@ -192,14 +194,14 @@ export function NavigationRail({
             })}
             type="button"
           >
-            <Icon name={dimension.id} />
+            {presentationMode ? <><span aria-hidden="true" className="showcase-dimension-dot" /><span className="dimension-name">{formatDimensionName(dimension.id, locale, dimension.name)}</span><span aria-hidden="true" className="dimension-grade">{visual.grade}</span></> : <><Icon name={dimension.id} />
             {!collapsed ? (
               <>
                 <b className="dimension-index">{dimension.index}</b>
                 <span className="dimension-name">{formatDimensionName(dimension.id, locale, dimension.name)}</span>
                 <span aria-hidden="true" className="dimension-grade">{visual.grade}</span>
               </>
-            ) : null}
+            ) : null}</>}
           </button>
         ))}
       </nav>

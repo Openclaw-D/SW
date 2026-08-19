@@ -127,7 +127,7 @@ export function DemoEntrance({ onEnter, locale = "en" }: { onEnter: () => void; 
       </button>
       <p id="demo-entrance-truth">
         <b>{copy(locale, "Authenticated intranet Demo entry.", "已认证的内网 Demo 入口。")}</b>
-        <span>{copy(locale, "24 isolated projects share a complete de-identified standard fact template. Scores, evidence, and decisions remain advisory and subject to human gates.", "24 个隔离项目共用完整脱敏标准事实模板；评分、证据和建议仍须经过人工 Gate。")}</span>
+        <span>{copy(locale, "One fixed de-identified project provides the complete public demonstration. Scores, evidence, and decisions remain advisory and subject to human gates.", "仅保留一套固定脱敏项目作为完整公开演示；评分、证据和建议仍须经过人工 Gate。")}</span>
       </p>
     </main>
   );
@@ -312,7 +312,7 @@ export function ProjectSelectionEntry({ projects, onChoose, locale = "en" }: { p
 
   return (
     <main className={`selection-entry${dockingView ? " is-docking" : ""}`}>
-      <header className="selection-entry-header"><b className="selection-brand">signal-council</b><div><p>{copy(locale, "Choose a project view", "选择项目查看方式")}</p><small>{copy(locale, "24 fixed, de-identified public demo projects", "固定 24 项脱敏公开演示项目")}</small></div></header>
+      <header className="selection-entry-header"><b className="selection-brand">signal-council</b><div><p>{copy(locale, "Public demonstration directory", "公开演示项目入口")}</p><small>{copy(locale, "Multiple display cards share one fixed, de-identified demonstration workspace", "多张展示卡共用一套固定脱敏演示工作台")}</small></div></header>
       <section aria-busy={dockingView ? "true" : undefined} className="selection-entry-grid" aria-label={copy(locale, "Project view choices", "项目查看方式")} ref={gridRef}>
         {PROJECT_VIEWS.map((view) => (
           <button className="selection-entry-option" key={view} onClick={() => dockToBrowser(view)} type="button">
@@ -324,7 +324,7 @@ export function ProjectSelectionEntry({ projects, onChoose, locale = "en" }: { p
           </button>
         ))}
       </section>
-      <footer className="selection-entry-footer"><span>{copy(locale, "Each project has isolated materials, facts, scores, evidence, and state.", "项目、材料包、事实、评分与证据固定一一绑定")}</span><span>{copy(locale, "All content is de-identified and synthetic.", "均为脱敏模拟演示数据")}</span></footer>
+      <footer className="selection-entry-footer"><span>{copy(locale, "Display cards are navigation examples; every entry opens the same fixed materials, facts, scores, evidence, and state.", "展示卡仅用于入口浏览；进入任意卡片均打开同一套固定的材料、事实、评分、证据与状态")}</span><span>{copy(locale, "All content is de-identified and synthetic.", "均为脱敏模拟演示数据")}</span></footer>
     </main>
   );
 }
@@ -477,7 +477,7 @@ export function ProjectSelectionBrowser({
             </button>
           ))}
         </nav>
-        <p className="selection-fixed-note"><b>{copy(locale, "24 fixed projects", "固定 24 项目")}</b><span>{copy(locale, "Materials, facts, scores, and evidence are bound one-to-one.", "材料包、事实、评分、证据一一绑定")}</span></p>
+        <p className="selection-fixed-note"><b>{copy(locale, "One shared demonstration workspace", "统一演示工作台")}</b><span>{copy(locale, "Display cards support browsing only; every entry opens the same materials, facts, scores, and evidence.", "展示卡仅用于入口浏览；进入任意卡片均打开同一套材料、事实、评分与证据")}</span></p>
       </header>
 
       <section className="selection-toolbar">
@@ -548,7 +548,7 @@ export function ProjectSelectionBrowser({
         ) : null}
       </section>
 
-      <footer className="selection-browser-footer">{copy(locale, "Click to open a project. Use Ctrl / Command or the checkboxes for multi-select. All 24 projects are fixed, one-to-one, de-identified synthetic demo data.", "单击进入项目；Ctrl / Command 或复选框可多选。24 个项目均为固定一一绑定的脱敏模拟演示数据。")}</footer>
+      <footer className="selection-browser-footer">{copy(locale, "All directory entries open the same fixed, de-identified synthetic demonstration workspace.", "目录中的全部入口均打开同一套固定脱敏模拟演示工作台。")}</footer>
 
       {pendingMove ? (
         <div className="selection-modal-backdrop" role="presentation">

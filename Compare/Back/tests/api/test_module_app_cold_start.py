@@ -21,7 +21,7 @@ with TestClient(app, raise_server_exceptions=False) as client:
     projects = client.get('/api/v1/projects')
     assert projects.status_code == 200, projects.text
     data = projects.json()['data']
-    assert len(data) == 24
+    assert len(data) == 1
     project_id = data[0]['projectId']
     workbench = client.get(f'/api/v1/projects/{project_id}/workbench')
     assert workbench.status_code == 200, workbench.text

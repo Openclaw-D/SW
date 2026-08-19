@@ -150,7 +150,7 @@ function Invoke-Preflight {
     } catch { $errors.Add($_.Exception.Message); Write-Result "Node/npm" "FAIL" $_.Exception.Message }
 
     if (-not $env:COMPARE_DATABASE_PATH) {
-        $env:COMPARE_DATABASE_PATH = Join-Path (Split-Path -Parent $script:RuntimeRoot) "compare.db"
+        $env:COMPARE_DATABASE_PATH = Join-Path (Split-Path -Parent $script:RuntimeRoot) "signal-council-demo.db"
     }
     if (-not $env:COMPARE_IMPORT_ROOT) {
         $env:COMPARE_IMPORT_ROOT = Join-Path (Split-Path -Parent $script:RuntimeRoot) "imports"

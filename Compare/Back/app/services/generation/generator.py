@@ -39,6 +39,7 @@ from .materials import EvidenceRegistry
 
 DEFAULT_GENERATOR_SEED = 20260810
 DEFAULT_PROJECT_COUNT = 24
+PUBLIC_DEMO_PROJECT_COUNT = 1
 _PATTERNS = ("support", "attention", "confirm", "risk", "forbid")
 _TZ = timezone(timedelta(hours=8))
 _BASE_TIME = datetime(2026, 8, 1, 9, 0, tzinfo=_TZ)
@@ -1642,8 +1643,8 @@ def generate_project_bundles(
 ) -> tuple[dict[str, Any], ...]:
     if isinstance(seed, bool) or not isinstance(seed, int):
         raise TypeError("seed must be an integer")
-    if isinstance(count, bool) or not isinstance(count, int) or count < DEFAULT_PROJECT_COUNT:
-        raise ValueError(f"count must be an integer >= {DEFAULT_PROJECT_COUNT}")
+    if isinstance(count, bool) or not isinstance(count, int) or count < 1:
+        raise ValueError("count must be a positive integer")
     if profile not in {"standard", "varied"}:
         raise ValueError("profile must be standard or varied")
     return tuple(generate_project_bundle(seed, index, profile).to_mapping() for index in range(count))
@@ -1697,7 +1698,8 @@ class WorkbenchGenerator:
 def create_workbench_generator(settings: Any = None) -> WorkbenchGenerator:
     seed = getattr(settings, "generator_seed", DEFAULT_GENERATOR_SEED) if settings is not None else DEFAULT_GENERATOR_SEED
     profile = getattr(settings, "generator_profile", "standard") if settings is not None else "standard"
-    return WorkbenchGenerator(seed=int(seed), count=DEFAULT_PROJECT_COUNT, profile=str(profile))
+    count = getattr(settings, "demo_project_count", DEFAULT_PROJECT_COUNT) if settings is not None else DEFAULT_PROJECT_COUNT
+    return WorkbenchGenerator(seed=int(seed), count=int(count), profile=str(profile))
 
 
 def _dimension_detail_payload(
@@ -1817,6 +1819,7 @@ def _dimension_detail_payload(
 __all__ = [
     "DEFAULT_GENERATOR_SEED",
     "DEFAULT_PROJECT_COUNT",
+    "PUBLIC_DEMO_PROJECT_COUNT",
     "GENERATOR_VERSION",
     "GeneratedProjectBundle",
     "WorkbenchGenerator",

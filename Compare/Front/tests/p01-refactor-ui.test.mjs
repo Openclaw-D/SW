@@ -412,7 +412,7 @@ test("review and materials keep fixed restore anchors while group chat is embedd
   assert.match(navigation, /向右展开六维导航/);
   assert.match(navigation, /aria-controls="navigation-rail"/);
   assert.match(navigation, /aria-expanded=\{!collapsed\}/);
-  assert.match(app, /setLayout\(\{ \.\.\.data\.layout, \.\.\.DEFAULT_LAYOUT_RATIOS \}\)/);
+  assert.match(app, /presentationMode \? PRESENTATION_LAYOUT_RATIOS : DEFAULT_LAYOUT_RATIOS/);
   assert.match(app, /layout\.middleCollapsed \? "is-middle-collapsed"/);
   assert.match(app, /layout\.materialCollapsed \? "is-material-collapsed"/);
   assert.match(app, /!layout\.middleCollapsed && !layout\.materialCollapsed && !chatMaximized \? <div aria-label=\{copy\(locale, "Resize the review and original-material areas", "调整审批画布与右侧区域宽度"\)\}/);

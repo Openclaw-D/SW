@@ -117,7 +117,7 @@ def test_real_http_sessions_memberships_and_role_acl(tmp_path: Path) -> None:
             assert isinstance(projects, list)
             project_counts[role] = len(projects)
             project_id = str(projects[0]["projectId"])
-        assert project_counts == {"business": 24, "risk": 24, "coordinator": 24}
+        assert project_counts == {"business": 1, "risk": 1, "coordinator": 1}
 
         thread_url = f"{base_url}/api/v1/projects/{project_id}/agents/threads"
         assert _request(
@@ -159,8 +159,8 @@ def test_real_http_sessions_memberships_and_role_acl(tmp_path: Path) -> None:
 
         with sqlite3.connect(database_path) as connection:
             assert connection.execute("SELECT COUNT(*) FROM accounts").fetchone()[0] == 3
-            assert connection.execute("SELECT COUNT(*) FROM projects").fetchone()[0] == 24
-            assert connection.execute("SELECT COUNT(*) FROM project_memberships").fetchone()[0] == 72
+            assert connection.execute("SELECT COUNT(*) FROM projects").fetchone()[0] == 1
+            assert connection.execute("SELECT COUNT(*) FROM project_memberships").fetchone()[0] == 3
             hash_lengths = connection.execute(
                 "SELECT MIN(length(token_hash)), MAX(length(token_hash)) FROM account_sessions"
             ).fetchone()

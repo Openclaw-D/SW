@@ -977,7 +977,7 @@ export function formatCollaborationKind(value: string, locale: PublicLocale) {
 
 export const IMAGE_TO_3D_BOUNDARY = {
   en: "Image-to-3D reconstruction unavailable — no reconstruction provider, job, or independently verified asset provenance is connected.",
-  "zh-CN": "图像转 3D 重建不可用——尚未接入重建 provider、任务或经独立验证的资产 provenance。",
+  "zh-CN": "图像转三维重建不可用——尚未接入重建服务提供方、任务或经独立验证的来源证明。",
 } as const;
 
 /**

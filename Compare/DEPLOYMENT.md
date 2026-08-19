@@ -46,7 +46,7 @@ The script performs preflight, safe port handling, starts Back and Front, and ch
 
 `Preflight` does not start services. It checks Python and Node versions, installed dependencies, repository-external runtime paths, the optional material root, and port availability. `Check` is strictly read-only: it requires Back health `ok`, correct CORS for the active Front origin, and a Front HTTP 200 response identifiable as signal-council. Project and original-material availability remain authenticated UI checks.
 
-By default, the database is outside the repository at `%LOCALAPPDATA%\CompareWorkbench\compare.db`; deployment state and logs are under `%LOCALAPPDATA%\CompareWorkbench\deployment\`. `COMPARE_DATABASE_PATH`, `COMPARE_IMPORT_ROOT`, `COMPARE_MATERIAL_ROOT`, and `COMPARE_DEPLOY_RUNTIME_ROOT` may override them, but must remain outside the repository.
+By default, the one-project public runtime database is outside the repository at `%LOCALAPPDATA%\CompareWorkbench\signal-council-demo.db`; deployment state and logs are under `%LOCALAPPDATA%\CompareWorkbench\deployment\`. The former `compare.db` is left untouched so an upgrade never deletes or silently rewrites an existing 24-case local database. `COMPARE_DATABASE_PATH`, `COMPARE_IMPORT_ROOT`, `COMPARE_MATERIAL_ROOT`, and `COMPARE_DEPLOY_RUNTIME_ROOT` may override the new defaults, but must remain outside the repository.
 
 ## Stop and diagnose
 

@@ -1,6 +1,6 @@
 # signal-council V1 Front
 
-The Front application is the browser side of the local signal-council reference workbench. It presents the 24 isolated, deterministic, de-identified demonstration projects through the authenticated Back HTTP contract. It is not a production deployment or a source of real customer, model, or risk facts.
+The Front application is the browser side of the local signal-council reference workbench. It opens exactly one deterministic, de-identified demonstration project through the authenticated Back HTTP contract. It is not a production deployment or a source of real customer, training, model, or risk facts.
 
 ## Behaviour and boundaries
 
@@ -35,7 +35,7 @@ npm.cmd run typecheck
 npm.cmd run build
 ```
 
-The current V1 Front gate is `204/204` tests, typecheck, and build passed. The UI also requires a fresh three-account 1920×1080 acceptance gate before release. These results verify the local reference UI only; they do not establish production deployment, real-provider behavior, real customer material handling, model quality, or statistical validation.
+The current Front gate is `217/217` tests, typecheck, and build passed. These results verify the one-project local reference UI only; they do not establish production deployment, real-provider behavior, real customer material handling, model quality, or statistical validation.
 
 ## Integration
 

@@ -2,7 +2,7 @@
 
 signal-council is a local reference workbench for financing-lease material verification and business-rule evaluation. Its repository is [Openclaw-D/signal-council](https://github.com/Openclaw-D/signal-council). It is not a production service, an automated approval system, a statistically validated risk model, or a repository of real customer material.
 
-The public V1 profile contains 24 isolated, deterministic, de-identified demonstration projects generated from one shared standard template. The live local path is:
+The default public profile contains exactly one deterministic, de-identified demonstration project. The separate 24-case generator and evaluation fixtures remain offline engineering assets; they are not listed by the website, loaded into the default runtime database, or used to train a model. The live local path is:
 
 ```text
 Browser → HTTP → FastAPI → SQLite
@@ -46,13 +46,13 @@ Use `npm.cmd` for Front commands on Windows. Build Python dependencies into `Bac
 
 The three intranet Demo accounts initially use password `123456`. This is a demonstration bootstrap value only. Before any Internet exposure, replace/rotate it, set secure cookies, add TLS and production process hosting, and pass the remaining public-security gates described in [DEPLOYMENT.md](DEPLOYMENT.md). Passwords are stored only as independently salted PBKDF2 hashes; sessions use an HttpOnly/SameSite cookie while SQLite stores only the token hash and necessary lifecycle timestamps.
 
-## Verified V1 reference gates
+## Verified reference gates
 
-- Front: `204/204` tests passed, plus typecheck and build.
-- Back: the current authentication/ACL run passed `424`; `37` frozen offline/oracle modules were skipped because their external native packs are absent; one warning remained.
-- UI: the bilingual interface passed the 1920×1080 acceptance gate.
+- Front: `217/217` tests passed, plus typecheck and build.
+- Back: `510` tests passed with the configured external evaluation root; one existing dependency-deprecation warning remained.
+- Runtime profile: cold start and real HTTP acceptance return exactly one public project and three memberships; the separate 24-case generator remains available only to explicit offline tests.
 
-These gates verify the local reference implementation only. They do not establish a production deployment, real-provider quality, real external API operation, statistical model validity, or real image-to-3D output.
+These gates verify the local reference implementation only. They do not establish a production deployment, real-provider quality, real external API operation, statistical model validity, real customer material handling, or real image-to-3D output.
 
 ## Repository map
 

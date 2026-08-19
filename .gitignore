@@ -17,6 +17,9 @@
 **/*.tsbuildinfo
 **/*.log
 
+# Local task artifacts (not source or release evidence)
+Compare/tmp-*
+
 # Local runtime data and secrets
 **/.env
 **/.env.*

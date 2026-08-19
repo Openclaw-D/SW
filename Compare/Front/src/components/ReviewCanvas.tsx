@@ -31,7 +31,7 @@ function FormalBusinessCorrection({ facts, pending, resultMessage, onSubmit }: {
   const [reason, setReason] = useState(copy(locale, "Manually checked against supplemental material", "依据补充材料人工核对"));
   return (
     <details className="approval-correction review-formal-correction">
-      <summary><Icon name="business" /><span>{copy(locale, "Formal business correction", "正式业务修正")}</span><small>{copy(locale, "Human Gate · creates a new fact version", "人工 Gate · 生成新事实版本")}</small></summary>
+      <summary><Icon name="business" /><span>{copy(locale, "Formal business correction", "正式业务修正")}</span><small>{copy(locale, "Human Gate · creates a new fact version", "人工审核 · 生成新事实版本")}</small></summary>
       <div className="correction-form">
         <label>{copy(locale, "Field", "字段")}<select aria-label={copy(locale, "Choose field to correct", "选择修正字段")} disabled={pending} onChange={(event) => { const next = facts.find((fact) => fact.id === event.target.value); setFactId(event.target.value); setValue(next ? String(next.value) : ""); }} value={selected?.id ?? ""}>{facts.map((fact) => <option key={fact.id} value={fact.id}>{formatCanonicalLabel(fact.label, locale)} · {formatFactValue(fact.value, fact.unit, locale)}</option>)}</select></label>
         <label>{copy(locale, "Proposed value", "建议值")}<input disabled={pending} onChange={(event) => setValue(event.target.value)} value={value} /></label>
@@ -105,7 +105,7 @@ const riskLevelMeta: Array<{ id: RiskLevel; label: string }> = [
   { id: "support", label: "支持" },
 ];
 
-function RiskSection({ summary, evidence, selectedTarget, expanded: sectionExpanded, onEvidenceSelect, onToggleExpanded }: { summary: GlobalRiskSummary; evidence: EvidenceReference[]; selectedTarget: ReviewEvidenceTarget | null; expanded: boolean; onEvidenceSelect: (target: ReviewEvidenceTarget) => void; onToggleExpanded: () => void }) {
+function RiskSection({ summary, evidence, selectedTarget, changeSummary, expanded: sectionExpanded, onEvidenceSelect, onToggleExpanded }: { summary: GlobalRiskSummary; evidence: EvidenceReference[]; selectedTarget: ReviewEvidenceTarget | null; changeSummary: string | null; expanded: boolean; onEvidenceSelect: (target: ReviewEvidenceTarget) => void; onToggleExpanded: () => void }) {
   const locale = usePublicLocale();
   const evidenceById = new Map(evidence.map((item) => [item.id, item]));
   const partyLabels = { business: copy(locale, "Business", "业务"), risk: copy(locale, "Risk", "风控"), joint: copy(locale, "Joint", "共同") };
@@ -150,10 +150,11 @@ function RiskSection({ summary, evidence, selectedTarget, expanded: sectionExpan
     </span>
   );
   return (
-    <section className={`dimension-section global-risk-section risk-level-${summary.level} ${sectionExpanded ? "is-section-expanded" : "is-section-collapsed"}`} data-semantic-localized id="review-risk">
+    <section className={`dimension-section global-risk-section risk-level-${summary.level} ${sectionExpanded ? "is-section-expanded" : "is-section-collapsed"}`} data-semantic-localized id="review-risk" tabIndex={-1}>
       <h1 className="visually-hidden" id="six-dimension-overview">{copy(locale, "Risk", "风险")}</h1>
       <ReviewSectionSummary expanded={sectionExpanded} headingAriaHidden onToggle={onToggleExpanded} sectionId="risk" summary={copy(locale, `${riskItems.length} items across five levels · ${summary.pendingHumanDeterminations.length} review threads awaiting human determination`, `五级共 ${riskItems.length} 项 · 待核主线 ${summary.pendingHumanDeterminations.length} 项`)} title={copy(locale, "Risk", "风险")} />
       <div className="review-section-body" hidden={!sectionExpanded} id="review-section-body-risk">
+        {changeSummary ? <div className="risk-change-note" role="status"><strong>判断变化</strong><span>{changeSummary}</span></div> : null}
         <div className="risk-groups" aria-label={copy(locale, "Five horizontal risk levels—Prohibited, Risk, Verify, Monitor, Support—with shared detail", "禁止、风险、核实、关注、支持五级横向风险卡与共享详情")}>
           <div className="risk-level-cards">
           {orderedGroups.map((group) => {
@@ -220,7 +221,7 @@ function ComplianceSection({ dimension, graph, facts, evidence, selectedTarget, 
   );
 }
 
-export function ReviewCanvas({ data, facts, activeReviewId, selectedTarget, selectedProductionStageId, collapsed, canCorrect, correctionPending, correctionMessage, onActiveReviewChange, onCorrection, onEvidenceSelect, onProductionStageSelect, onTimeSeriesRequest, onToggleCollapsed }: { data: WorkbenchProject; facts: FactVersion[]; activeReviewId: ReviewSectionId; selectedTarget: ReviewEvidenceTarget | null; selectedProductionStageId: string; collapsed: boolean; canCorrect: boolean; correctionPending: boolean; correctionMessage: string | null; onActiveReviewChange: (id: ReviewSectionId) => void; onCorrection: (factId: string, value: string, reason: string) => Promise<void>; onEvidenceSelect: (target: ReviewEvidenceTarget) => void; onProductionStageSelect: (stageId: string, imageId: string) => void; onTimeSeriesRequest: (request: DimensionSeriesRequest) => Promise<DimensionSeriesResponse>; onToggleCollapsed: () => void }) {
+export function ReviewCanvas({ data, facts, activeReviewId, selectedTarget, selectedProductionStageId, collapsed, canCorrect, correctionPending, correctionMessage, onActiveReviewChange, onCorrection, onEvidenceSelect, onProductionStageSelect, onTimeSeriesRequest, onToggleCollapsed, riskChangeSummary = null, presentationMode = false }: { data: WorkbenchProject; facts: FactVersion[]; activeReviewId: ReviewSectionId; selectedTarget: ReviewEvidenceTarget | null; selectedProductionStageId: string; collapsed: boolean; canCorrect: boolean; correctionPending: boolean; correctionMessage: string | null; onActiveReviewChange: (id: ReviewSectionId) => void; onCorrection: (factId: string, value: string, reason: string) => Promise<void>; onEvidenceSelect: (target: ReviewEvidenceTarget) => void; onProductionStageSelect: (stageId: string, imageId: string) => void; onTimeSeriesRequest: (request: DimensionSeriesRequest) => Promise<DimensionSeriesResponse>; onToggleCollapsed: () => void; riskChangeSummary?: string | null; presentationMode?: boolean }) {
   const locale = usePublicLocale();
   const canvasRef = useRef<HTMLElement>(null);
   const [expandedSectionIds, setExpandedSectionIds] = useState<Set<ReviewSectionId>>(() => new Set(REVIEW_SECTION_IDS));
@@ -259,14 +260,14 @@ export function ReviewCanvas({ data, facts, activeReviewId, selectedTarget, sele
     if (next !== activeReviewId) onActiveReviewChange(next);
   };
   return (
-    <main className={`review-canvas ${collapsed ? "is-collapsed" : ""}`} aria-label={copy(locale, "Risk and six-dimension vertical review", "风险与六维纵向审查页面")} data-semantic-localized id="review-pane" onScroll={handleScroll} ref={canvasRef}>
+    <main className={`review-canvas ${presentationMode ? "is-presentation-review" : ""} ${collapsed ? "is-collapsed" : ""}`} aria-label={copy(locale, "Risk and six-dimension vertical review", "风险与六维纵向审查页面")} data-semantic-localized id="review-pane" onScroll={handleScroll} ref={canvasRef}>
       {collapsed ? (
         <button aria-controls="review-pane" aria-expanded={false} aria-label={copy(locale, "Expand review canvas from the upper-left corner", "从左上角展开审查画布")} className="pane-corner-anchor review-corner-anchor" onClick={onToggleCollapsed} title={copy(locale, "Expand review canvas from the upper-left corner", "从左上角展开审查画布")} type="button"><span aria-hidden="true" className="pane-corner-glyph">↘</span></button>
       ) : (
         <>
-          <header className="review-pane-heading"><button aria-controls="review-pane" aria-expanded aria-label={copy(locale, "Collapse review canvas to the upper-left corner", "收起审查画布至左上角")} className="pane-corner-anchor review-corner-anchor" onClick={onToggleCollapsed} title={copy(locale, "Collapse review canvas to the upper-left corner", "收起审查画布至左上角")} type="button"><span aria-hidden="true" className="pane-corner-glyph">↖</span></button><span className="review-pane-title"><strong>{copy(locale, "Review canvas", "审查画布")}</strong><small>{copy(locale, "Risk first · continuous six-dimension review", "风险置顶 · 六维连续审查")}</small></span></header>
-          {canCorrect && facts.some((fact) => fact.dimensionId === "compliance") ? <FormalBusinessCorrection facts={facts.filter((fact) => fact.dimensionId === "compliance")} onSubmit={onCorrection} pending={correctionPending} resultMessage={correctionMessage} /> : null}
-          <RiskSection evidence={data.evidence} expanded={expandedSectionIds.has("risk")} onEvidenceSelect={onEvidenceSelect} onToggleExpanded={() => toggleSection("risk")} selectedTarget={selectedTarget} summary={data.riskSummary} />
+          {presentationMode ? <button aria-controls="review-pane" aria-expanded aria-label={copy(locale, "Collapse review canvas to the upper-left corner", "收起审查画布至左上角")} className="pane-corner-anchor review-corner-anchor" onClick={onToggleCollapsed} title={copy(locale, "Collapse review canvas to the upper-left corner", "收起审查画布至左上角")} type="button"><span aria-hidden="true" className="pane-corner-glyph">↖</span></button> : <header className="review-pane-heading"><button aria-controls="review-pane" aria-expanded aria-label={copy(locale, "Collapse review canvas to the upper-left corner", "收起审查画布至左上角")} className="pane-corner-anchor review-corner-anchor" onClick={onToggleCollapsed} title={copy(locale, "Collapse review canvas to the upper-left corner", "收起审查画布至左上角")} type="button"><span aria-hidden="true" className="pane-corner-glyph">↖</span></button><span className="review-pane-title"><strong>{copy(locale, "Review canvas", "审查画布")}</strong><small>{copy(locale, "Risk first · continuous six-dimension review", "风险置顶 · 六维连续审查")}</small></span></header>}
+          {!presentationMode && canCorrect && facts.some((fact) => fact.dimensionId === "compliance") ? <FormalBusinessCorrection facts={facts.filter((fact) => fact.dimensionId === "compliance")} onSubmit={onCorrection} pending={correctionPending} resultMessage={correctionMessage} /> : null}
+          <RiskSection changeSummary={riskChangeSummary} evidence={data.evidence} expanded={expandedSectionIds.has("risk")} onEvidenceSelect={onEvidenceSelect} onToggleExpanded={() => toggleSection("risk")} selectedTarget={selectedTarget} summary={data.riskSummary} />
           <ComplianceSection dimension={compliance} evidence={data.evidence} expanded={expandedSectionIds.has("compliance")} facts={facts.filter((fact) => fact.dimensionId === "compliance")} graph={data.complianceGraph} onEvidenceSelect={onEvidenceSelect} onToggleExpanded={() => toggleSection("compliance")} selectedTarget={selectedTarget} />
           {data.dimensions.filter((item) => item.id !== "compliance").map((dimension) => {
             const detail = details.get(dimension.id);

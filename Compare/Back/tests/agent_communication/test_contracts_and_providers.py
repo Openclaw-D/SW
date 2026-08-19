@@ -275,6 +275,48 @@ def test_synthetic_provider_is_single_step_dynamic_and_advisory() -> None:
     assert "suggested_handoffs" not in type(content).model_fields
 
 
+def test_synthetic_risk_reply_locates_blocking_rules_and_next_action() -> None:
+    provider = SyntheticAgentProvider()
+    request = _request(instruction="这条制度结果是什么意思？")
+    context_payload = _context(AgentRole.RISK).model_dump(by_alias=True)
+    context_payload["currentInstruction"] = request.instruction
+    context_payload["approvalState"] = {
+        "version": 1,
+        "status": "draft",
+        "hardGateStatus": "block",
+        "blockingRuleIds": ["HG-OWNERSHIP"],
+        "riskVeto": False,
+        "summary": "主体关系尚未满足制度条件。",
+    }
+    context_payload["policyResults"] = [
+        {
+            "policyResultId": "policy-ownership",
+            "ruleId": "HG-OWNERSHIP",
+            "title": "主体关系核验",
+            "result": "block",
+            "explanation": "实控人关系缺少可定位原件。",
+            "nextAction": "补充股权结构原件并标注页码。",
+            "citations": [],
+        }
+    ]
+    context = AgentProviderContext.model_validate(context_payload)
+    content = asyncio.run(
+        provider.generate(
+            AgentRole.RISK,
+            request,
+            context,
+            _assembled(),
+            max_output_tokens=512,
+        )
+    )
+    assert content.disposition.value == "escalate"
+    assert "HG-OWNERSHIP" in content.reply_text
+    assert "主体关系核验" in content.reply_text
+    assert "补充股权结构原件并标注页码" in content.reply_text
+    assert "这条制度结果" in content.reply_text
+    assert content.questions == ["请业务侧按上述动作补齐或核对后，再由人工复核 HG-OWNERSHIP。"]
+
+
 def test_openai_request_is_strict_single_focus_and_has_no_tool_surface() -> None:
     payload = serialize_openai_agent_request(
         AgentRole.BUSINESS,

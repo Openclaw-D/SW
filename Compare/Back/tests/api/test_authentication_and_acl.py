@@ -10,7 +10,7 @@ import pytest
 from app.contracts.agent_communication import AgentMode
 from app.core.config import Settings
 from app.main import create_app
-from app.services.authentication import PASSWORD_ITERATIONS, SESSION_COOKIE_NAME
+from app.services.authentication import AuthenticationService, PASSWORD_ITERATIONS, SESSION_COOKIE_NAME
 
 
 def _client(database: Path, *, environment: str = "development") -> TestClient:
@@ -39,6 +39,28 @@ def test_seed_kdf_memberships_and_migration_are_idempotent(tmp_path: Path) -> No
         assert len({row[1] for row in accounts}) == 3
         assert db.execute("SELECT COUNT(*) FROM project_memberships").fetchone()[0] == 72
         assert db.execute("SELECT COUNT(*) FROM schema_migrations WHERE version=9").fetchone()[0] == 1
+
+
+def test_memberships_reconcile_when_projects_are_seeded_after_authentication(tmp_path: Path) -> None:
+    database = tmp_path / "late-project-memberships.db"
+    AuthenticationService(database).seed()
+
+    with _client(database) as client:
+        _login(client, "business")
+        projects = client.get("/api/v1/projects")
+        assert projects.status_code == 200, projects.text
+        project_id = projects.json()["data"][0]["projectId"]
+        assert client.get(f"/api/v1/projects/{project_id}/workbench").status_code == 200
+        # Reconciliation is idempotent across authenticated requests.
+        assert client.get(f"/api/v1/projects/{project_id}/workbench").status_code == 200
+
+    with sqlite3.connect(database) as db:
+        project_count = db.execute("SELECT COUNT(*) FROM projects").fetchone()[0]
+        assert db.execute(
+            "SELECT COUNT(*) FROM project_memberships WHERE project_id=?",
+            (project_id,),
+        ).fetchone()[0] == 3
+        assert db.execute("SELECT COUNT(*) FROM project_memberships").fetchone()[0] == project_count * 3
 
 def test_login_me_logout_hash_only_and_expiry(tmp_path: Path) -> None:
     database = tmp_path / "sessions.db"

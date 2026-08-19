@@ -1,5 +1,9 @@
 # Roadmap
 
+## 默认单项目脱敏演示（2026-08-16，complete）
+
+默认网站、模块冷启动、真实 HTTP 项目目录、Mock Gateway 和新仓库外运行库均固定为 1 套脱敏演示项目，入口直接进入该项目；三个账号只为该项目建立 3 条 membership。旧 `compare.db` 完整保留，默认改用 `signal-council-demo.db`，不做删除或破坏性裁剪。24 项生成器、外置材料矩阵和 hidden truth/Oracle 继续只服务显式离线回归与评测，不进入默认网站或运行库，也不表述为训练数据。Back `510 passed`、Front `217/217`、typecheck、vinext build 与部署 Preflight 通过。
+
 ## GLM-5.3 迁移检查点（2026-08-16，complete）
 
 Compare 的可选真实 A2A provider 已冻结为 `glm_5_3_coding_plan_cli / glm-5.3[1m]`，CLI 直接传精确模型 ID，旧 `glm-5.2` 遥测必须拒绝。隔离真实风控 turn、精确 provenance、正式表零增量、Back provider `34/34` 与 Front `204/204` 已通过。该检查点不扩展 Agent 权限、不改变 synthetic 默认值，也不声称生产 SLA 或模型质量已验证。

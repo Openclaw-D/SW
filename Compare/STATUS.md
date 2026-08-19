@@ -4,6 +4,12 @@
 
 ## 当前阶段
 
+### 默认单项目脱敏演示收束（2026-08-16）
+
+默认网站和 `Settings.from_environment()` 现在只提供 1 套确定性脱敏演示项目，Demo 入口直接进入该项目；三个固定账号各建立 1 条 membership，共 3 条。24 项 generator 与外置材料矩阵仅保留为显式离线回归/评测资产，不进入默认运行库、不显示在网站，也不是训练数据。默认仓库外数据库切换为 `%LOCALAPPDATA%\CompareWorkbench\signal-council-demo.db`，旧 `compare.db` 不删除、不迁移、不裁剪。
+
+当前 Gate：Back 聚焦冷启动/真实 HTTP/generator `28 passed`，最终全量 `510 passed / 1 warning`；Front `217/217`、typecheck、vinext build 通过；`start-local.ps1 -Action Preflight` 明确投影新仓库外数据库路径。改动只涉及源码、测试和文档，没有新增图片、PDF、Office、压缩包、数据库、Archive 或其他二进制材料。
+
 ### GLM-5.3 迁移检查点（2026-08-16）
 
 Compare 的可选真实 Agent 路径已从冻结的 `glm_5_2_coding_plan_cli / glm-5.2` 迁移到精确的 `glm_5_3_coding_plan_cli / glm-5.3[1m]`。CLI 命令直接传模型 ID，不再经 `sonnet` 别名；运行遥测必须只包含精确 `glm-5.3[1m]`，旧 5.2、前后缀代理、多模型或缺失身份均 fail closed。
@@ -14,7 +20,7 @@ Compare 的可选真实 Agent 路径已从冻结的 `glm_5_2_coding_plan_cli / g
 
 signal-council 已实现固定 `business / risk / coordinator` 内网 Demo 登录，coordinator 在服务端映射为 `leadership`、界面显示协管。SQLite 增加 account、account session、project membership；当前全部项目以幂等方式建立三条 membership，不复制项目或流程数据。正式 API principal 只来自后端 session，客户端自报 `X-Compare-Role` 无法换角色。
 
-2026-08-16 当前完整 Gate：Back `509 passed / 1 warning`；Front `217/217`、typecheck 与 vinext build 通过。应用内浏览器以物理 `1920×1080` override 复核现有 risk session，实际 CSS 视口 `1315×739`，入口与项目选择页横向溢出 0、console error/warning 0；页面明确显示 24 项固定一一绑定的脱敏模拟演示数据。权限契约固定为 business/risk 参与群聊并只调用业务或风控 Agent，coordinator 读取共享投影、管理系统设置并执行审批，不参与群聊且不是 Agent target。
+`3cbaa1a` 的 24 项认证基线 Gate 为 Back `509 passed / 1 warning`、Front `217/217`、typecheck 与 vinext build 通过；其多项目公开目录口径现已由前述单项目默认运行契约覆盖。权限契约保持不变：business/risk 参与群聊并只调用业务或风控 Agent，coordinator 读取共享投影、管理系统设置并执行审批，不参与群聊且不是 Agent target。
 
 一键脚本 `Preflight` 通过；默认 `Start` 正确拒绝复用本轮开始前已占用 8000 的旧 API（其 OpenAPI 无 `/auth/login`），并未终止该未知进程。因 4317 同时存在既有同目录 vinext，`Start / Check / Stop` 完整循环未在默认端口重跑，不能写成已通过。仓库外随机端口真实 HTTP Gate 已独立证明新 API、迁移、session 与 ACL 可运行。
 

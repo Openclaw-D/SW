@@ -1,24 +1,22 @@
 import { useEffect, useRef, useState } from "react";
 import { App } from "./App";
-import { isProjectView, type ProjectCatalogItem, type ProjectView } from "./contracts/projectSelection";
-import { DemoEntrance, ProjectSelectionBrowser, ProjectSelectionEntry } from "./components/ProjectSelection";
+import { isProjectView, type ProjectCatalogItem, type ProjectView } from "./contracts/projectSelection.ts";
+import { ProjectSelectionBrowser, ProjectSelectionEntry } from "./components/ProjectSelection";
 import { MockWorkbenchGateway } from "./gateway/mockWorkbenchGateway";
 import { HttpWorkbenchGateway } from "./gateway/httpWorkbenchGateway";
 import type { WorkbenchGateway } from "./gateway/workbenchGateway";
 import { catalogProjectIdentity } from "./lib/workbenchLogic";
+import { generateProjectCatalog } from "./mock/projectCatalog";
 import { copy, PUBLIC_LOCALE_KEY, PublicLocaleContext, readPublicLocale, translateEnglishSurface, type PublicLocale } from "./lib/publicLocale";
 import type { ReactNode } from "react";
 import type { AccountRole, AuthenticatedAccount } from "./contracts/authentication";
 import { AuthenticationClient, AuthenticationClientError, SessionExpiryCoordinator } from "./gateway/authenticationClient";
 import "./styles/project-selection.css";
 
-const LAST_VIEW_KEY = "compare-project-selection-last-view-v1";
-
 type RouteState =
   | { screen: "demo" }
-  | { screen: "entry" }
-  | { screen: "selection"; view: ProjectView }
-  | { screen: "project"; projectId: string; from: ProjectView };
+  | { screen: "directory"; view: ProjectView }
+  | { screen: "project"; projectId: string };
 
 type AuthNotice = {
   kind: "not-authenticated" | "session-expired" | "credentials-rejected" | "signed-out" | "service-error";
@@ -45,11 +43,9 @@ function loginFailureNotice(reason: unknown): AuthNotice {
 function routeFromLocation(): RouteState {
   const params = new URLSearchParams(window.location.search);
   const projectId = params.get("project");
-  const from = isProjectView(params.get("from")) ? params.get("from") as ProjectView : "list";
-  if (projectId) return { screen: "project", projectId, from };
-  const view = params.get("view");
-  if (isProjectView(view)) return { screen: "selection", view };
-  if (params.get("select") === "1") return { screen: "entry" };
+  if (projectId) return { screen: "project", projectId };
+  const directoryView = params.get("directory");
+  if (isProjectView(directoryView)) return { screen: "directory", view: directoryView };
   return { screen: "demo" };
 }
 
@@ -57,10 +53,14 @@ function routeUrl(route: RouteState) {
   const apiBase = new URLSearchParams(window.location.search).get("apiBase");
   const suffix = apiBase ? `&apiBase=${encodeURIComponent(apiBase)}` : "";
   if (route.screen === "demo") return apiBase ? `/?apiBase=${encodeURIComponent(apiBase)}` : "/";
-  if (route.screen === "entry") return `/?select=1${suffix}`;
-  if (route.screen === "selection") return `/?view=${route.view}${suffix}`;
-  return `/?project=${encodeURIComponent(route.projectId)}&from=${route.from}${suffix}`;
+  if (route.screen === "directory") return `/?directory=${route.view}${suffix}`;
+  return `/?project=${encodeURIComponent(route.projectId)}${suffix}`;
 }
+
+const PUBLIC_DIRECTORY_PROJECTS = generateProjectCatalog(
+  20260816,
+  new Date(Date.UTC(2026, 7, 16, 12, 0, 0)),
+);
 
 function PublicSurface({ children, locale }: { children: ReactNode; locale: PublicLocale }) {
   useEffect(() => {
@@ -105,8 +105,8 @@ export function ProjectExperience() {
     setLoadError(null);
     try {
       const nextProjects = await nextGateway.listProjects();
-      if (nextProjects.length !== 24 || new Set(nextProjects.map((project) => project.projectId)).size !== 24) {
-        throw new Error("固定演示目录必须包含 24 个唯一项目。");
+      if (nextProjects.length !== 1 || new Set(nextProjects.map((project) => project.projectId)).size !== 1) {
+        throw new Error("公开演示需要一个唯一的 canonical 项目资料包。");
       }
       setGateway(nextGateway);
       setProjects(nextProjects);
@@ -234,11 +234,6 @@ export function ProjectExperience() {
     setRoute(nextRoute);
   };
 
-  const openSelection = (view: ProjectView) => {
-    localStorage.setItem(LAST_VIEW_KEY, view);
-    navigate({ screen: "selection", view });
-  };
-
   if (!route || authState === "recovering") {
     return <PublicSurface locale={locale}><div className="selection-loading"><b>signal-council</b><span>{copy(locale, "Preparing the public demo…", "正在准备公开演示项目…")}</span></div></PublicSurface>;
   }
@@ -251,10 +246,6 @@ export function ProjectExperience() {
 
   const accountBar = <div className="signal-council-account" role="status"><span><b>{account.displayName}</b><small>{account.username} · {account.role === "leadership" ? "系统设置" : account.role === "business" ? "业务" : "风控"}</small></span><button disabled={authPending} onClick={() => void logout()} type="button">退出</button></div>;
 
-  if (route.screen === "demo") {
-    return <PublicSurface locale={locale}>{languageControl}{accountBar}<DemoEntrance locale={locale} onEnter={() => navigate({ screen: "entry" })} /></PublicSurface>;
-  }
-
   if (loadError) {
     return <PublicSurface locale={locale}><div className="selection-loading">{languageControl}{accountBar}<b>{copy(locale, "Project directory unavailable", "项目目录读取失败")}</b><span>{loadError}</span><button onClick={() => { if (gateway) void installGateway(gateway); else window.location.reload(); }} type="button">{copy(locale, "Retry", "重试")}</button></div></PublicSurface>;
   }
@@ -265,27 +256,18 @@ export function ProjectExperience() {
     return <PublicSurface locale={locale}><div className="selection-loading">{languageControl}<b>{copy(locale, "Project directory is empty", "项目目录为空")}</b><span>{copy(locale, "This service has no public demo projects.", "当前服务没有可进入的固定演示项目。")}</span><button onClick={() => void installGateway(gateway)} type="button">{copy(locale, "Reload directory", "重试目录")}</button></div></PublicSurface>;
   }
 
-  if (route.screen === "entry") {
-    return <PublicSurface locale={locale}>{languageControl}{accountBar}<ProjectSelectionEntry locale={locale} onChoose={openSelection} projects={projects} /></PublicSurface>;
+  if (route.screen === "demo") {
+    return <PublicSurface locale={locale}>{languageControl}{accountBar}<ProjectSelectionEntry locale={locale} onChoose={(view) => navigate({ screen: "directory", view })} projects={PUBLIC_DIRECTORY_PROJECTS} /></PublicSurface>;
   }
 
-  if (route.screen === "selection") {
-    return (<PublicSurface locale={locale}>
-      {accountBar}
-      <ProjectSelectionBrowser
-        locale={locale}
-        initialView={route.view}
-        onEntry={() => navigate({ screen: "entry" })}
-        onOpenProject={(projectId, view) => { localStorage.setItem(LAST_VIEW_KEY, view); navigate({ screen: "project", projectId, from: view }); }}
-        onViewChange={(view) => { localStorage.setItem(LAST_VIEW_KEY, view); window.history.replaceState({}, "", routeUrl({ screen: "selection", view })); setRoute({ screen: "selection", view }); }}
-        projects={projects}
-      />
-    </PublicSurface>);
+  const canonicalProjectId = projects[0].projectId;
+  if (route.screen === "directory") {
+    return <PublicSurface locale={locale}>{languageControl}{accountBar}<ProjectSelectionBrowser initialView={route.view} locale={locale} onEntry={() => navigate({ screen: "demo" })} onOpenProject={() => navigate({ screen: "project", projectId: canonicalProjectId })} onViewChange={(view) => navigate({ screen: "directory", view })} projects={PUBLIC_DIRECTORY_PROJECTS} /></PublicSurface>;
   }
 
   const projectIdentity = catalogProjectIdentity(projects, route.projectId);
   if (!projectIdentity) {
-    return <PublicSurface locale={locale}><div className="selection-loading">{languageControl}<b>{copy(locale, "Project not found", "项目未找到")}</b><span>{copy(locale, "The project is not in this demo batch.", "当前演示批次中没有该项目。")}</span><button onClick={() => navigate({ screen: "entry" })} type="button">{copy(locale, "Back to entry", "返回入口")}</button></div></PublicSurface>;
+    return <PublicSurface locale={locale}><div className="selection-loading">{languageControl}<b>{copy(locale, "Project not found", "项目未找到")}</b><span>{copy(locale, "The project is not the configured public demo.", "当前项目不是已配置的公开演示项目。")}</span><button onClick={() => navigate({ screen: "demo" })} type="button">{copy(locale, "Back to entry", "返回入口")}</button></div></PublicSurface>;
   }
 
   return (<PublicSurface locale={locale}>
@@ -293,13 +275,14 @@ export function ProjectExperience() {
       account={account}
       gateway={gateway}
       key={route.projectId}
-      onBack={() => navigate({ screen: "selection", view: route.from })}
+      onBack={() => navigate({ screen: "demo" })}
       onLogout={() => void logout()}
       onPrincipalRoleChange={(role) => void switchPrincipalRole(role)}
       projectId={projectIdentity.requestProjectId}
       projectNo={projectIdentity.projectNo}
         principalRoleChangePending={authPending}
         showSimulationControls={mockMode}
+        presentationMode
         locale={locale}
         onLocaleChange={setPublicLocale}
     />

@@ -20,7 +20,7 @@ DEFAULT_DISCLAIMER = (
 def _default_database_path() -> Path:
     local_data = os.getenv("LOCALAPPDATA")
     root = Path(local_data) if local_data else Path(tempfile.gettempdir())
-    return (root / "CompareWorkbench" / "compare.db").resolve()
+    return (root / "CompareWorkbench" / "signal-council-demo.db").resolve()
 
 
 def _default_import_root() -> Path:
@@ -105,6 +105,10 @@ class Settings:
     agent_risk_model: str = "glm-5.3[1m]"
     agent_leadership_model: str = "glm-5.3[1m]"
     generator_seed: int = 20260810
+    # Direct Settings construction keeps the historical 24-case regression
+    # fixture. Normal application startup uses from_environment(), which fixes
+    # the public runtime to one de-identified demonstration project.
+    demo_project_count: int = 24
     # Direct construction is retained for legacy deterministic test fixtures;
     # normal application startup always goes through from_environment(), whose
     # public default is the standard profile below.
@@ -178,6 +182,7 @@ class Settings:
                 "COMPARE_AGENT_RISK_MODEL",
                 os.getenv("COMPARE_AGENT_MODEL", "glm-5.3[1m]"),
             ),
+            demo_project_count=1,
             agent_leadership_model=os.getenv(
                 "COMPARE_AGENT_LEADERSHIP_MODEL",
                 os.getenv("COMPARE_AGENT_MODEL", "glm-5.3[1m]"),

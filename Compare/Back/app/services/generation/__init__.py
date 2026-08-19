@@ -3,6 +3,7 @@ from __future__ import annotations
 from .generator import (
     DEFAULT_GENERATOR_SEED,
     DEFAULT_PROJECT_COUNT,
+    PUBLIC_DEMO_PROJECT_COUNT,
     GENERATOR_VERSION,
     GeneratedProjectBundle,
     WorkbenchGenerator,
@@ -16,6 +17,7 @@ from .generator import (
 __all__ = [
     "DEFAULT_GENERATOR_SEED",
     "DEFAULT_PROJECT_COUNT",
+    "PUBLIC_DEMO_PROJECT_COUNT",
     "GENERATOR_VERSION",
     "GeneratedProjectBundle",
     "WorkbenchGenerator",

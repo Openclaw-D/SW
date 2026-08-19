@@ -20,6 +20,7 @@ from app.fixtures.equipment_configurations import EQUIPMENT_CONFIGURATION_PROFIL
 from app.services.generation import (
     DEFAULT_GENERATOR_SEED,
     DEFAULT_PROJECT_COUNT,
+    PUBLIC_DEMO_PROJECT_COUNT,
     create_workbench_generator,
     generate_project_bundle,
     generate_project_bundles,
@@ -62,6 +63,18 @@ def test_default_generator_produces_24_strict_front_contract_bundles(bundles: tu
         assert len(bundle["dimensionSeries"]) == 4
         for group in bundle["selectionGroups"]:
             ReviewEvidenceSelectionGroup.model_validate(group)
+
+
+def test_runtime_profile_seeds_exactly_one_public_demo_project() -> None:
+    settings = SimpleNamespace(
+        generator_seed=DEFAULT_GENERATOR_SEED,
+        generator_profile="standard",
+        demo_project_count=PUBLIC_DEMO_PROJECT_COUNT,
+    )
+    generator = create_workbench_generator(settings)
+
+    assert generator.count == PUBLIC_DEMO_PROJECT_COUNT == 1
+    assert len(generator.seed_bundles()) == 1
 
 
 def test_public_standard_profile_has_24_unique_isolated_projects_and_one_fact_template() -> None:

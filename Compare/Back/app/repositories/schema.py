@@ -3,7 +3,7 @@ from __future__ import annotations
 import sqlite3
 
 
-SCHEMA_VERSION = 9
+SCHEMA_VERSION = 10
 
 SCHEMA_SQL = """
 CREATE TABLE IF NOT EXISTS schema_migrations (
@@ -341,6 +341,79 @@ CREATE TABLE IF NOT EXISTS approval_transitions (
     UNIQUE(project_id, sequence)
 );
 
+CREATE TABLE IF NOT EXISTS pre_review_runs (
+    id TEXT PRIMARY KEY,
+    project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+    sequence INTEGER NOT NULL CHECK (sequence >= 1),
+    trigger TEXT NOT NULL CHECK (trigger IN ('start', 'rejudge', 'submit')),
+    input_hash TEXT NOT NULL,
+    calculation_version TEXT NOT NULL,
+    projection_json TEXT NOT NULL,
+    bindings_json TEXT NOT NULL,
+    provenance_json TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    created_by TEXT NOT NULL,
+    UNIQUE(project_id, sequence),
+    UNIQUE(project_id, input_hash, trigger, sequence)
+);
+CREATE INDEX IF NOT EXISTS ix_pre_review_runs_project_sequence
+    ON pre_review_runs(project_id, sequence);
+
+CREATE TABLE IF NOT EXISTS pre_review_snapshots (
+    id TEXT PRIMARY KEY,
+    project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+    visible_version INTEGER NOT NULL CHECK (visible_version >= 1),
+    kind TEXT NOT NULL CHECK (kind IN ('baseline', 'checkpoint', 'final')),
+    run_id TEXT NOT NULL REFERENCES pre_review_runs(id) ON DELETE RESTRICT,
+    projection_json TEXT NOT NULL,
+    bindings_json TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    created_by TEXT NOT NULL,
+    locked_at TEXT,
+    immutable INTEGER NOT NULL DEFAULT 1 CHECK (immutable = 1),
+    CHECK ((kind = 'final' AND locked_at IS NOT NULL) OR (kind != 'final' AND locked_at IS NULL)),
+    UNIQUE(project_id, visible_version)
+);
+CREATE INDEX IF NOT EXISTS ix_pre_review_snapshots_project_version
+    ON pre_review_snapshots(project_id, visible_version);
+CREATE UNIQUE INDEX IF NOT EXISTS ux_pre_review_snapshots_single_final
+    ON pre_review_snapshots(project_id) WHERE kind = 'final';
+
+CREATE TABLE IF NOT EXISTS pre_review_state (
+    project_id TEXT PRIMARY KEY REFERENCES projects(id) ON DELETE CASCADE,
+    version INTEGER NOT NULL CHECK (version >= 1),
+    snapshot_limit INTEGER NOT NULL DEFAULT 3 CHECK (snapshot_limit BETWEEN 2 AND 5),
+    latest_run_id TEXT NOT NULL REFERENCES pre_review_runs(id) ON DELETE RESTRICT,
+    submitted_snapshot_id TEXT REFERENCES pre_review_snapshots(id) ON DELETE RESTRICT,
+    started_at TEXT NOT NULL,
+    started_by TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    updated_by TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS pre_review_issue_actions (
+    id TEXT PRIMARY KEY,
+    project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+    issue_id TEXT NOT NULL,
+    action_type TEXT NOT NULL CHECK (
+        action_type IN ('link_evidence', 'explain', 'request_manual_review')
+    ),
+    evidence_ref TEXT REFERENCES evidence_references(id) ON DELETE RESTRICT,
+    note TEXT,
+    created_at TEXT NOT NULL,
+    created_by TEXT NOT NULL,
+    CHECK (
+        (action_type = 'link_evidence' AND evidence_ref IS NOT NULL)
+        OR (action_type != 'link_evidence' AND evidence_ref IS NULL)
+    ),
+    CHECK (
+        (action_type = 'explain' AND length(trim(COALESCE(note, ''))) > 0)
+        OR action_type != 'explain'
+    )
+);
+CREATE INDEX IF NOT EXISTS ix_pre_review_issue_actions_project_issue
+    ON pre_review_issue_actions(project_id, issue_id, created_at);
+
 CREATE TABLE IF NOT EXISTS idempotency_records (
     key TEXT PRIMARY KEY,
     operation TEXT NOT NULL,
@@ -576,6 +649,9 @@ IMMUTABLE_TABLES = (
     "rule_versions",
     "policy_results",
     "approval_transitions",
+    "pre_review_runs",
+    "pre_review_snapshots",
+    "pre_review_issue_actions",
     "idempotency_records",
     "audit_records",
     "agent_messages",

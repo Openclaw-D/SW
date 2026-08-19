@@ -230,13 +230,34 @@ def _risk_content(
             + "。"
         )
     if blocked:
+        blocked_policies = [item for item in context.policy_results if item.result == "block"]
+        rule_ids = list(dict.fromkeys([
+            *context.approval_state.blocking_rule_ids,
+            *(item.rule_id for item in blocked_policies),
+        ]))
+        rule_text = (
+            "；".join(
+                f"{item.rule_id}（{item.title}）：{item.explanation}"
+                for item in blocked_policies[:3]
+            )
+            if blocked_policies
+            else "当前上下文未提供可展示的阻断规则说明，请人工打开制度结果核对。"
+        )
+        next_action = (
+            "；".join(item.next_action for item in blocked_policies[:3])
+            if blocked_policies
+            else "请人工核对审批状态、阻断规则和关联证据后确定补件或复核动作"
+        )
+        veto_text = "；当前存在风险否决" if context.approval_state.risk_veto else ""
         return GeneratedAgentContent(
             reply_text=(
-                "当前存在 hard gate、风险否决或阻断制度结果。风控侧只能提示阻断事实并提交系统汇总，"
-                "任何 Agent 都不能覆盖该状态。"
+                f"阻断定位：审批 Gate 为 {context.approval_state.hard_gate_status}{veto_text}；"
+                f"阻断规则：{('、'.join(rule_ids) if rule_ids else '待人工核对')}。\n"
+                f"本轮问题“{topic}”对应的制度依据：{rule_text}\n"
+                f"下一步：{next_action}。风控仅提示阻断事实，任何 Agent 都不能解除或覆盖该状态。"
             ),
             observations=observations,
-            questions=[],
+            questions=[f"请业务侧按上述动作补齐或核对后，再由人工复核 {('、'.join(rule_ids) if rule_ids else '阻断制度结果')}。"],
             citations=citations,
             scope_status=AgentScopeStatus.IN_SCOPE,
             disposition=AgentDisposition.ESCALATE,

@@ -15,12 +15,13 @@ test("default responsive layout keeps both axes proportional at target viewports
   assert.match(app, /const PERSISTED_LAYOUT_VERSION = 3;/);
   assert.match(logic, /materialRatio:\s*50/);
   assert.match(logic, /collaborationRatio:\s*50/);
+  assert.match(logic, /PRESENTATION_LAYOUT_RATIOS[\s\S]*materialRatio:\s*30[\s\S]*collaborationRatio:\s*50/);
   assert.match(logic, /materialRatio:\s*\[10, 90\]/);
   assert.match(logic, /collaborationRatio:\s*\[10, 90\]/);
-  assert.match(app, /sanitizePersistedLayout\(stored, scoredProject\.layout\)/);
+  assert.match(app, /sanitizePersistedLayout\(stored, layoutFallback\)/);
   assert.match(app, /setLayout\(\{ \.\.\.scoredProject\.layout, \.\.\.persisted \}\)/);
   assert.match(app, /localStorage\.setItem\(PERSISTED_LAYOUT_VERSION_KEY, String\(PERSISTED_LAYOUT_VERSION\)\)/);
-  assert.match(app, /onResetLayout=\{\(\) => \{ setLayout\(\{ \.\.\.data\.layout, \.\.\.DEFAULT_LAYOUT_RATIOS \}\)/);
+  assert.match(app, /presentationMode \? PRESENTATION_LAYOUT_RATIOS : DEFAULT_LAYOUT_RATIOS/);
 
   assert.match(styles, /grid-template-columns:[^;]*var\(--layout-review-share\)[^;]*var\(--layout-material-share\)/);
   assert.match(styles, /grid-template-rows:[^;]*var\(--layout-source-share\)[^;]*var\(--layout-chat-share\)/);
@@ -31,7 +32,7 @@ test("default responsive layout keeps both axes proportional at target viewports
     { width: 2560, height: 1440 },
   ];
   for (const viewport of targetViewports) {
-    assert.equal(viewport.width * 0.5, viewport.width - viewport.width * 0.5);
+    assert.equal(viewport.width * 0.3, viewport.width - viewport.width * 0.7);
     assert.equal(viewport.height * 0.5, viewport.height - viewport.height * 0.5);
   }
 });

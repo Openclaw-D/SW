@@ -1,0 +1,116 @@
+.pre-review-summary {
+  min-width: 0;
+  width: 100%;
+  padding: 0;
+  display: grid;
+  grid-template-columns: minmax(360px, 1fr) auto auto auto;
+  align-items: center;
+  gap: 8px;
+  color: #172033;
+  background: transparent;
+  font: 12px/1.35 system-ui, sans-serif;
+}
+
+.pre-review-summary__bar {
+  min-width: 0;
+  height: 24px;
+  display: flex;
+  overflow: hidden;
+  margin: 0;
+  border-radius: 5px;
+  background: #f2f4f7;
+}
+
+.pre-review-segment {
+  min-width: 5%;
+  display: grid;
+  grid-template-rows: repeat(2, auto);
+  align-items: center;
+  align-content: center;
+  justify-items: center;
+  justify-content: center;
+  gap: 2px;
+  overflow: hidden;
+  border-right: 2px solid #fff;
+  white-space: nowrap;
+}
+
+.pre-review-segment--support { color: #14532d; background: #dcfce7; }
+.pre-review-segment--review { color: #78350f; background: #fef3c7; }
+.pre-review-segment--deny { color: #991b1b; background: #fee2e2; }
+.pre-review-segment small { font-size: 12px; }
+.pre-review-segment b { font-size: 12px; line-height: 1; }
+
+.pre-review-summary button,
+.pre-review-top-actions button {
+  min-height: 28px;
+  padding: 3px 8px;
+  border: 1px solid #cdd5df;
+  border-radius: 6px;
+  background: #fff;
+  color: #243247;
+  cursor: pointer;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.pre-review-summary button:hover,
+.pre-review-top-actions button:hover { border-color: #2563eb; color: #1d4ed8; }
+.pre-review-summary button:disabled,
+.pre-review-top-actions button:disabled { cursor: not-allowed; opacity: .45; }
+
+.pre-review-version { min-width: 54px; display: grid; place-items: center; padding: 0; }
+.pre-review-version-dot { width: 8px; height: 8px; border-radius: 50%; background: #94a3b8; box-shadow: 0 0 0 3px rgb(148 163 184 / 18%); }
+.pre-review-version[data-version="V1"] .pre-review-version-dot { background: #2563eb; box-shadow: 0 0 0 3px rgb(37 99 235 / 18%); }
+.pre-review-version[data-version="V2"] .pre-review-version-dot { background: #f59e0b; box-shadow: 0 0 0 3px rgb(245 158 11 / 18%); }
+.pre-review-version[data-version="V3"] .pre-review-version-dot { background: #22c55e; box-shadow: 0 0 0 3px rgb(34 197 94 / 18%); }
+.pre-review-diff-trigger { letter-spacing: .04em; font-weight: 800; }
+.pre-review-estimate { --estimate-color: #22c55e; min-width: 54px; display: grid; place-items: center; }
+.pre-review-estimate--attention { --estimate-color: #2563eb; }
+.pre-review-estimate--confirm { --estimate-color: #f59e0b; }
+.pre-review-estimate--risk { --estimate-color: #dc2626; }
+.pre-review-estimate--forbid { --estimate-color: #7c3aed; }
+.pre-review-estimate-ring { width: 28px; height: 28px; border-radius: 50%; background: conic-gradient(var(--estimate-color) calc(var(--estimate-arc) * 1%), #e5e7eb 0); -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2px)); mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2px)); }
+
+.pre-review-top-actions { display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+.pre-review-top-actions button { min-width: 64px; min-height: 42px; padding: 8px 14px; border-radius: 8px; font-size: 14px; font-weight: 800; }
+.pre-review-top-actions button:first-child { border-color: #bbf7d0; background: #dcfce7; color: #14532d; }
+.pre-review-top-actions button:nth-child(2) { border-color: #fde68a; background: #fef3c7; color: #78350f; }
+.pre-review-top-actions button:nth-child(3) { border-color: #fecaca; background: #fee2e2; color: #991b1b; }
+.pre-review-top-actions button[aria-pressed="true"] { box-shadow: inset 0 0 0 2px currentColor; }
+
+/* 展示页顶部使用贯穿整行的虚线分格，避免悬浮小卡片感。 */
+.showcase-experience .pre-review-summary { height: 100%; gap: 0; }
+.showcase-experience .pre-review-summary__bar { height: 100%; border-radius: 0; background: #fff; }
+.showcase-experience .pre-review-segment { height: 100%; border-right: 1px dashed #cbd0d8; }
+.showcase-experience .pre-review-version,
+.showcase-experience .pre-review-diff-trigger,
+.showcase-experience .pre-review-estimate {
+  height: 100%;
+  padding-inline: 10px;
+  align-content: center;
+  border-width: 0 0 0 1px;
+  border-style: dashed;
+  border-color: #cbd0d8;
+  border-radius: 0;
+}
+.showcase-experience .pre-review-estimate { border-right: 1px dashed #cbd0d8; }
+.showcase-experience .pre-review-top-actions { width: 100%; height: 100%; gap: 0; }
+.showcase-experience .pre-review-top-actions button {
+  flex: 1 1 0;
+  height: 100%;
+  border-width: 0 0 0 1px;
+  border-style: dashed;
+  border-radius: 0;
+}
+
+@media (max-width: 1500px) {
+  .pre-review-summary { grid-template-columns: minmax(260px, 1fr) auto auto auto; gap: 5px; }
+}
+
+@media (max-width: 1100px) {
+  .pre-review-summary { grid-template-columns: minmax(220px, 1fr) auto auto; }
+  .pre-review-estimate { display: none; }
+  .pre-review-summary button,
+  .pre-review-top-actions button { padding-inline: 5px; }
+}

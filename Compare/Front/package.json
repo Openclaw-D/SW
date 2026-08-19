@@ -10,7 +10,9 @@
     "dev": "vinext dev",
     "typecheck": "tsc --noEmit",
     "test": "node --experimental-strip-types --test tests/*.test.mjs",
-    "build": "vinext build"
+    "build": "vinext build",
+    "showcase:dev": "vite --config vite.showcase.config.ts",
+    "showcase:build": "vite build --config vite.showcase.config.ts && node scripts/build-showcase-standalone.mjs"
   },
   "dependencies": {
     "react": "19.2.6",

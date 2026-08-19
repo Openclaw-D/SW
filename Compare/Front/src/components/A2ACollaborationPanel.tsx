@@ -90,10 +90,11 @@ function GroupMessage({ accountRole, message, referenced, evidenceLabels, select
   );
 }
 
-function GroupComposer({ accountRole, agentBusy, reference, annotationReference, settings, onAttachAnnotation, onRequestAnnotation, onClearReference, onSubmit, onImportMaterialPackage, onConfirmMaterialImport }: {
+function GroupComposer({ accountRole, agentBusy, reference, selectionLabel, annotationReference, settings, onAttachAnnotation, onRequestAnnotation, onClearReference, onSubmit, onImportMaterialPackage, onConfirmMaterialImport }: {
   accountRole: AccountRole;
   agentBusy: boolean;
   reference: CollaborationContextReference | null;
+  selectionLabel: string | null;
   annotationReference: Extract<CollaborationContextReference, { kind: "material_annotation" }> | null;
   settings: CollaborationViewSettings;
   onAttachAnnotation: () => void;
@@ -167,6 +168,7 @@ function GroupComposer({ accountRole, agentBusy, reference, annotationReference,
   return (
     <footer className="a2a-group-composer">
       {reference ? <div className={`a2a-reference ${reference.kind === "material_annotation" ? "is-material-annotation" : ""}`}>{reference.kind === "material_annotation" && reference.snapshotDataUrl ? <img alt={copy(locale, "Material annotation snapshot", "材料注释截图")} src={reference.snapshotDataUrl} /> : null}<span>{reference.kind === "material_annotation" ? copy(locale, `Material annotation · ${reference.matchStatus}`, `材料注释 · ${reference.matchStatus === "exact" ? "元素精确定位" : reference.matchStatus === "confirmed" ? "OCR 已匹配" : "OCR 待确认"}`) : copy(locale, "Quoted context", "引用")} · {reference.label}</span><button onClick={onClearReference} type="button">×</button></div> : null}
+      {!reference && selectionLabel ? <div className="a2a-reference is-selection-context" role="status"><span>当前选中依据 · {selectionLabel}</span></div> : null}
       <div className="a2a-routing-options" aria-label={copy(locale, "Choose whether to notify an Agent", "选择是否通知 Agent")}>{targets.map((item) => { const agentDisabled = item.value !== null && !settings.enabledAgents[item.value]; return <button aria-pressed={target === item.value} disabled={(agentBusy && item.value !== null) || agentDisabled} key={item.value ?? "chat"} onClick={() => chooseTarget(item.value, item.label)} title={agentDisabled ? copy(locale, "This Agent is paused in Settings.", "该 Agent 已在设置中暂停。") : agentBusy && item.value !== null ? copy(locale, "An Agent is already working. Normal chat remains available.", "已有 Agent 正在处理；仍可继续普通聊天。") : undefined} type="button">{item.label}</button>; })}</div>
       <div className="a2a-compact-tool-row">
         <input accept=".zip,application/zip" aria-label={copy(locale, "Choose a ZIP material package", "选择材料包 ZIP 文件")} hidden onChange={(event) => { void upload(event.target.files?.[0] ?? null); event.currentTarget.value = ""; }} ref={fileInputRef} type="file" />
@@ -190,6 +192,7 @@ export function A2ACollaborationPanel({ accountRole, agentActivity, agentMessage
   const [settingsOpen, setSettingsOpen] = useState(accountRole === "leadership");
   const [viewSettings, setViewSettings] = useState(DEFAULT_COLLABORATION_VIEW_SETTINGS);
   const evidenceLabels = useMemo(() => new Map(evidence.map((item) => [item.id, item.label])), [evidence]);
+  const selectionLabel = selectedTarget ? evidenceLabels.get(selectedTarget.evidenceRef) ?? "已选证据" : null;
   const messages = useMemo(() => agentMessages.filter((message) => message.role !== "leadership").sort((left, right) => left.sequence - right.sequence || left.id.localeCompare(right.id)), [agentMessages]);
   const feedRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -209,7 +212,7 @@ export function A2ACollaborationPanel({ accountRole, agentActivity, agentMessage
           {settingsOpen ? <AgentSettingsDashboard messages={messages} onChange={setViewSettings} onClose={() => setSettingsOpen(false)} settings={viewSettings} /> : <>
             {agentError ? <div className="a2a-panel-error" role="alert">{formatServiceMessage(agentError, locale)}</div> : null}
             <div className="a2a-group-feed" aria-label={copy(locale, "Project group chat history", "项目群聊记录")} ref={feedRef}>{messages.length || agentActivity ? <>{messages.map((message) => <GroupMessage accountRole={accountRole} evidenceLabels={evidenceLabels} key={message.id} message={message} onEvidenceActivate={onAgentEvidenceActivate} onReference={toggleReference} referenced={reference?.kind === "agent_message" && reference.id === message.id} selectedTarget={selectedTarget} showProvenance={viewSettings.showProvenance} />)}{agentActivity ? <AgentActivity activity={agentActivity} /> : null}</> : <EmptyState detail={copy(locale, "Start with a normal message or explicitly mention Business or Risk.", "直接说话，或明确 @业务 / @风控。") } title={copy(locale, "No group messages yet", "群聊还没有消息")} />}</div>
-            {canParticipate ? <GroupComposer accountRole={accountRole} agentBusy={agentActivity?.phase === "thinking"} annotationReference={annotationReference} onAttachAnnotation={() => annotationReference && setReference({ ...annotationReference, createdAt: new Date().toISOString() })} onRequestAnnotation={onRequestAnnotation} onClearReference={() => setReference(null)} onConfirmMaterialImport={onConfirmMaterialImport} onImportMaterialPackage={onImportMaterialPackage} onSubmit={onSubmitMessage} reference={reference} settings={viewSettings} /> : <div className="a2a-settings-only-note" role="status">{copy(locale, "This account manages settings and does not participate in group chat.", "当前账号用于管理设置，不参与群聊发言。")}</div>}
+            {canParticipate ? <GroupComposer accountRole={accountRole} agentBusy={agentActivity?.phase === "thinking"} annotationReference={annotationReference} onAttachAnnotation={() => annotationReference && setReference({ ...annotationReference, createdAt: new Date().toISOString() })} onRequestAnnotation={onRequestAnnotation} onClearReference={() => setReference(null)} onConfirmMaterialImport={onConfirmMaterialImport} onImportMaterialPackage={onImportMaterialPackage} onSubmit={onSubmitMessage} reference={reference} selectionLabel={selectionLabel} settings={viewSettings} /> : <div className="a2a-settings-only-note" role="status">{copy(locale, "This account manages settings and does not participate in group chat.", "当前账号用于管理设置，不参与群聊发言。")}</div>}
           </>}
         </> : null}
       </section>

@@ -84,7 +84,7 @@ export function deriveSimulatedRiskLevel(
   _dimensions: readonly DimensionDefinition[],
   _materialStatus: ProjectMaterialStatus,
 ): RiskLevel {
-  // 当前 24 个目录项目共用一套含人工 Gate 与“核实”项的脱敏模板，
+  // 公开运行时只展示一套含人工 Gate 与“核实”项的脱敏模板，
   // 没有每项目独立风险事实；材料状态、置信度和 decisionGrade 均不得降低风险级别。
   return "confirm";
 }

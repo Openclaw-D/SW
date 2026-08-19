@@ -16,7 +16,7 @@ import type {
   RiskQuestionInput,
   WorkbenchProject,
 } from "../contracts/workbench";
-import type { ProjectCatalogItem } from "../contracts/projectSelection";
+import { PUBLIC_DEMO_PROJECT_COUNT, type ProjectCatalogItem } from "../contracts/projectSelection.ts";
 import type { CandidateConfirmationInput, MaterialIntelligenceRunInput } from "../contracts/materialIntelligence";
 import { mockWorkbenchProject } from "../mock/mockCase.ts";
 import { mockDimensionTimeSeries } from "../mock/p3AdjustData.ts";
@@ -75,7 +75,7 @@ export class MockWorkbenchGateway implements WorkbenchGateway {
   private readonly meta: GatewayResponseMeta = { requestId: "mock-local", schemaVersion: "1.0", dataStatus: "simulated", source: "deterministic_business_rules", disclaimer: "local mock" };
 
   constructor(seed = 20260812, projects?: ProjectCatalogItem[]) {
-    this.projects = clone(projects ?? generateProjectCatalog(seed, new Date(2026, 7, 12, 9, 0, 0)));
+    this.projects = clone(projects ?? generateProjectCatalog(seed, new Date(2026, 7, 12, 9, 0, 0)).slice(0, PUBLIC_DEMO_PROJECT_COUNT));
   }
 
   getLastResponseMeta(): GatewayResponseMeta { return { ...this.meta }; }
@@ -97,7 +97,7 @@ export class MockWorkbenchGateway implements WorkbenchGateway {
       ...project.project,
       id: catalogProject.projectId,
       name: `${catalogProject.companyShortName} ${catalogProject.financingType} · 统一脱敏核验模板`,
-      disclaimer: `${project.project.disclaimer} 当前项目身份与行业已按所选目录确定性替换；其余事实、材料、设备与协同内容沿用统一脱敏核验模板，不代表 24 套真实客户材料。`,
+      disclaimer: `${project.project.disclaimer} 当前项目使用唯一一套确定性脱敏演示材料，不代表真实客户材料。`,
     };
     project.dimensions = clone(catalogProject.dimensions);
     project.riskSummary = {
